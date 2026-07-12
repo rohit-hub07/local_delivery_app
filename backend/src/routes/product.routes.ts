@@ -1,0 +1,18 @@
+import express from "express"
+import { addProduct, getAllProducts, removeProduct } from "../controllers/product.controllers.js";
+import { isVendor } from "../middlewares/isVendor.js";
+import { isAuthenticated } from "../middlewares/isAuthenticated.js";
+
+const productRouter = express.Router();
+
+productRouter.post("/add-product",isAuthenticated,isVendor, addProduct)
+
+productRouter.delete("/delete-product/:id",isAuthenticated,isVendor, removeProduct)
+
+// show all product of vendor
+productRouter.get("/all-products/:id", getAllProducts)
+
+// get product by id
+
+
+export default productRouter;

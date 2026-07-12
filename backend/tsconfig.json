@@ -8,7 +8,7 @@
     "strict": true,                              /* Enable all strict type-checking options */
     "esModuleInterop": true,                     /* Emit additional JavaScript to ease importing CommonJS modules */
     "skipLibCheck": true,                        /* Skip type checking of declaration files */
-    "forceConsistentCasingInFileNames": true     /* Ensure that casing is correct in imports */
+    "forceConsistentCasingInFileNames": true,     /* Ensure that casing is correct in imports */
   },
   "include": ["src/**/*"],                       /* Track all source files */
   "exclude": ["node_modules", "dist"]            /* Skip compilation for external and build folders */

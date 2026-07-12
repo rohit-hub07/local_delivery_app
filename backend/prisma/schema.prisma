@@ -8,21 +8,58 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+generator zod {
+  provider = "zod-prisma-types"
+  output   = "../src/generated/zod" // Saves Zod schemas separate from Prisma types
+}
+
 datasource db {
   provider = "postgresql"
 }
 
-enum Role{
+enum Role {
   CUSTOMER
   VENDOR
 }
 
 model User {
-  id String @id @default(uuid())
-  name String
-  phone Int @unique
-  password String 
-  role Role @default(CUSTOMER)
+  id        String   @id @default(uuid())
+  /// @zod.string.min(2, { message: "Name must be at least 2 characters long" })
+  name      String
+  /// @zod.string.regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" })
+  phone     String   @unique
+  address   String
+  role      Role     @default(CUSTOMER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  vendor Vendor?
+}
+
+model Vendor {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  /// @zod.string.min(2,{message: "Business name must be at least 2 characters long"})
+  businessName String
+  /// @zod.string.regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" })
+  businessPhone String 
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  product Product[]
+}
+
+model Product{
+  id String @id @default(uuid())
+  vendorId String 
+  /// @zod.string.min(2,{message: "Product name must be of at least 2 characters"})
+  productName String
+  /// @zod.string.min(2, {message: "Product description must be of at leat 2 characters"})
+  description String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendor Vendor @relation(fields: [vendorId], references: [id],onDelete: Cascade)
 }
