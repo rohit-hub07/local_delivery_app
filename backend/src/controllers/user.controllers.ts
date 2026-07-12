@@ -32,14 +32,14 @@ export const signupController = async (req: Request, res: Response) => {
 
     const { name, phone, role,address } = validateBody.data;
 
-    console.log("Before check the users:")
+    // console.log("Before check the users:")
 
     // check for existing user
     const existingUser = await db.user.findUnique({
       where: { phone },
     });
 
-    console.log("After checking the user")
+    // console.log("After checking the user")
 
     if (existingUser) {
       return res.status(404).json({

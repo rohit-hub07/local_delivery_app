@@ -1,5 +1,5 @@
 import express from "express"
-import { addProduct, getAllProducts, removeProduct } from "../controllers/product.controllers.js";
+import { addProduct, getAllProducts, getProductById, removeProduct } from "../controllers/product.controllers.js";
 import { isVendor } from "../middlewares/isVendor.js";
 import { isAuthenticated } from "../middlewares/isAuthenticated.js";
 
@@ -10,9 +10,9 @@ productRouter.post("/add-product",isAuthenticated,isVendor, addProduct)
 productRouter.delete("/delete-product/:id",isAuthenticated,isVendor, removeProduct)
 
 // show all product of vendor
-productRouter.get("/all-products/:id", getAllProducts)
+productRouter.get("/all-products/:id",isAuthenticated, getAllProducts)
 
 // get product by id
-
+productRouter.get("/vendor/product/:id", isAuthenticated, getProductById)
 
 export default productRouter;

@@ -109,5 +109,25 @@ export const getAllProducts = async (req: Request, res: Response) => {
 }
 
 export const getProductById = async (req: Request, res: Response) => {
-
+  try {
+    const id = req.params.id as string
+    const product = await db.product.findUnique({where: {id}})
+    if(!product){
+      return res.status(404).json({
+        message: "Product doesn't exist or removed!",
+        success: false
+      })
+    }
+    return res.status(200).json({
+      message: "Product fetched successfully!",
+      success: true,
+      product: product
+    })
+  } catch (error: any) {
+    console.log("Error inside of get product by id: ", error.message)
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false
+    })
+  }
 }
