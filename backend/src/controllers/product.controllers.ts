@@ -68,6 +68,14 @@ export const removeProduct = async (req: Request, res: Response) => {
         success: false,
       })
     }
+    // check if the vendor is owner of the product
+    const vendor = req.vendor;
+    if(vendor.id != product.vendorId){
+      return res.status(401).json({
+        message: "Sorry you are not allowed to perform this action!",
+        success: false
+      })
+    }
 
     await db.product.delete({ where: { id } });
     return res.status(200).json({
