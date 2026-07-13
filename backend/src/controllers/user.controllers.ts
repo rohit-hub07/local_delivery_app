@@ -102,6 +102,7 @@ export const loginController = async (req: Request, res: Response) => {
       id: true,
       name: true,
       role: true,
+      address: true,
       createdAt: true,
       updatedAt: true,
     })
@@ -139,7 +140,8 @@ export const loginController = async (req: Request, res: Response) => {
       user: {
         id: user.id,
         phone: user.phone,
-        name: user.name
+        name: user.name,
+        role: user.role
       }
     })
   } catch (error) {

@@ -5,7 +5,8 @@ import userRouter from "./routes/user.routes.js";
 import cookieParser from "cookie-parser"
 import vendorRouter from "./routes/vendor.routes.js";
 import productRouter from "./routes/product.routes.js";
-import vendorCustomers from "./routes/vendorCustomers.routes.js";
+import vendorCustomers from "./routes/vendor.customers.routes.js";
+import customerSubscriptionRouter from "./routes/customers.subscription.routes.js";
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use("/auth",userRouter)
 app.use("/vendor", vendorRouter)
 app.use("/product", productRouter)
 app.use("/customer", vendorCustomers)
+app.use("/subscription", customerSubscriptionRouter)
 
 app.listen(PORT,() =>{
   console.log(`App is listening to port: ${PORT}`)

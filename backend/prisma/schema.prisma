@@ -33,50 +33,68 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  vendor Vendor? @relation("VendorIdRelation")
+  vendor          Vendor?           @relation("VendorIdRelation")
   vendorcustomers VendorCustomers[] @relation("CustomerPhoneRelation")
 }
 
 model Vendor {
-  id           String   @id @default(uuid())
-  userId       String   @unique
+  id            String   @id @default(uuid())
+  userId        String   @unique
   /// @zod.string.min(2,{message: "Business name must be at least 2 characters long"})
-  businessName String
+  businessName  String
   /// @zod.string.regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" })
-  businessPhone String 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  businessPhone String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  user User @relation("VendorIdRelation",fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation("VendorIdRelation", fields: [userId], references: [id], onDelete: Cascade)
 
   product Product[]
 
   vendorcustomers VendorCustomers[]
 }
 
-model Product{
-  id String @id @default(uuid())
-  vendorId String 
+model Product {
+  id          String   @id @default(uuid())
+  vendorId    String
   /// @zod.string.min(2,{message: "Product name must be of at least 2 characters"})
   productName String
   /// @zod.string.min(2, {message: "Product description must be of at leat 2 characters"})
   description String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  vendor Vendor @relation(fields: [vendorId], references: [id],onDelete: Cascade)
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  subscription CustomerSubscription[]
 }
 
-model VendorCustomers{
-  id String @id @default(uuid())
-  vendorId String
+model VendorCustomers {
+  id            String   @id @default(uuid())
+  vendorId      String
   /// @zod.string.regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" })
   customerPhone String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  vendor Vendor @relation(fields: [vendorId], references: [id],onDelete: Cascade)
-  user User @relation("CustomerPhoneRelation",fields: [customerPhone], references: [phone], onDelete: Cascade)
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  user   User   @relation("CustomerPhoneRelation", fields: [customerPhone], references: [phone], onDelete: Cascade)
 
-  @@unique([vendorId, customerPhone]) 
+  subscription CustomerSubscription[]
+
+  @@unique([vendorId, customerPhone])
+}
+
+model CustomerSubscription {
+  id               String   @id @default(uuid())
+  vendorCustomerId String
+  productId        String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  vendorCustomers VendorCustomers @relation(fields: [vendorCustomerId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+   @@unique([vendorCustomerId, productId]) 
 }

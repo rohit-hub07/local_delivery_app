@@ -11,9 +11,9 @@ productRouter.post("/add-product",isAuthenticated,isCreatedVendorProfile,isVendo
 productRouter.delete("/delete-product/:id",isAuthenticated,isCreatedVendorProfile,isVendor, removeProduct)
 
 // show all product of vendor
-productRouter.get("/all-products/:id",isAuthenticated,isCreatedVendorProfile, getAllProducts)
+productRouter.get("/all-products/:id",isAuthenticated, getAllProducts)
 
 // get product by id
-productRouter.get("/vendor/product/:id", isAuthenticated,isCreatedVendorProfile, getProductById)
+productRouter.get("/vendor/product/:id", isAuthenticated, getProductById)
 
 export default productRouter;

@@ -20,6 +20,8 @@ export const ProductScalarFieldEnumSchema = z.enum(['id','vendorId','productName
 
 export const VendorCustomersScalarFieldEnumSchema = z.enum(['id','vendorId','customerPhone','createdAt','updatedAt']);
 
+export const CustomerSubscriptionScalarFieldEnumSchema = z.enum(['id','vendorCustomerId','productId','createdAt','updatedAt']);
+
 export const SortOrderSchema = z.enum(['asc','desc']);
 
 export const QueryModeSchema = z.enum(['default','insensitive']);
@@ -91,6 +93,20 @@ export const VendorCustomersSchema = z.object({
 })
 
 export type VendorCustomers = z.infer<typeof VendorCustomersSchema>
+
+/////////////////////////////////////////
+// CUSTOMER SUBSCRIPTION SCHEMA
+/////////////////////////////////////////
+
+export const CustomerSubscriptionSchema = z.object({
+  id: z.uuid(),
+  vendorCustomerId: z.string(),
+  productId: z.string(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+})
+
+export type CustomerSubscription = z.infer<typeof CustomerSubscriptionSchema>
 
 /////////////////////////////////////////
 // SELECT & INCLUDE
@@ -173,11 +189,21 @@ export const VendorSelectSchema: z.ZodType<Prisma.VendorSelect> = z.object({
 
 export const ProductIncludeSchema: z.ZodType<Prisma.ProductInclude> = z.object({
   vendor: z.union([z.boolean(),z.lazy(() => VendorArgsSchema)]).optional(),
+  subscription: z.union([z.boolean(),z.lazy(() => CustomerSubscriptionFindManyArgsSchema)]).optional(),
+  _count: z.union([z.boolean(),z.lazy(() => ProductCountOutputTypeArgsSchema)]).optional(),
 }).strict();
 
 export const ProductArgsSchema: z.ZodType<Prisma.ProductDefaultArgs> = z.object({
   select: z.lazy(() => ProductSelectSchema).optional(),
   include: z.lazy(() => ProductIncludeSchema).optional(),
+}).strict();
+
+export const ProductCountOutputTypeArgsSchema: z.ZodType<Prisma.ProductCountOutputTypeDefaultArgs> = z.object({
+  select: z.lazy(() => ProductCountOutputTypeSelectSchema).nullish(),
+}).strict();
+
+export const ProductCountOutputTypeSelectSchema: z.ZodType<Prisma.ProductCountOutputTypeSelect> = z.object({
+  subscription: z.boolean().optional(),
 }).strict();
 
 export const ProductSelectSchema: z.ZodType<Prisma.ProductSelect> = z.object({
@@ -188,6 +214,8 @@ export const ProductSelectSchema: z.ZodType<Prisma.ProductSelect> = z.object({
   createdAt: z.boolean().optional(),
   updatedAt: z.boolean().optional(),
   vendor: z.union([z.boolean(),z.lazy(() => VendorArgsSchema)]).optional(),
+  subscription: z.union([z.boolean(),z.lazy(() => CustomerSubscriptionFindManyArgsSchema)]).optional(),
+  _count: z.union([z.boolean(),z.lazy(() => ProductCountOutputTypeArgsSchema)]).optional(),
 }).strict()
 
 // VENDOR CUSTOMERS
@@ -196,11 +224,21 @@ export const ProductSelectSchema: z.ZodType<Prisma.ProductSelect> = z.object({
 export const VendorCustomersIncludeSchema: z.ZodType<Prisma.VendorCustomersInclude> = z.object({
   vendor: z.union([z.boolean(),z.lazy(() => VendorArgsSchema)]).optional(),
   user: z.union([z.boolean(),z.lazy(() => UserArgsSchema)]).optional(),
+  subscription: z.union([z.boolean(),z.lazy(() => CustomerSubscriptionFindManyArgsSchema)]).optional(),
+  _count: z.union([z.boolean(),z.lazy(() => VendorCustomersCountOutputTypeArgsSchema)]).optional(),
 }).strict();
 
 export const VendorCustomersArgsSchema: z.ZodType<Prisma.VendorCustomersDefaultArgs> = z.object({
   select: z.lazy(() => VendorCustomersSelectSchema).optional(),
   include: z.lazy(() => VendorCustomersIncludeSchema).optional(),
+}).strict();
+
+export const VendorCustomersCountOutputTypeArgsSchema: z.ZodType<Prisma.VendorCustomersCountOutputTypeDefaultArgs> = z.object({
+  select: z.lazy(() => VendorCustomersCountOutputTypeSelectSchema).nullish(),
+}).strict();
+
+export const VendorCustomersCountOutputTypeSelectSchema: z.ZodType<Prisma.VendorCustomersCountOutputTypeSelect> = z.object({
+  subscription: z.boolean().optional(),
 }).strict();
 
 export const VendorCustomersSelectSchema: z.ZodType<Prisma.VendorCustomersSelect> = z.object({
@@ -211,6 +249,31 @@ export const VendorCustomersSelectSchema: z.ZodType<Prisma.VendorCustomersSelect
   updatedAt: z.boolean().optional(),
   vendor: z.union([z.boolean(),z.lazy(() => VendorArgsSchema)]).optional(),
   user: z.union([z.boolean(),z.lazy(() => UserArgsSchema)]).optional(),
+  subscription: z.union([z.boolean(),z.lazy(() => CustomerSubscriptionFindManyArgsSchema)]).optional(),
+  _count: z.union([z.boolean(),z.lazy(() => VendorCustomersCountOutputTypeArgsSchema)]).optional(),
+}).strict()
+
+// CUSTOMER SUBSCRIPTION
+//------------------------------------------------------
+
+export const CustomerSubscriptionIncludeSchema: z.ZodType<Prisma.CustomerSubscriptionInclude> = z.object({
+  vendorCustomers: z.union([z.boolean(),z.lazy(() => VendorCustomersArgsSchema)]).optional(),
+  product: z.union([z.boolean(),z.lazy(() => ProductArgsSchema)]).optional(),
+}).strict();
+
+export const CustomerSubscriptionArgsSchema: z.ZodType<Prisma.CustomerSubscriptionDefaultArgs> = z.object({
+  select: z.lazy(() => CustomerSubscriptionSelectSchema).optional(),
+  include: z.lazy(() => CustomerSubscriptionIncludeSchema).optional(),
+}).strict();
+
+export const CustomerSubscriptionSelectSchema: z.ZodType<Prisma.CustomerSubscriptionSelect> = z.object({
+  id: z.boolean().optional(),
+  vendorCustomerId: z.boolean().optional(),
+  productId: z.boolean().optional(),
+  createdAt: z.boolean().optional(),
+  updatedAt: z.boolean().optional(),
+  vendorCustomers: z.union([z.boolean(),z.lazy(() => VendorCustomersArgsSchema)]).optional(),
+  product: z.union([z.boolean(),z.lazy(() => ProductArgsSchema)]).optional(),
 }).strict()
 
 
@@ -387,6 +450,7 @@ export const ProductWhereInputSchema: z.ZodType<Prisma.ProductWhereInput> = z.st
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   vendor: z.union([ z.lazy(() => VendorScalarRelationFilterSchema), z.lazy(() => VendorWhereInputSchema) ]).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionListRelationFilterSchema).optional(),
 });
 
 export const ProductOrderByWithRelationInputSchema: z.ZodType<Prisma.ProductOrderByWithRelationInput> = z.strictObject({
@@ -397,6 +461,7 @@ export const ProductOrderByWithRelationInputSchema: z.ZodType<Prisma.ProductOrde
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
   vendor: z.lazy(() => VendorOrderByWithRelationInputSchema).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionOrderByRelationAggregateInputSchema).optional(),
 });
 
 export const ProductWhereUniqueInputSchema: z.ZodType<Prisma.ProductWhereUniqueInput> = z.object({
@@ -413,6 +478,7 @@ export const ProductWhereUniqueInputSchema: z.ZodType<Prisma.ProductWhereUniqueI
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   vendor: z.union([ z.lazy(() => VendorScalarRelationFilterSchema), z.lazy(() => VendorWhereInputSchema) ]).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionListRelationFilterSchema).optional(),
 }));
 
 export const ProductOrderByWithAggregationInputSchema: z.ZodType<Prisma.ProductOrderByWithAggregationInput> = z.strictObject({
@@ -450,6 +516,7 @@ export const VendorCustomersWhereInputSchema: z.ZodType<Prisma.VendorCustomersWh
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   vendor: z.union([ z.lazy(() => VendorScalarRelationFilterSchema), z.lazy(() => VendorWhereInputSchema) ]).optional(),
   user: z.union([ z.lazy(() => UserScalarRelationFilterSchema), z.lazy(() => UserWhereInputSchema) ]).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionListRelationFilterSchema).optional(),
 });
 
 export const VendorCustomersOrderByWithRelationInputSchema: z.ZodType<Prisma.VendorCustomersOrderByWithRelationInput> = z.strictObject({
@@ -460,6 +527,7 @@ export const VendorCustomersOrderByWithRelationInputSchema: z.ZodType<Prisma.Ven
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
   vendor: z.lazy(() => VendorOrderByWithRelationInputSchema).optional(),
   user: z.lazy(() => UserOrderByWithRelationInputSchema).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionOrderByRelationAggregateInputSchema).optional(),
 });
 
 export const VendorCustomersWhereUniqueInputSchema: z.ZodType<Prisma.VendorCustomersWhereUniqueInput> = z.union([
@@ -486,6 +554,7 @@ export const VendorCustomersWhereUniqueInputSchema: z.ZodType<Prisma.VendorCusto
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   vendor: z.union([ z.lazy(() => VendorScalarRelationFilterSchema), z.lazy(() => VendorWhereInputSchema) ]).optional(),
   user: z.union([ z.lazy(() => UserScalarRelationFilterSchema), z.lazy(() => UserWhereInputSchema) ]).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionListRelationFilterSchema).optional(),
 }));
 
 export const VendorCustomersOrderByWithAggregationInputSchema: z.ZodType<Prisma.VendorCustomersOrderByWithAggregationInput> = z.strictObject({
@@ -506,6 +575,77 @@ export const VendorCustomersScalarWhereWithAggregatesInputSchema: z.ZodType<Pris
   id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   vendorId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   customerPhone: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  createdAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
+  updatedAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
+});
+
+export const CustomerSubscriptionWhereInputSchema: z.ZodType<Prisma.CustomerSubscriptionWhereInput> = z.strictObject({
+  AND: z.union([ z.lazy(() => CustomerSubscriptionWhereInputSchema), z.lazy(() => CustomerSubscriptionWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => CustomerSubscriptionWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => CustomerSubscriptionWhereInputSchema), z.lazy(() => CustomerSubscriptionWhereInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  vendorCustomerId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  productId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  createdAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  vendorCustomers: z.union([ z.lazy(() => VendorCustomersScalarRelationFilterSchema), z.lazy(() => VendorCustomersWhereInputSchema) ]).optional(),
+  product: z.union([ z.lazy(() => ProductScalarRelationFilterSchema), z.lazy(() => ProductWhereInputSchema) ]).optional(),
+});
+
+export const CustomerSubscriptionOrderByWithRelationInputSchema: z.ZodType<Prisma.CustomerSubscriptionOrderByWithRelationInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  vendorCustomerId: z.lazy(() => SortOrderSchema).optional(),
+  productId: z.lazy(() => SortOrderSchema).optional(),
+  createdAt: z.lazy(() => SortOrderSchema).optional(),
+  updatedAt: z.lazy(() => SortOrderSchema).optional(),
+  vendorCustomers: z.lazy(() => VendorCustomersOrderByWithRelationInputSchema).optional(),
+  product: z.lazy(() => ProductOrderByWithRelationInputSchema).optional(),
+});
+
+export const CustomerSubscriptionWhereUniqueInputSchema: z.ZodType<Prisma.CustomerSubscriptionWhereUniqueInput> = z.union([
+  z.object({
+    id: z.uuid(),
+    vendorCustomerId_productId: z.lazy(() => CustomerSubscriptionVendorCustomerIdProductIdCompoundUniqueInputSchema),
+  }),
+  z.object({
+    id: z.uuid(),
+  }),
+  z.object({
+    vendorCustomerId_productId: z.lazy(() => CustomerSubscriptionVendorCustomerIdProductIdCompoundUniqueInputSchema),
+  }),
+])
+.and(z.strictObject({
+  id: z.uuid().optional(),
+  vendorCustomerId_productId: z.lazy(() => CustomerSubscriptionVendorCustomerIdProductIdCompoundUniqueInputSchema).optional(),
+  AND: z.union([ z.lazy(() => CustomerSubscriptionWhereInputSchema), z.lazy(() => CustomerSubscriptionWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => CustomerSubscriptionWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => CustomerSubscriptionWhereInputSchema), z.lazy(() => CustomerSubscriptionWhereInputSchema).array() ]).optional(),
+  vendorCustomerId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  productId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  createdAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  vendorCustomers: z.union([ z.lazy(() => VendorCustomersScalarRelationFilterSchema), z.lazy(() => VendorCustomersWhereInputSchema) ]).optional(),
+  product: z.union([ z.lazy(() => ProductScalarRelationFilterSchema), z.lazy(() => ProductWhereInputSchema) ]).optional(),
+}));
+
+export const CustomerSubscriptionOrderByWithAggregationInputSchema: z.ZodType<Prisma.CustomerSubscriptionOrderByWithAggregationInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  vendorCustomerId: z.lazy(() => SortOrderSchema).optional(),
+  productId: z.lazy(() => SortOrderSchema).optional(),
+  createdAt: z.lazy(() => SortOrderSchema).optional(),
+  updatedAt: z.lazy(() => SortOrderSchema).optional(),
+  _count: z.lazy(() => CustomerSubscriptionCountOrderByAggregateInputSchema).optional(),
+  _max: z.lazy(() => CustomerSubscriptionMaxOrderByAggregateInputSchema).optional(),
+  _min: z.lazy(() => CustomerSubscriptionMinOrderByAggregateInputSchema).optional(),
+});
+
+export const CustomerSubscriptionScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.CustomerSubscriptionScalarWhereWithAggregatesInput> = z.strictObject({
+  AND: z.union([ z.lazy(() => CustomerSubscriptionScalarWhereWithAggregatesInputSchema), z.lazy(() => CustomerSubscriptionScalarWhereWithAggregatesInputSchema).array() ]).optional(),
+  OR: z.lazy(() => CustomerSubscriptionScalarWhereWithAggregatesInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => CustomerSubscriptionScalarWhereWithAggregatesInputSchema), z.lazy(() => CustomerSubscriptionScalarWhereWithAggregatesInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  vendorCustomerId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  productId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   createdAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
 });
@@ -665,6 +805,7 @@ export const ProductCreateInputSchema: z.ZodType<Prisma.ProductCreateInput> = z.
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   vendor: z.lazy(() => VendorCreateNestedOneWithoutProductInputSchema),
+  subscription: z.lazy(() => CustomerSubscriptionCreateNestedManyWithoutProductInputSchema).optional(),
 });
 
 export const ProductUncheckedCreateInputSchema: z.ZodType<Prisma.ProductUncheckedCreateInput> = z.strictObject({
@@ -674,6 +815,7 @@ export const ProductUncheckedCreateInputSchema: z.ZodType<Prisma.ProductUnchecke
   description: z.string().min(2, {message: "Product description must be of at leat 2 characters"}),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUncheckedCreateNestedManyWithoutProductInputSchema).optional(),
 });
 
 export const ProductUpdateInputSchema: z.ZodType<Prisma.ProductUpdateInput> = z.strictObject({
@@ -683,6 +825,7 @@ export const ProductUpdateInputSchema: z.ZodType<Prisma.ProductUpdateInput> = z.
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   vendor: z.lazy(() => VendorUpdateOneRequiredWithoutProductNestedInputSchema).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUpdateManyWithoutProductNestedInputSchema).optional(),
 });
 
 export const ProductUncheckedUpdateInputSchema: z.ZodType<Prisma.ProductUncheckedUpdateInput> = z.strictObject({
@@ -692,6 +835,7 @@ export const ProductUncheckedUpdateInputSchema: z.ZodType<Prisma.ProductUnchecke
   description: z.union([ z.string().min(2, {message: "Product description must be of at leat 2 characters"}),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUncheckedUpdateManyWithoutProductNestedInputSchema).optional(),
 });
 
 export const ProductCreateManyInputSchema: z.ZodType<Prisma.ProductCreateManyInput> = z.strictObject({
@@ -726,6 +870,7 @@ export const VendorCustomersCreateInputSchema: z.ZodType<Prisma.VendorCustomersC
   updatedAt: z.coerce.date().optional(),
   vendor: z.lazy(() => VendorCreateNestedOneWithoutVendorcustomersInputSchema),
   user: z.lazy(() => UserCreateNestedOneWithoutVendorcustomersInputSchema),
+  subscription: z.lazy(() => CustomerSubscriptionCreateNestedManyWithoutVendorCustomersInputSchema).optional(),
 });
 
 export const VendorCustomersUncheckedCreateInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedCreateInput> = z.strictObject({
@@ -734,6 +879,7 @@ export const VendorCustomersUncheckedCreateInputSchema: z.ZodType<Prisma.VendorC
   customerPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUncheckedCreateNestedManyWithoutVendorCustomersInputSchema).optional(),
 });
 
 export const VendorCustomersUpdateInputSchema: z.ZodType<Prisma.VendorCustomersUpdateInput> = z.strictObject({
@@ -742,6 +888,7 @@ export const VendorCustomersUpdateInputSchema: z.ZodType<Prisma.VendorCustomersU
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   vendor: z.lazy(() => VendorUpdateOneRequiredWithoutVendorcustomersNestedInputSchema).optional(),
   user: z.lazy(() => UserUpdateOneRequiredWithoutVendorcustomersNestedInputSchema).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUpdateManyWithoutVendorCustomersNestedInputSchema).optional(),
 });
 
 export const VendorCustomersUncheckedUpdateInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateInput> = z.strictObject({
@@ -750,6 +897,7 @@ export const VendorCustomersUncheckedUpdateInputSchema: z.ZodType<Prisma.VendorC
   customerPhone: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUncheckedUpdateManyWithoutVendorCustomersNestedInputSchema).optional(),
 });
 
 export const VendorCustomersCreateManyInputSchema: z.ZodType<Prisma.VendorCustomersCreateManyInput> = z.strictObject({
@@ -770,6 +918,60 @@ export const VendorCustomersUncheckedUpdateManyInputSchema: z.ZodType<Prisma.Ven
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   vendorId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   customerPhone: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const CustomerSubscriptionCreateInputSchema: z.ZodType<Prisma.CustomerSubscriptionCreateInput> = z.strictObject({
+  id: z.uuid().optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+  vendorCustomers: z.lazy(() => VendorCustomersCreateNestedOneWithoutSubscriptionInputSchema),
+  product: z.lazy(() => ProductCreateNestedOneWithoutSubscriptionInputSchema),
+});
+
+export const CustomerSubscriptionUncheckedCreateInputSchema: z.ZodType<Prisma.CustomerSubscriptionUncheckedCreateInput> = z.strictObject({
+  id: z.uuid().optional(),
+  vendorCustomerId: z.string(),
+  productId: z.string(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+});
+
+export const CustomerSubscriptionUpdateInputSchema: z.ZodType<Prisma.CustomerSubscriptionUpdateInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  vendorCustomers: z.lazy(() => VendorCustomersUpdateOneRequiredWithoutSubscriptionNestedInputSchema).optional(),
+  product: z.lazy(() => ProductUpdateOneRequiredWithoutSubscriptionNestedInputSchema).optional(),
+});
+
+export const CustomerSubscriptionUncheckedUpdateInputSchema: z.ZodType<Prisma.CustomerSubscriptionUncheckedUpdateInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  vendorCustomerId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  productId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const CustomerSubscriptionCreateManyInputSchema: z.ZodType<Prisma.CustomerSubscriptionCreateManyInput> = z.strictObject({
+  id: z.uuid().optional(),
+  vendorCustomerId: z.string(),
+  productId: z.string(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+});
+
+export const CustomerSubscriptionUpdateManyMutationInputSchema: z.ZodType<Prisma.CustomerSubscriptionUpdateManyMutationInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const CustomerSubscriptionUncheckedUpdateManyInputSchema: z.ZodType<Prisma.CustomerSubscriptionUncheckedUpdateManyInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  vendorCustomerId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  productId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
@@ -941,6 +1143,16 @@ export const VendorScalarRelationFilterSchema: z.ZodType<Prisma.VendorScalarRela
   isNot: z.lazy(() => VendorWhereInputSchema).optional(),
 });
 
+export const CustomerSubscriptionListRelationFilterSchema: z.ZodType<Prisma.CustomerSubscriptionListRelationFilter> = z.strictObject({
+  every: z.lazy(() => CustomerSubscriptionWhereInputSchema).optional(),
+  some: z.lazy(() => CustomerSubscriptionWhereInputSchema).optional(),
+  none: z.lazy(() => CustomerSubscriptionWhereInputSchema).optional(),
+});
+
+export const CustomerSubscriptionOrderByRelationAggregateInputSchema: z.ZodType<Prisma.CustomerSubscriptionOrderByRelationAggregateInput> = z.strictObject({
+  _count: z.lazy(() => SortOrderSchema).optional(),
+});
+
 export const ProductCountOrderByAggregateInputSchema: z.ZodType<Prisma.ProductCountOrderByAggregateInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
   vendorId: z.lazy(() => SortOrderSchema).optional(),
@@ -993,6 +1205,45 @@ export const VendorCustomersMinOrderByAggregateInputSchema: z.ZodType<Prisma.Ven
   id: z.lazy(() => SortOrderSchema).optional(),
   vendorId: z.lazy(() => SortOrderSchema).optional(),
   customerPhone: z.lazy(() => SortOrderSchema).optional(),
+  createdAt: z.lazy(() => SortOrderSchema).optional(),
+  updatedAt: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const VendorCustomersScalarRelationFilterSchema: z.ZodType<Prisma.VendorCustomersScalarRelationFilter> = z.strictObject({
+  is: z.lazy(() => VendorCustomersWhereInputSchema).optional(),
+  isNot: z.lazy(() => VendorCustomersWhereInputSchema).optional(),
+});
+
+export const ProductScalarRelationFilterSchema: z.ZodType<Prisma.ProductScalarRelationFilter> = z.strictObject({
+  is: z.lazy(() => ProductWhereInputSchema).optional(),
+  isNot: z.lazy(() => ProductWhereInputSchema).optional(),
+});
+
+export const CustomerSubscriptionVendorCustomerIdProductIdCompoundUniqueInputSchema: z.ZodType<Prisma.CustomerSubscriptionVendorCustomerIdProductIdCompoundUniqueInput> = z.strictObject({
+  vendorCustomerId: z.string(),
+  productId: z.string(),
+});
+
+export const CustomerSubscriptionCountOrderByAggregateInputSchema: z.ZodType<Prisma.CustomerSubscriptionCountOrderByAggregateInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  vendorCustomerId: z.lazy(() => SortOrderSchema).optional(),
+  productId: z.lazy(() => SortOrderSchema).optional(),
+  createdAt: z.lazy(() => SortOrderSchema).optional(),
+  updatedAt: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const CustomerSubscriptionMaxOrderByAggregateInputSchema: z.ZodType<Prisma.CustomerSubscriptionMaxOrderByAggregateInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  vendorCustomerId: z.lazy(() => SortOrderSchema).optional(),
+  productId: z.lazy(() => SortOrderSchema).optional(),
+  createdAt: z.lazy(() => SortOrderSchema).optional(),
+  updatedAt: z.lazy(() => SortOrderSchema).optional(),
+});
+
+export const CustomerSubscriptionMinOrderByAggregateInputSchema: z.ZodType<Prisma.CustomerSubscriptionMinOrderByAggregateInput> = z.strictObject({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  vendorCustomerId: z.lazy(() => SortOrderSchema).optional(),
+  productId: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
 });
@@ -1187,12 +1438,54 @@ export const VendorCreateNestedOneWithoutProductInputSchema: z.ZodType<Prisma.Ve
   connect: z.lazy(() => VendorWhereUniqueInputSchema).optional(),
 });
 
+export const CustomerSubscriptionCreateNestedManyWithoutProductInputSchema: z.ZodType<Prisma.CustomerSubscriptionCreateNestedManyWithoutProductInput> = z.strictObject({
+  create: z.union([ z.lazy(() => CustomerSubscriptionCreateWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionCreateWithoutProductInputSchema).array(), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutProductInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutProductInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => CustomerSubscriptionCreateManyProductInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const CustomerSubscriptionUncheckedCreateNestedManyWithoutProductInputSchema: z.ZodType<Prisma.CustomerSubscriptionUncheckedCreateNestedManyWithoutProductInput> = z.strictObject({
+  create: z.union([ z.lazy(() => CustomerSubscriptionCreateWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionCreateWithoutProductInputSchema).array(), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutProductInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutProductInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => CustomerSubscriptionCreateManyProductInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+});
+
 export const VendorUpdateOneRequiredWithoutProductNestedInputSchema: z.ZodType<Prisma.VendorUpdateOneRequiredWithoutProductNestedInput> = z.strictObject({
   create: z.union([ z.lazy(() => VendorCreateWithoutProductInputSchema), z.lazy(() => VendorUncheckedCreateWithoutProductInputSchema) ]).optional(),
   connectOrCreate: z.lazy(() => VendorCreateOrConnectWithoutProductInputSchema).optional(),
   upsert: z.lazy(() => VendorUpsertWithoutProductInputSchema).optional(),
   connect: z.lazy(() => VendorWhereUniqueInputSchema).optional(),
   update: z.union([ z.lazy(() => VendorUpdateToOneWithWhereWithoutProductInputSchema), z.lazy(() => VendorUpdateWithoutProductInputSchema), z.lazy(() => VendorUncheckedUpdateWithoutProductInputSchema) ]).optional(),
+});
+
+export const CustomerSubscriptionUpdateManyWithoutProductNestedInputSchema: z.ZodType<Prisma.CustomerSubscriptionUpdateManyWithoutProductNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => CustomerSubscriptionCreateWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionCreateWithoutProductInputSchema).array(), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutProductInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutProductInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => CustomerSubscriptionUpsertWithWhereUniqueWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUpsertWithWhereUniqueWithoutProductInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => CustomerSubscriptionCreateManyProductInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => CustomerSubscriptionUpdateWithWhereUniqueWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUpdateWithWhereUniqueWithoutProductInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => CustomerSubscriptionUpdateManyWithWhereWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUpdateManyWithWhereWithoutProductInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => CustomerSubscriptionScalarWhereInputSchema), z.lazy(() => CustomerSubscriptionScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const CustomerSubscriptionUncheckedUpdateManyWithoutProductNestedInputSchema: z.ZodType<Prisma.CustomerSubscriptionUncheckedUpdateManyWithoutProductNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => CustomerSubscriptionCreateWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionCreateWithoutProductInputSchema).array(), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutProductInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutProductInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => CustomerSubscriptionUpsertWithWhereUniqueWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUpsertWithWhereUniqueWithoutProductInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => CustomerSubscriptionCreateManyProductInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => CustomerSubscriptionUpdateWithWhereUniqueWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUpdateWithWhereUniqueWithoutProductInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => CustomerSubscriptionUpdateManyWithWhereWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUpdateManyWithWhereWithoutProductInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => CustomerSubscriptionScalarWhereInputSchema), z.lazy(() => CustomerSubscriptionScalarWhereInputSchema).array() ]).optional(),
 });
 
 export const VendorCreateNestedOneWithoutVendorcustomersInputSchema: z.ZodType<Prisma.VendorCreateNestedOneWithoutVendorcustomersInput> = z.strictObject({
@@ -1205,6 +1498,20 @@ export const UserCreateNestedOneWithoutVendorcustomersInputSchema: z.ZodType<Pri
   create: z.union([ z.lazy(() => UserCreateWithoutVendorcustomersInputSchema), z.lazy(() => UserUncheckedCreateWithoutVendorcustomersInputSchema) ]).optional(),
   connectOrCreate: z.lazy(() => UserCreateOrConnectWithoutVendorcustomersInputSchema).optional(),
   connect: z.lazy(() => UserWhereUniqueInputSchema).optional(),
+});
+
+export const CustomerSubscriptionCreateNestedManyWithoutVendorCustomersInputSchema: z.ZodType<Prisma.CustomerSubscriptionCreateNestedManyWithoutVendorCustomersInput> = z.strictObject({
+  create: z.union([ z.lazy(() => CustomerSubscriptionCreateWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionCreateWithoutVendorCustomersInputSchema).array(), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutVendorCustomersInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutVendorCustomersInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => CustomerSubscriptionCreateManyVendorCustomersInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+});
+
+export const CustomerSubscriptionUncheckedCreateNestedManyWithoutVendorCustomersInputSchema: z.ZodType<Prisma.CustomerSubscriptionUncheckedCreateNestedManyWithoutVendorCustomersInput> = z.strictObject({
+  create: z.union([ z.lazy(() => CustomerSubscriptionCreateWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionCreateWithoutVendorCustomersInputSchema).array(), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutVendorCustomersInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutVendorCustomersInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => CustomerSubscriptionCreateManyVendorCustomersInputEnvelopeSchema).optional(),
+  connect: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
 });
 
 export const VendorUpdateOneRequiredWithoutVendorcustomersNestedInputSchema: z.ZodType<Prisma.VendorUpdateOneRequiredWithoutVendorcustomersNestedInput> = z.strictObject({
@@ -1221,6 +1528,62 @@ export const UserUpdateOneRequiredWithoutVendorcustomersNestedInputSchema: z.Zod
   upsert: z.lazy(() => UserUpsertWithoutVendorcustomersInputSchema).optional(),
   connect: z.lazy(() => UserWhereUniqueInputSchema).optional(),
   update: z.union([ z.lazy(() => UserUpdateToOneWithWhereWithoutVendorcustomersInputSchema), z.lazy(() => UserUpdateWithoutVendorcustomersInputSchema), z.lazy(() => UserUncheckedUpdateWithoutVendorcustomersInputSchema) ]).optional(),
+});
+
+export const CustomerSubscriptionUpdateManyWithoutVendorCustomersNestedInputSchema: z.ZodType<Prisma.CustomerSubscriptionUpdateManyWithoutVendorCustomersNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => CustomerSubscriptionCreateWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionCreateWithoutVendorCustomersInputSchema).array(), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutVendorCustomersInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutVendorCustomersInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => CustomerSubscriptionUpsertWithWhereUniqueWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUpsertWithWhereUniqueWithoutVendorCustomersInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => CustomerSubscriptionCreateManyVendorCustomersInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => CustomerSubscriptionUpdateWithWhereUniqueWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUpdateWithWhereUniqueWithoutVendorCustomersInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => CustomerSubscriptionUpdateManyWithWhereWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUpdateManyWithWhereWithoutVendorCustomersInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => CustomerSubscriptionScalarWhereInputSchema), z.lazy(() => CustomerSubscriptionScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const CustomerSubscriptionUncheckedUpdateManyWithoutVendorCustomersNestedInputSchema: z.ZodType<Prisma.CustomerSubscriptionUncheckedUpdateManyWithoutVendorCustomersNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => CustomerSubscriptionCreateWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionCreateWithoutVendorCustomersInputSchema).array(), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutVendorCustomersInputSchema).array() ]).optional(),
+  connectOrCreate: z.union([ z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionCreateOrConnectWithoutVendorCustomersInputSchema).array() ]).optional(),
+  upsert: z.union([ z.lazy(() => CustomerSubscriptionUpsertWithWhereUniqueWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUpsertWithWhereUniqueWithoutVendorCustomersInputSchema).array() ]).optional(),
+  createMany: z.lazy(() => CustomerSubscriptionCreateManyVendorCustomersInputEnvelopeSchema).optional(),
+  set: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  disconnect: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  delete: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  connect: z.union([ z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema), z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema).array() ]).optional(),
+  update: z.union([ z.lazy(() => CustomerSubscriptionUpdateWithWhereUniqueWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUpdateWithWhereUniqueWithoutVendorCustomersInputSchema).array() ]).optional(),
+  updateMany: z.union([ z.lazy(() => CustomerSubscriptionUpdateManyWithWhereWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUpdateManyWithWhereWithoutVendorCustomersInputSchema).array() ]).optional(),
+  deleteMany: z.union([ z.lazy(() => CustomerSubscriptionScalarWhereInputSchema), z.lazy(() => CustomerSubscriptionScalarWhereInputSchema).array() ]).optional(),
+});
+
+export const VendorCustomersCreateNestedOneWithoutSubscriptionInputSchema: z.ZodType<Prisma.VendorCustomersCreateNestedOneWithoutSubscriptionInput> = z.strictObject({
+  create: z.union([ z.lazy(() => VendorCustomersCreateWithoutSubscriptionInputSchema), z.lazy(() => VendorCustomersUncheckedCreateWithoutSubscriptionInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => VendorCustomersCreateOrConnectWithoutSubscriptionInputSchema).optional(),
+  connect: z.lazy(() => VendorCustomersWhereUniqueInputSchema).optional(),
+});
+
+export const ProductCreateNestedOneWithoutSubscriptionInputSchema: z.ZodType<Prisma.ProductCreateNestedOneWithoutSubscriptionInput> = z.strictObject({
+  create: z.union([ z.lazy(() => ProductCreateWithoutSubscriptionInputSchema), z.lazy(() => ProductUncheckedCreateWithoutSubscriptionInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => ProductCreateOrConnectWithoutSubscriptionInputSchema).optional(),
+  connect: z.lazy(() => ProductWhereUniqueInputSchema).optional(),
+});
+
+export const VendorCustomersUpdateOneRequiredWithoutSubscriptionNestedInputSchema: z.ZodType<Prisma.VendorCustomersUpdateOneRequiredWithoutSubscriptionNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => VendorCustomersCreateWithoutSubscriptionInputSchema), z.lazy(() => VendorCustomersUncheckedCreateWithoutSubscriptionInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => VendorCustomersCreateOrConnectWithoutSubscriptionInputSchema).optional(),
+  upsert: z.lazy(() => VendorCustomersUpsertWithoutSubscriptionInputSchema).optional(),
+  connect: z.lazy(() => VendorCustomersWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => VendorCustomersUpdateToOneWithWhereWithoutSubscriptionInputSchema), z.lazy(() => VendorCustomersUpdateWithoutSubscriptionInputSchema), z.lazy(() => VendorCustomersUncheckedUpdateWithoutSubscriptionInputSchema) ]).optional(),
+});
+
+export const ProductUpdateOneRequiredWithoutSubscriptionNestedInputSchema: z.ZodType<Prisma.ProductUpdateOneRequiredWithoutSubscriptionNestedInput> = z.strictObject({
+  create: z.union([ z.lazy(() => ProductCreateWithoutSubscriptionInputSchema), z.lazy(() => ProductUncheckedCreateWithoutSubscriptionInputSchema) ]).optional(),
+  connectOrCreate: z.lazy(() => ProductCreateOrConnectWithoutSubscriptionInputSchema).optional(),
+  upsert: z.lazy(() => ProductUpsertWithoutSubscriptionInputSchema).optional(),
+  connect: z.lazy(() => ProductWhereUniqueInputSchema).optional(),
+  update: z.union([ z.lazy(() => ProductUpdateToOneWithWhereWithoutSubscriptionInputSchema), z.lazy(() => ProductUpdateWithoutSubscriptionInputSchema), z.lazy(() => ProductUncheckedUpdateWithoutSubscriptionInputSchema) ]).optional(),
 });
 
 export const NestedStringFilterSchema: z.ZodType<Prisma.NestedStringFilter> = z.strictObject({
@@ -1337,6 +1700,7 @@ export const VendorCustomersCreateWithoutUserInputSchema: z.ZodType<Prisma.Vendo
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   vendor: z.lazy(() => VendorCreateNestedOneWithoutVendorcustomersInputSchema),
+  subscription: z.lazy(() => CustomerSubscriptionCreateNestedManyWithoutVendorCustomersInputSchema).optional(),
 });
 
 export const VendorCustomersUncheckedCreateWithoutUserInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedCreateWithoutUserInput> = z.strictObject({
@@ -1344,6 +1708,7 @@ export const VendorCustomersUncheckedCreateWithoutUserInputSchema: z.ZodType<Pri
   vendorId: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUncheckedCreateNestedManyWithoutVendorCustomersInputSchema).optional(),
 });
 
 export const VendorCustomersCreateOrConnectWithoutUserInputSchema: z.ZodType<Prisma.VendorCustomersCreateOrConnectWithoutUserInput> = z.strictObject({
@@ -1447,6 +1812,7 @@ export const ProductCreateWithoutVendorInputSchema: z.ZodType<Prisma.ProductCrea
   description: z.string().min(2, {message: "Product description must be of at leat 2 characters"}),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
+  subscription: z.lazy(() => CustomerSubscriptionCreateNestedManyWithoutProductInputSchema).optional(),
 });
 
 export const ProductUncheckedCreateWithoutVendorInputSchema: z.ZodType<Prisma.ProductUncheckedCreateWithoutVendorInput> = z.strictObject({
@@ -1455,6 +1821,7 @@ export const ProductUncheckedCreateWithoutVendorInputSchema: z.ZodType<Prisma.Pr
   description: z.string().min(2, {message: "Product description must be of at leat 2 characters"}),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUncheckedCreateNestedManyWithoutProductInputSchema).optional(),
 });
 
 export const ProductCreateOrConnectWithoutVendorInputSchema: z.ZodType<Prisma.ProductCreateOrConnectWithoutVendorInput> = z.strictObject({
@@ -1472,6 +1839,7 @@ export const VendorCustomersCreateWithoutVendorInputSchema: z.ZodType<Prisma.Ven
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   user: z.lazy(() => UserCreateNestedOneWithoutVendorcustomersInputSchema),
+  subscription: z.lazy(() => CustomerSubscriptionCreateNestedManyWithoutVendorCustomersInputSchema).optional(),
 });
 
 export const VendorCustomersUncheckedCreateWithoutVendorInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedCreateWithoutVendorInput> = z.strictObject({
@@ -1479,6 +1847,7 @@ export const VendorCustomersUncheckedCreateWithoutVendorInputSchema: z.ZodType<P
   customerPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUncheckedCreateNestedManyWithoutVendorCustomersInputSchema).optional(),
 });
 
 export const VendorCustomersCreateOrConnectWithoutVendorInputSchema: z.ZodType<Prisma.VendorCustomersCreateOrConnectWithoutVendorInput> = z.strictObject({
@@ -1593,6 +1962,30 @@ export const VendorCreateOrConnectWithoutProductInputSchema: z.ZodType<Prisma.Ve
   create: z.union([ z.lazy(() => VendorCreateWithoutProductInputSchema), z.lazy(() => VendorUncheckedCreateWithoutProductInputSchema) ]),
 });
 
+export const CustomerSubscriptionCreateWithoutProductInputSchema: z.ZodType<Prisma.CustomerSubscriptionCreateWithoutProductInput> = z.strictObject({
+  id: z.uuid().optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+  vendorCustomers: z.lazy(() => VendorCustomersCreateNestedOneWithoutSubscriptionInputSchema),
+});
+
+export const CustomerSubscriptionUncheckedCreateWithoutProductInputSchema: z.ZodType<Prisma.CustomerSubscriptionUncheckedCreateWithoutProductInput> = z.strictObject({
+  id: z.uuid().optional(),
+  vendorCustomerId: z.string(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+});
+
+export const CustomerSubscriptionCreateOrConnectWithoutProductInputSchema: z.ZodType<Prisma.CustomerSubscriptionCreateOrConnectWithoutProductInput> = z.strictObject({
+  where: z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => CustomerSubscriptionCreateWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutProductInputSchema) ]),
+});
+
+export const CustomerSubscriptionCreateManyProductInputEnvelopeSchema: z.ZodType<Prisma.CustomerSubscriptionCreateManyProductInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => CustomerSubscriptionCreateManyProductInputSchema), z.lazy(() => CustomerSubscriptionCreateManyProductInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
+});
+
 export const VendorUpsertWithoutProductInputSchema: z.ZodType<Prisma.VendorUpsertWithoutProductInput> = z.strictObject({
   update: z.union([ z.lazy(() => VendorUpdateWithoutProductInputSchema), z.lazy(() => VendorUncheckedUpdateWithoutProductInputSchema) ]),
   create: z.union([ z.lazy(() => VendorCreateWithoutProductInputSchema), z.lazy(() => VendorUncheckedCreateWithoutProductInputSchema) ]),
@@ -1622,6 +2015,33 @@ export const VendorUncheckedUpdateWithoutProductInputSchema: z.ZodType<Prisma.Ve
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   vendorcustomers: z.lazy(() => VendorCustomersUncheckedUpdateManyWithoutVendorNestedInputSchema).optional(),
+});
+
+export const CustomerSubscriptionUpsertWithWhereUniqueWithoutProductInputSchema: z.ZodType<Prisma.CustomerSubscriptionUpsertWithWhereUniqueWithoutProductInput> = z.strictObject({
+  where: z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => CustomerSubscriptionUpdateWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUncheckedUpdateWithoutProductInputSchema) ]),
+  create: z.union([ z.lazy(() => CustomerSubscriptionCreateWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutProductInputSchema) ]),
+});
+
+export const CustomerSubscriptionUpdateWithWhereUniqueWithoutProductInputSchema: z.ZodType<Prisma.CustomerSubscriptionUpdateWithWhereUniqueWithoutProductInput> = z.strictObject({
+  where: z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => CustomerSubscriptionUpdateWithoutProductInputSchema), z.lazy(() => CustomerSubscriptionUncheckedUpdateWithoutProductInputSchema) ]),
+});
+
+export const CustomerSubscriptionUpdateManyWithWhereWithoutProductInputSchema: z.ZodType<Prisma.CustomerSubscriptionUpdateManyWithWhereWithoutProductInput> = z.strictObject({
+  where: z.lazy(() => CustomerSubscriptionScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => CustomerSubscriptionUpdateManyMutationInputSchema), z.lazy(() => CustomerSubscriptionUncheckedUpdateManyWithoutProductInputSchema) ]),
+});
+
+export const CustomerSubscriptionScalarWhereInputSchema: z.ZodType<Prisma.CustomerSubscriptionScalarWhereInput> = z.strictObject({
+  AND: z.union([ z.lazy(() => CustomerSubscriptionScalarWhereInputSchema), z.lazy(() => CustomerSubscriptionScalarWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => CustomerSubscriptionScalarWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => CustomerSubscriptionScalarWhereInputSchema), z.lazy(() => CustomerSubscriptionScalarWhereInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  vendorCustomerId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  productId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  createdAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
+  updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
 });
 
 export const VendorCreateWithoutVendorcustomersInputSchema: z.ZodType<Prisma.VendorCreateWithoutVendorcustomersInput> = z.strictObject({
@@ -1674,6 +2094,30 @@ export const UserUncheckedCreateWithoutVendorcustomersInputSchema: z.ZodType<Pri
 export const UserCreateOrConnectWithoutVendorcustomersInputSchema: z.ZodType<Prisma.UserCreateOrConnectWithoutVendorcustomersInput> = z.strictObject({
   where: z.lazy(() => UserWhereUniqueInputSchema),
   create: z.union([ z.lazy(() => UserCreateWithoutVendorcustomersInputSchema), z.lazy(() => UserUncheckedCreateWithoutVendorcustomersInputSchema) ]),
+});
+
+export const CustomerSubscriptionCreateWithoutVendorCustomersInputSchema: z.ZodType<Prisma.CustomerSubscriptionCreateWithoutVendorCustomersInput> = z.strictObject({
+  id: z.uuid().optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+  product: z.lazy(() => ProductCreateNestedOneWithoutSubscriptionInputSchema),
+});
+
+export const CustomerSubscriptionUncheckedCreateWithoutVendorCustomersInputSchema: z.ZodType<Prisma.CustomerSubscriptionUncheckedCreateWithoutVendorCustomersInput> = z.strictObject({
+  id: z.uuid().optional(),
+  productId: z.string(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+});
+
+export const CustomerSubscriptionCreateOrConnectWithoutVendorCustomersInputSchema: z.ZodType<Prisma.CustomerSubscriptionCreateOrConnectWithoutVendorCustomersInput> = z.strictObject({
+  where: z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => CustomerSubscriptionCreateWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutVendorCustomersInputSchema) ]),
+});
+
+export const CustomerSubscriptionCreateManyVendorCustomersInputEnvelopeSchema: z.ZodType<Prisma.CustomerSubscriptionCreateManyVendorCustomersInputEnvelope> = z.strictObject({
+  data: z.union([ z.lazy(() => CustomerSubscriptionCreateManyVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionCreateManyVendorCustomersInputSchema).array() ]),
+  skipDuplicates: z.boolean().optional(),
 });
 
 export const VendorUpsertWithoutVendorcustomersInputSchema: z.ZodType<Prisma.VendorUpsertWithoutVendorcustomersInput> = z.strictObject({
@@ -1740,6 +2184,122 @@ export const UserUncheckedUpdateWithoutVendorcustomersInputSchema: z.ZodType<Pri
   vendor: z.lazy(() => VendorUncheckedUpdateOneWithoutUserNestedInputSchema).optional(),
 });
 
+export const CustomerSubscriptionUpsertWithWhereUniqueWithoutVendorCustomersInputSchema: z.ZodType<Prisma.CustomerSubscriptionUpsertWithWhereUniqueWithoutVendorCustomersInput> = z.strictObject({
+  where: z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema),
+  update: z.union([ z.lazy(() => CustomerSubscriptionUpdateWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUncheckedUpdateWithoutVendorCustomersInputSchema) ]),
+  create: z.union([ z.lazy(() => CustomerSubscriptionCreateWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUncheckedCreateWithoutVendorCustomersInputSchema) ]),
+});
+
+export const CustomerSubscriptionUpdateWithWhereUniqueWithoutVendorCustomersInputSchema: z.ZodType<Prisma.CustomerSubscriptionUpdateWithWhereUniqueWithoutVendorCustomersInput> = z.strictObject({
+  where: z.lazy(() => CustomerSubscriptionWhereUniqueInputSchema),
+  data: z.union([ z.lazy(() => CustomerSubscriptionUpdateWithoutVendorCustomersInputSchema), z.lazy(() => CustomerSubscriptionUncheckedUpdateWithoutVendorCustomersInputSchema) ]),
+});
+
+export const CustomerSubscriptionUpdateManyWithWhereWithoutVendorCustomersInputSchema: z.ZodType<Prisma.CustomerSubscriptionUpdateManyWithWhereWithoutVendorCustomersInput> = z.strictObject({
+  where: z.lazy(() => CustomerSubscriptionScalarWhereInputSchema),
+  data: z.union([ z.lazy(() => CustomerSubscriptionUpdateManyMutationInputSchema), z.lazy(() => CustomerSubscriptionUncheckedUpdateManyWithoutVendorCustomersInputSchema) ]),
+});
+
+export const VendorCustomersCreateWithoutSubscriptionInputSchema: z.ZodType<Prisma.VendorCustomersCreateWithoutSubscriptionInput> = z.strictObject({
+  id: z.uuid().optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+  vendor: z.lazy(() => VendorCreateNestedOneWithoutVendorcustomersInputSchema),
+  user: z.lazy(() => UserCreateNestedOneWithoutVendorcustomersInputSchema),
+});
+
+export const VendorCustomersUncheckedCreateWithoutSubscriptionInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedCreateWithoutSubscriptionInput> = z.strictObject({
+  id: z.uuid().optional(),
+  vendorId: z.string(),
+  customerPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+});
+
+export const VendorCustomersCreateOrConnectWithoutSubscriptionInputSchema: z.ZodType<Prisma.VendorCustomersCreateOrConnectWithoutSubscriptionInput> = z.strictObject({
+  where: z.lazy(() => VendorCustomersWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => VendorCustomersCreateWithoutSubscriptionInputSchema), z.lazy(() => VendorCustomersUncheckedCreateWithoutSubscriptionInputSchema) ]),
+});
+
+export const ProductCreateWithoutSubscriptionInputSchema: z.ZodType<Prisma.ProductCreateWithoutSubscriptionInput> = z.strictObject({
+  id: z.uuid().optional(),
+  productName: z.string().min(2,{message: "Product name must be of at least 2 characters"}),
+  description: z.string().min(2, {message: "Product description must be of at leat 2 characters"}),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+  vendor: z.lazy(() => VendorCreateNestedOneWithoutProductInputSchema),
+});
+
+export const ProductUncheckedCreateWithoutSubscriptionInputSchema: z.ZodType<Prisma.ProductUncheckedCreateWithoutSubscriptionInput> = z.strictObject({
+  id: z.uuid().optional(),
+  vendorId: z.string(),
+  productName: z.string().min(2,{message: "Product name must be of at least 2 characters"}),
+  description: z.string().min(2, {message: "Product description must be of at leat 2 characters"}),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+});
+
+export const ProductCreateOrConnectWithoutSubscriptionInputSchema: z.ZodType<Prisma.ProductCreateOrConnectWithoutSubscriptionInput> = z.strictObject({
+  where: z.lazy(() => ProductWhereUniqueInputSchema),
+  create: z.union([ z.lazy(() => ProductCreateWithoutSubscriptionInputSchema), z.lazy(() => ProductUncheckedCreateWithoutSubscriptionInputSchema) ]),
+});
+
+export const VendorCustomersUpsertWithoutSubscriptionInputSchema: z.ZodType<Prisma.VendorCustomersUpsertWithoutSubscriptionInput> = z.strictObject({
+  update: z.union([ z.lazy(() => VendorCustomersUpdateWithoutSubscriptionInputSchema), z.lazy(() => VendorCustomersUncheckedUpdateWithoutSubscriptionInputSchema) ]),
+  create: z.union([ z.lazy(() => VendorCustomersCreateWithoutSubscriptionInputSchema), z.lazy(() => VendorCustomersUncheckedCreateWithoutSubscriptionInputSchema) ]),
+  where: z.lazy(() => VendorCustomersWhereInputSchema).optional(),
+});
+
+export const VendorCustomersUpdateToOneWithWhereWithoutSubscriptionInputSchema: z.ZodType<Prisma.VendorCustomersUpdateToOneWithWhereWithoutSubscriptionInput> = z.strictObject({
+  where: z.lazy(() => VendorCustomersWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => VendorCustomersUpdateWithoutSubscriptionInputSchema), z.lazy(() => VendorCustomersUncheckedUpdateWithoutSubscriptionInputSchema) ]),
+});
+
+export const VendorCustomersUpdateWithoutSubscriptionInputSchema: z.ZodType<Prisma.VendorCustomersUpdateWithoutSubscriptionInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  vendor: z.lazy(() => VendorUpdateOneRequiredWithoutVendorcustomersNestedInputSchema).optional(),
+  user: z.lazy(() => UserUpdateOneRequiredWithoutVendorcustomersNestedInputSchema).optional(),
+});
+
+export const VendorCustomersUncheckedUpdateWithoutSubscriptionInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateWithoutSubscriptionInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  vendorId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const ProductUpsertWithoutSubscriptionInputSchema: z.ZodType<Prisma.ProductUpsertWithoutSubscriptionInput> = z.strictObject({
+  update: z.union([ z.lazy(() => ProductUpdateWithoutSubscriptionInputSchema), z.lazy(() => ProductUncheckedUpdateWithoutSubscriptionInputSchema) ]),
+  create: z.union([ z.lazy(() => ProductCreateWithoutSubscriptionInputSchema), z.lazy(() => ProductUncheckedCreateWithoutSubscriptionInputSchema) ]),
+  where: z.lazy(() => ProductWhereInputSchema).optional(),
+});
+
+export const ProductUpdateToOneWithWhereWithoutSubscriptionInputSchema: z.ZodType<Prisma.ProductUpdateToOneWithWhereWithoutSubscriptionInput> = z.strictObject({
+  where: z.lazy(() => ProductWhereInputSchema).optional(),
+  data: z.union([ z.lazy(() => ProductUpdateWithoutSubscriptionInputSchema), z.lazy(() => ProductUncheckedUpdateWithoutSubscriptionInputSchema) ]),
+});
+
+export const ProductUpdateWithoutSubscriptionInputSchema: z.ZodType<Prisma.ProductUpdateWithoutSubscriptionInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  productName: z.union([ z.string().min(2,{message: "Product name must be of at least 2 characters"}),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  description: z.union([ z.string().min(2, {message: "Product description must be of at leat 2 characters"}),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  vendor: z.lazy(() => VendorUpdateOneRequiredWithoutProductNestedInputSchema).optional(),
+});
+
+export const ProductUncheckedUpdateWithoutSubscriptionInputSchema: z.ZodType<Prisma.ProductUncheckedUpdateWithoutSubscriptionInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  vendorId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  productName: z.union([ z.string().min(2,{message: "Product name must be of at least 2 characters"}),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  description: z.union([ z.string().min(2, {message: "Product description must be of at leat 2 characters"}),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
 export const VendorCustomersCreateManyUserInputSchema: z.ZodType<Prisma.VendorCustomersCreateManyUserInput> = z.strictObject({
   id: z.uuid().optional(),
   vendorId: z.string(),
@@ -1752,6 +2312,7 @@ export const VendorCustomersUpdateWithoutUserInputSchema: z.ZodType<Prisma.Vendo
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   vendor: z.lazy(() => VendorUpdateOneRequiredWithoutVendorcustomersNestedInputSchema).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUpdateManyWithoutVendorCustomersNestedInputSchema).optional(),
 });
 
 export const VendorCustomersUncheckedUpdateWithoutUserInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateWithoutUserInput> = z.strictObject({
@@ -1759,6 +2320,7 @@ export const VendorCustomersUncheckedUpdateWithoutUserInputSchema: z.ZodType<Pri
   vendorId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUncheckedUpdateManyWithoutVendorCustomersNestedInputSchema).optional(),
 });
 
 export const VendorCustomersUncheckedUpdateManyWithoutUserInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateManyWithoutUserInput> = z.strictObject({
@@ -1789,6 +2351,7 @@ export const ProductUpdateWithoutVendorInputSchema: z.ZodType<Prisma.ProductUpda
   description: z.union([ z.string().min(2, {message: "Product description must be of at leat 2 characters"}),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUpdateManyWithoutProductNestedInputSchema).optional(),
 });
 
 export const ProductUncheckedUpdateWithoutVendorInputSchema: z.ZodType<Prisma.ProductUncheckedUpdateWithoutVendorInput> = z.strictObject({
@@ -1797,6 +2360,7 @@ export const ProductUncheckedUpdateWithoutVendorInputSchema: z.ZodType<Prisma.Pr
   description: z.union([ z.string().min(2, {message: "Product description must be of at leat 2 characters"}),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUncheckedUpdateManyWithoutProductNestedInputSchema).optional(),
 });
 
 export const ProductUncheckedUpdateManyWithoutVendorInputSchema: z.ZodType<Prisma.ProductUncheckedUpdateManyWithoutVendorInput> = z.strictObject({
@@ -1812,6 +2376,7 @@ export const VendorCustomersUpdateWithoutVendorInputSchema: z.ZodType<Prisma.Ven
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   user: z.lazy(() => UserUpdateOneRequiredWithoutVendorcustomersNestedInputSchema).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUpdateManyWithoutVendorCustomersNestedInputSchema).optional(),
 });
 
 export const VendorCustomersUncheckedUpdateWithoutVendorInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateWithoutVendorInput> = z.strictObject({
@@ -1819,11 +2384,68 @@ export const VendorCustomersUncheckedUpdateWithoutVendorInputSchema: z.ZodType<P
   customerPhone: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  subscription: z.lazy(() => CustomerSubscriptionUncheckedUpdateManyWithoutVendorCustomersNestedInputSchema).optional(),
 });
 
 export const VendorCustomersUncheckedUpdateManyWithoutVendorInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateManyWithoutVendorInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   customerPhone: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const CustomerSubscriptionCreateManyProductInputSchema: z.ZodType<Prisma.CustomerSubscriptionCreateManyProductInput> = z.strictObject({
+  id: z.uuid().optional(),
+  vendorCustomerId: z.string(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+});
+
+export const CustomerSubscriptionUpdateWithoutProductInputSchema: z.ZodType<Prisma.CustomerSubscriptionUpdateWithoutProductInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  vendorCustomers: z.lazy(() => VendorCustomersUpdateOneRequiredWithoutSubscriptionNestedInputSchema).optional(),
+});
+
+export const CustomerSubscriptionUncheckedUpdateWithoutProductInputSchema: z.ZodType<Prisma.CustomerSubscriptionUncheckedUpdateWithoutProductInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  vendorCustomerId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const CustomerSubscriptionUncheckedUpdateManyWithoutProductInputSchema: z.ZodType<Prisma.CustomerSubscriptionUncheckedUpdateManyWithoutProductInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  vendorCustomerId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const CustomerSubscriptionCreateManyVendorCustomersInputSchema: z.ZodType<Prisma.CustomerSubscriptionCreateManyVendorCustomersInput> = z.strictObject({
+  id: z.uuid().optional(),
+  productId: z.string(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+});
+
+export const CustomerSubscriptionUpdateWithoutVendorCustomersInputSchema: z.ZodType<Prisma.CustomerSubscriptionUpdateWithoutVendorCustomersInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  product: z.lazy(() => ProductUpdateOneRequiredWithoutSubscriptionNestedInputSchema).optional(),
+});
+
+export const CustomerSubscriptionUncheckedUpdateWithoutVendorCustomersInputSchema: z.ZodType<Prisma.CustomerSubscriptionUncheckedUpdateWithoutVendorCustomersInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  productId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+});
+
+export const CustomerSubscriptionUncheckedUpdateManyWithoutVendorCustomersInputSchema: z.ZodType<Prisma.CustomerSubscriptionUncheckedUpdateManyWithoutVendorCustomersInput> = z.strictObject({
+  id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  productId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
@@ -2080,6 +2702,68 @@ export const VendorCustomersFindUniqueOrThrowArgsSchema: z.ZodType<Prisma.Vendor
   where: VendorCustomersWhereUniqueInputSchema, 
 }).strict();
 
+export const CustomerSubscriptionFindFirstArgsSchema: z.ZodType<Prisma.CustomerSubscriptionFindFirstArgs> = z.object({
+  select: CustomerSubscriptionSelectSchema.optional(),
+  include: CustomerSubscriptionIncludeSchema.optional(),
+  where: CustomerSubscriptionWhereInputSchema.optional(), 
+  orderBy: z.union([ CustomerSubscriptionOrderByWithRelationInputSchema.array(), CustomerSubscriptionOrderByWithRelationInputSchema ]).optional(),
+  cursor: CustomerSubscriptionWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ CustomerSubscriptionScalarFieldEnumSchema, CustomerSubscriptionScalarFieldEnumSchema.array() ]).optional(),
+}).strict();
+
+export const CustomerSubscriptionFindFirstOrThrowArgsSchema: z.ZodType<Prisma.CustomerSubscriptionFindFirstOrThrowArgs> = z.object({
+  select: CustomerSubscriptionSelectSchema.optional(),
+  include: CustomerSubscriptionIncludeSchema.optional(),
+  where: CustomerSubscriptionWhereInputSchema.optional(), 
+  orderBy: z.union([ CustomerSubscriptionOrderByWithRelationInputSchema.array(), CustomerSubscriptionOrderByWithRelationInputSchema ]).optional(),
+  cursor: CustomerSubscriptionWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ CustomerSubscriptionScalarFieldEnumSchema, CustomerSubscriptionScalarFieldEnumSchema.array() ]).optional(),
+}).strict();
+
+export const CustomerSubscriptionFindManyArgsSchema: z.ZodType<Prisma.CustomerSubscriptionFindManyArgs> = z.object({
+  select: CustomerSubscriptionSelectSchema.optional(),
+  include: CustomerSubscriptionIncludeSchema.optional(),
+  where: CustomerSubscriptionWhereInputSchema.optional(), 
+  orderBy: z.union([ CustomerSubscriptionOrderByWithRelationInputSchema.array(), CustomerSubscriptionOrderByWithRelationInputSchema ]).optional(),
+  cursor: CustomerSubscriptionWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ CustomerSubscriptionScalarFieldEnumSchema, CustomerSubscriptionScalarFieldEnumSchema.array() ]).optional(),
+}).strict();
+
+export const CustomerSubscriptionAggregateArgsSchema: z.ZodType<Prisma.CustomerSubscriptionAggregateArgs> = z.object({
+  where: CustomerSubscriptionWhereInputSchema.optional(), 
+  orderBy: z.union([ CustomerSubscriptionOrderByWithRelationInputSchema.array(), CustomerSubscriptionOrderByWithRelationInputSchema ]).optional(),
+  cursor: CustomerSubscriptionWhereUniqueInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+}).strict();
+
+export const CustomerSubscriptionGroupByArgsSchema: z.ZodType<Prisma.CustomerSubscriptionGroupByArgs> = z.object({
+  where: CustomerSubscriptionWhereInputSchema.optional(), 
+  orderBy: z.union([ CustomerSubscriptionOrderByWithAggregationInputSchema.array(), CustomerSubscriptionOrderByWithAggregationInputSchema ]).optional(),
+  by: CustomerSubscriptionScalarFieldEnumSchema.array(), 
+  having: CustomerSubscriptionScalarWhereWithAggregatesInputSchema.optional(), 
+  take: z.number().optional(),
+  skip: z.number().optional(),
+}).strict();
+
+export const CustomerSubscriptionFindUniqueArgsSchema: z.ZodType<Prisma.CustomerSubscriptionFindUniqueArgs> = z.object({
+  select: CustomerSubscriptionSelectSchema.optional(),
+  include: CustomerSubscriptionIncludeSchema.optional(),
+  where: CustomerSubscriptionWhereUniqueInputSchema, 
+}).strict();
+
+export const CustomerSubscriptionFindUniqueOrThrowArgsSchema: z.ZodType<Prisma.CustomerSubscriptionFindUniqueOrThrowArgs> = z.object({
+  select: CustomerSubscriptionSelectSchema.optional(),
+  include: CustomerSubscriptionIncludeSchema.optional(),
+  where: CustomerSubscriptionWhereUniqueInputSchema, 
+}).strict();
+
 export const UserCreateArgsSchema: z.ZodType<Prisma.UserCreateArgs> = z.object({
   select: UserSelectSchema.optional(),
   include: UserIncludeSchema.optional(),
@@ -2293,5 +2977,59 @@ export const VendorCustomersUpdateManyAndReturnArgsSchema: z.ZodType<Prisma.Vend
 
 export const VendorCustomersDeleteManyArgsSchema: z.ZodType<Prisma.VendorCustomersDeleteManyArgs> = z.object({
   where: VendorCustomersWhereInputSchema.optional(), 
+  limit: z.number().optional(),
+}).strict();
+
+export const CustomerSubscriptionCreateArgsSchema: z.ZodType<Prisma.CustomerSubscriptionCreateArgs> = z.object({
+  select: CustomerSubscriptionSelectSchema.optional(),
+  include: CustomerSubscriptionIncludeSchema.optional(),
+  data: z.union([ CustomerSubscriptionCreateInputSchema, CustomerSubscriptionUncheckedCreateInputSchema ]),
+}).strict();
+
+export const CustomerSubscriptionUpsertArgsSchema: z.ZodType<Prisma.CustomerSubscriptionUpsertArgs> = z.object({
+  select: CustomerSubscriptionSelectSchema.optional(),
+  include: CustomerSubscriptionIncludeSchema.optional(),
+  where: CustomerSubscriptionWhereUniqueInputSchema, 
+  create: z.union([ CustomerSubscriptionCreateInputSchema, CustomerSubscriptionUncheckedCreateInputSchema ]),
+  update: z.union([ CustomerSubscriptionUpdateInputSchema, CustomerSubscriptionUncheckedUpdateInputSchema ]),
+}).strict();
+
+export const CustomerSubscriptionCreateManyArgsSchema: z.ZodType<Prisma.CustomerSubscriptionCreateManyArgs> = z.object({
+  data: z.union([ CustomerSubscriptionCreateManyInputSchema, CustomerSubscriptionCreateManyInputSchema.array() ]),
+  skipDuplicates: z.boolean().optional(),
+}).strict();
+
+export const CustomerSubscriptionCreateManyAndReturnArgsSchema: z.ZodType<Prisma.CustomerSubscriptionCreateManyAndReturnArgs> = z.object({
+  data: z.union([ CustomerSubscriptionCreateManyInputSchema, CustomerSubscriptionCreateManyInputSchema.array() ]),
+  skipDuplicates: z.boolean().optional(),
+}).strict();
+
+export const CustomerSubscriptionDeleteArgsSchema: z.ZodType<Prisma.CustomerSubscriptionDeleteArgs> = z.object({
+  select: CustomerSubscriptionSelectSchema.optional(),
+  include: CustomerSubscriptionIncludeSchema.optional(),
+  where: CustomerSubscriptionWhereUniqueInputSchema, 
+}).strict();
+
+export const CustomerSubscriptionUpdateArgsSchema: z.ZodType<Prisma.CustomerSubscriptionUpdateArgs> = z.object({
+  select: CustomerSubscriptionSelectSchema.optional(),
+  include: CustomerSubscriptionIncludeSchema.optional(),
+  data: z.union([ CustomerSubscriptionUpdateInputSchema, CustomerSubscriptionUncheckedUpdateInputSchema ]),
+  where: CustomerSubscriptionWhereUniqueInputSchema, 
+}).strict();
+
+export const CustomerSubscriptionUpdateManyArgsSchema: z.ZodType<Prisma.CustomerSubscriptionUpdateManyArgs> = z.object({
+  data: z.union([ CustomerSubscriptionUpdateManyMutationInputSchema, CustomerSubscriptionUncheckedUpdateManyInputSchema ]),
+  where: CustomerSubscriptionWhereInputSchema.optional(), 
+  limit: z.number().optional(),
+}).strict();
+
+export const CustomerSubscriptionUpdateManyAndReturnArgsSchema: z.ZodType<Prisma.CustomerSubscriptionUpdateManyAndReturnArgs> = z.object({
+  data: z.union([ CustomerSubscriptionUpdateManyMutationInputSchema, CustomerSubscriptionUncheckedUpdateManyInputSchema ]),
+  where: CustomerSubscriptionWhereInputSchema.optional(), 
+  limit: z.number().optional(),
+}).strict();
+
+export const CustomerSubscriptionDeleteManyArgsSchema: z.ZodType<Prisma.CustomerSubscriptionDeleteManyArgs> = z.object({
+  where: CustomerSubscriptionWhereInputSchema.optional(), 
   limit: z.number().optional(),
 }).strict();
