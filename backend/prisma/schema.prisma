@@ -22,6 +22,12 @@ enum Role {
   VENDOR
 }
 
+enum Status {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 model User {
   id        String   @id @default(uuid())
   /// @zod.string.min(2, { message: "Name must be at least 2 characters long" })
@@ -67,6 +73,7 @@ model Product {
   vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
   subscription CustomerSubscription[]
+  request Requests[]
 }
 
 model VendorCustomers {
@@ -81,6 +88,7 @@ model VendorCustomers {
   user   User   @relation("CustomerPhoneRelation", fields: [customerPhone], references: [phone], onDelete: Cascade)
 
   subscription CustomerSubscription[]
+  request Requests[]
 
   @@unique([vendorId, customerPhone])
 }
@@ -97,4 +105,24 @@ model CustomerSubscription {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
    @@unique([vendorCustomerId, productId]) 
+}
+
+model Requests {
+  id String @id @default(uuid())
+  vendorCustomerId String
+  productId String
+  type String @default("note")
+  /// @zod.string.min(2,{message: "Message should be at least 2 of 2 characters"})
+  message String 
+  start_date DateTime
+  end_date DateTime
+  status Status @default(PENDING)
+  respondedAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendorCustomers VendorCustomers @relation(fields: [vendorCustomerId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
 }

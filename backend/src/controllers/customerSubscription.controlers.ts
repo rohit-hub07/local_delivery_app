@@ -171,3 +171,49 @@ export const unsubscribeProduct = async (req: Request, res: Response) => {
     })
   }
 }
+
+export const customerSubscribedProduct = async (req: Request, res: Response) => {
+  try {
+    const userid = req.user.id;
+    if(!userid){
+      return res.status(404).json({
+        message: "Please login first!",
+        success: false
+      })
+    }
+
+    const subscribedCustomerProduct = await db.product.findMany({
+      where: {
+        subscription: {
+          some: {
+            vendorCustomers: {
+              user: {
+                id: userid
+              }
+            }
+          }
+        }
+      }
+    })
+
+    if (!subscribedCustomerProduct) {
+      return res.status(404).json({
+        message: "No subscribed products available!",
+        success: false
+      })
+    }
+    
+    return res.status(200).json({
+      message: "Products fetched successfully!",
+      success: true,
+      subscribeProduct: subscribedCustomerProduct
+    })
+
+  } catch (error: any) {
+    console.log("Error while removing subscribed product: ", error.message)
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false
+    })
+  }
+}

@@ -1,6 +1,6 @@
 import express from "express";
 import { isAuthenticated } from "../middlewares/isAuthenticated.js";
-import { subscribeProduct, unsubscribeProduct } from "../controllers/customerSubscription.controlers.js";
+import { customerSubscribedProduct, subscribeProduct, unsubscribeProduct } from "../controllers/customerSubscription.controlers.js";
 
 const customerSubscriptionRouter = express.Router();
 
@@ -10,6 +10,8 @@ customerSubscriptionRouter.post("/product/add/:id", isAuthenticated,subscribePro
 // allow customers to remove vendor products
 customerSubscriptionRouter.delete("/product/unsubscribe-product/:id",isAuthenticated,unsubscribeProduct)
 
-// show all the subscribed products
+// show all the subscribed products 
+customerSubscriptionRouter.get("/get/subscribed-product", isAuthenticated, customerSubscribedProduct)
+
 
 export default customerSubscriptionRouter
