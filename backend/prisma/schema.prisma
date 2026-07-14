@@ -117,7 +117,7 @@ model Requests {
   start_date DateTime
   end_date DateTime
   status Status @default(PENDING)
-  respondedAt DateTime
+  respondedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
