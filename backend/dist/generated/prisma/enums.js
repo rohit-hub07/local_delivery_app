@@ -11,3 +11,8 @@ export const Role = {
     CUSTOMER: 'CUSTOMER',
     VENDOR: 'VENDOR'
 };
+export const Status = {
+    PENDING: 'PENDING',
+    ACCEPTED: 'ACCEPTED',
+    REJECTED: 'REJECTED'
+};

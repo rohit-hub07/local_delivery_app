@@ -39,7 +39,12 @@ export const JsonNull = runtime.JsonNull;
  */
 export const AnyNull = runtime.AnyNull;
 export const ModelName = {
-    User: 'User'
+    User: 'User',
+    Vendor: 'Vendor',
+    Product: 'Product',
+    VendorCustomers: 'VendorCustomers',
+    CustomerSubscription: 'CustomerSubscription',
+    Requests: 'Requests'
 };
 /*
  * Enums
@@ -54,8 +59,51 @@ export const UserScalarFieldEnum = {
     id: 'id',
     name: 'name',
     phone: 'phone',
-    password: 'password',
+    address: 'address',
     role: 'role',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+};
+export const VendorScalarFieldEnum = {
+    id: 'id',
+    userId: 'userId',
+    businessName: 'businessName',
+    businessPhone: 'businessPhone',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+};
+export const ProductScalarFieldEnum = {
+    id: 'id',
+    vendorId: 'vendorId',
+    productName: 'productName',
+    description: 'description',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+};
+export const VendorCustomersScalarFieldEnum = {
+    id: 'id',
+    vendorId: 'vendorId',
+    customerPhone: 'customerPhone',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+};
+export const CustomerSubscriptionScalarFieldEnum = {
+    id: 'id',
+    vendorCustomerId: 'vendorCustomerId',
+    productId: 'productId',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+};
+export const RequestsScalarFieldEnum = {
+    id: 'id',
+    vendorCustomerId: 'vendorCustomerId',
+    productId: 'productId',
+    type: 'type',
+    message: 'message',
+    start_date: 'start_date',
+    end_date: 'end_date',
+    status: 'status',
+    respondedAt: 'respondedAt',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
 };
@@ -66,4 +114,8 @@ export const SortOrder = {
 export const QueryMode = {
     default: 'default',
     insensitive: 'insensitive'
+};
+export const NullsOrder = {
+    first: 'first',
+    last: 'last'
 };

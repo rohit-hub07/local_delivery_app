@@ -6,7 +6,10 @@ const userRouter = express.Router();
 
 userRouter.post("/signup",signupController)
 
-userRouter.post("/login", loginController)
+userRouter.post("/login", (req, res, next) => {
+  console.log("Login route hit");
+  next();
+}, loginController)
 
 userRouter.post("/logout",isAuthenticated, logoutController)
 
