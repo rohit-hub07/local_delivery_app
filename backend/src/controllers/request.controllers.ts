@@ -31,7 +31,12 @@ export const customerRequest = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Product doesn't exist!", success: false })
     }
     const user = req.user
-
+    if(!user){
+      return res.status(401).json({
+        message: "Unauthorize",
+        success: false
+      })
+    }
     // find vendor customer id
     const vendorCustomer = await db.vendorCustomers.findUnique({
       where: {
@@ -82,6 +87,12 @@ export const customerRequest = async (req: Request, res: Response) => {
 export const getCustomerRequests = async (req: Request, res: Response) => {
   try {
     const vendorId = req.vendor.id;
+    if(!vendorId){
+      return res.status(401).json({
+        message: "Vendor doesn't exist!",
+        success: false
+      })
+    }
     const requests = await db.requests.findMany({
       where: {
         vendorCustomers: {
@@ -184,6 +195,12 @@ export const vendorResponse = async (req: Request, res: Response) => {
 export const customerRequestStatus = async (req: Request, res: Response) => {
   try {
     const user = req.user
+    if(!user){
+      return res.status(401).json({
+        message: "Unauthorize",
+        success: false
+      })
+    }
     const requestStatus = await db.requests.findMany({
       where: {
         vendorCustomers: {

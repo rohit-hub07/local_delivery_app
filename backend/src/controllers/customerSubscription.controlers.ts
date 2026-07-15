@@ -221,6 +221,12 @@ export const customerSubscribedProduct = async (req: Request, res: Response) => 
 export const vendorSubscibedProducts = async (req: Request, res: Response) => {
   try {
     const vendor = req.vendor
+    if(!vendor){
+      return res.status(401).json({
+        message: "Vendor doesn't exist!",
+        success: false
+      })
+    }
     const subscribedProducts = await db.customerSubscription.findMany({
       where: {
         vendorCustomers: {

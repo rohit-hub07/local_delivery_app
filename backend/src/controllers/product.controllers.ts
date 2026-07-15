@@ -22,12 +22,18 @@ export const addProduct = async (req: Request, res: Response) => {
     }
     const { description, productName } = validateBody.data
     // const newProduct = 
-    const vendorId = req.vendor;
+    const vendor = req.vendor;
+    if(!vendor){
+      return res.status(401).json({
+        message: "Vendor doesn't exist!",
+        success: false
+      })
+    }
     console.log("req.vendor: ", req.vendor)
-    console.log("vendoorId: ", vendorId)
+    console.log("vendoorId: ", vendor)
     const newProduct = await db.product.create({
       data: {
-        vendorId: vendorId.id, description, productName
+        vendorId: vendor.id, description, productName
       }
     })
 
@@ -70,6 +76,12 @@ export const removeProduct = async (req: Request, res: Response) => {
     }
     // check if the vendor is owner of the product
     const vendor = req.vendor;
+    if(!vendor){
+      return res.status(401).json({
+        message: "Vendor doesn't exist!",
+        success: false
+      })
+    }
     if(vendor.id != product.vendorId){
       return res.status(401).json({
         message: "Sorry you are not allowed to perform this action!",

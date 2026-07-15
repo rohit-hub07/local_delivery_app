@@ -28,7 +28,7 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
   const token = req.cookies?.token
   console.log("token: ", token)
   if (!token) {
-    throw new Error("Please login");
+    return res.status(401).json({ message: "No token" });
   }
   const decode = jwt.verify(token, process.env.JWT_SECRET as string) as CustomJwt
 

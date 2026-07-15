@@ -182,7 +182,7 @@ export const currentUserController = async(req: Request, res: Response) =>{
     // console.log("user inside of curr controller: ", user)
     if(!user){
       return res.status(404).json({
-        message: "User doesn't exist!",
+        message: "Unauthorize",
         success: false
       })
     }

@@ -23,6 +23,12 @@ export const createVendorProfile = async(req: Request, res: Response) =>{
       });
     }
     const user = req.user;
+    if(!user){
+      return res.status(401).json({
+        message: "Unauthorize",
+        success: false
+      })
+    }
     console.log("user inside of createvendor: ",user)
     const { businessName, businessPhone} = validateBody.data;
 

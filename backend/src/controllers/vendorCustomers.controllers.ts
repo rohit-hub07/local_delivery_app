@@ -35,7 +35,12 @@ export const addCustomers = async (req: Request, res: Response) => {
     }
 
     const vendorId = req.vendor.id
-
+    if(!vendorId){
+      return res.status(401).json({
+        message: "Vendor doesn't exist!",
+        success: false
+      })
+    }
     // add customer
     const newCustomer = await db.vendorCustomers.create({
       data: {
@@ -77,7 +82,12 @@ export const removeCustomer = async (req: Request, res: Response) => {
 
 
     const vendorId = req.vendor.id;
-
+    if(!vendorId){
+      return res.status(401).json({
+        message: "Vendor doesn't exist!",
+        success: false
+      })
+    }
     await db.vendorCustomers.delete(
       {
         where: {
