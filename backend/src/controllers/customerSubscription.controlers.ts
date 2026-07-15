@@ -175,7 +175,7 @@ export const unsubscribeProduct = async (req: Request, res: Response) => {
 export const customerSubscribedProduct = async (req: Request, res: Response) => {
   try {
     const userid = req.user.id;
-    if(!userid){
+    if (!userid) {
       return res.status(404).json({
         message: "Please login first!",
         success: false
@@ -202,7 +202,7 @@ export const customerSubscribedProduct = async (req: Request, res: Response) => 
         success: false
       })
     }
-    
+
     return res.status(200).json({
       message: "Products fetched successfully!",
       success: true,
@@ -211,6 +211,39 @@ export const customerSubscribedProduct = async (req: Request, res: Response) => 
 
   } catch (error: any) {
     console.log("Error while removing subscribed product: ", error.message)
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false
+    })
+  }
+}
+
+export const vendorSubscibedProducts = async (req: Request, res: Response) => {
+  try {
+    const vendor = req.vendor
+    const subscribedProducts = await db.customerSubscription.findMany({
+      where: {
+        vendorCustomers: {
+          vendorId: vendor.id
+        }
+      },
+      include:{
+        product: true
+      }
+    })
+    if (!subscribedProducts) {
+      return res.status(404).json({
+        message: "Customers haven't subscribed to any products yet!",
+        success: false
+      })
+    }
+    return res.status(200).json({
+      message: "Customer subcribed products fetched successfully!",
+      success: true,
+      subscribedProducts: subscribedProducts
+    })
+  } catch (error: any) {
+    console.log("Error while fetching customer subscribed products: ", error.message)
     return res.status(500).json({
       message: "Internal Server Error",
       success: false
