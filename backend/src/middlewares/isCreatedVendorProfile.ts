@@ -22,5 +22,5 @@ export const isCreatedVendorProfile = async(req: Request, res: Response, next : 
       success: false,
     })
   }
-  next()
+  next()  
 }

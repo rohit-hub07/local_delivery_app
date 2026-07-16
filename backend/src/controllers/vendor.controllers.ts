@@ -62,7 +62,42 @@ export const createVendorProfile = async(req: Request, res: Response) =>{
       profile: newVendorProfile,
     })
   } catch (error: any) {
-    console.log("Error wwhile creating vendor profile: ", error.message)
+    console.log("Error while creating vendor profile: ", error.message)
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false
+    })
+  }
+}
+
+export const vendorProfile = async(req: Request, res: Response) =>{
+  try {
+    // check if vendor profile exists or not
+    const user = req.user
+    if(user.role == "CUSTOMER"){
+      return res.status(403).json({
+        message: "You are not allowed to perform this action!",
+        success: false
+      })
+    }
+    const id = req.params.id as string
+    const vendorProfile = await db.vendor.findUnique({where: {
+      userId: id
+    }});
+    if(!vendorProfile){
+      return res.status(404).json({
+        message: "Vendor profile doesn't exists!",
+        success: false,
+      })
+    }
+    // render the profile
+    return res.status(200).json({
+      message: "Vendor profile fetched successfully!",
+      success: true,
+      vendorProfile: vendorProfile
+    })
+  } catch (error: any) {
+    console.log("Error fetching vendor profile: ", error.message)
     return res.status(500).json({
       message: "Internal Server Error",
       success: false
