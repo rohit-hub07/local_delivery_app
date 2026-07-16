@@ -98,7 +98,7 @@ export const signupController = async (req: Request, res: Response) => {
 
 export const loginController = async (req: Request, res: Response) => {
   try {
-    console.log("Backend is hit by frontend")
+    // console.log("Backend is hit by frontend")
     const login = UserSchema.omit({
       id: true,
       name: true,

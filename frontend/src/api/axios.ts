@@ -1,7 +1,7 @@
 import axios from "axios";
 
 
-const api = axios.create({
+export const axiosInstance = axios.create({
   baseURL: process.env.EXPO_PUBLIC_BACKEND_URL,
   withCredentials: true,
   headers: {
@@ -9,4 +9,4 @@ const api = axios.create({
   },
 });
 
-export default api;
+// export default api;

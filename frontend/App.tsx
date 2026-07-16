@@ -1,11 +1,12 @@
 import Toast from "react-native-toast-message";
-import AuthNavigation from "./src/navigation/AuthNavigator";
+import { NavigationContainer } from "@react-navigation/native";
+import RootNavigator from "./src/navigation/RootNavigator";
 
 export default function App() {
   return (
-    <>
-      <AuthNavigation />
+    <NavigationContainer>
+      <RootNavigator />
       <Toast />
-    </>
+    </NavigationContainer>
   )
 }
