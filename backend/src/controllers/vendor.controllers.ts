@@ -73,6 +73,7 @@ export const createVendorProfile = async(req: Request, res: Response) =>{
 export const vendorProfile = async(req: Request, res: Response) =>{
   try {
     // check if vendor profile exists or not
+    console.log("Request is hitting vendorProfile")
     const user = req.user
     if(user.role == "CUSTOMER"){
       return res.status(403).json({
@@ -80,9 +81,9 @@ export const vendorProfile = async(req: Request, res: Response) =>{
         success: false
       })
     }
-    const id = req.params.id as string
+    // const id = req.params.id as string
     const vendorProfile = await db.vendor.findUnique({where: {
-      userId: id
+      userId: user.id
     }});
     if(!vendorProfile){
       return res.status(404).json({

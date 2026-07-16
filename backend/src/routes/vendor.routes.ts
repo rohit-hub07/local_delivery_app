@@ -5,10 +5,10 @@ import { isRoleVendor } from "../middlewares/isRoleVendor.js";
 
 const vendorRouter = express.Router();
 
-// fetch vendor profile
-vendorRouter.get("/vendor-profile/:id", isAuthenticated, vendorProfile)
 
 vendorRouter.post("/create/vendor-profile",isAuthenticated,isRoleVendor, createVendorProfile)
 
+// fetch vendor profile
+vendorRouter.get("/vendor-profile" ,isAuthenticated, vendorProfile)
 
 export default vendorRouter;

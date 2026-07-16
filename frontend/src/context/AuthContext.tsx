@@ -1,5 +1,7 @@
 // src/api/auth.api.ts
 import { create } from "zustand"
+import { persist, createJSONStorage } from "zustand/middleware"
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { axiosInstance } from "../api/axios"
 
 export type LoginTypes = {
@@ -23,70 +25,77 @@ interface AuthState {
   logout: () => Promise<any>
 }
 
-export const useAuthStore = create<AuthState>()((set) => ({
-  user: null,
-  authUser: async () => {
-    try {
-      const res = await axiosInstance.get("/auth/me")
-      if (res.data.user) {
-        set({ user: res.data.user })
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      authUser: async () => {
+        try {
+          const res = await axiosInstance.get("/auth/me")
+          if (res.data.user) {
+            set({ user: res.data.user })
+          }
+          return res.data;
+        } catch (error: any) {
+          set({ user: null }); // Reset state on error
+          const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Authentication failed";
+          throw new Error(message);
+        }
+      },
+
+      login: async (credentials: LoginTypes) => {
+        try {
+          const res = await axiosInstance.post("/auth/login", {
+            phone: credentials.phone
+          })
+          if (res.data.user) {
+            set({ user: res.data.user })
+          }
+
+          return res.data
+
+        } catch (error: any) {
+          set({ user: null }); // Reset state on error
+          const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Login failed";
+          throw new Error(message);
+        }
+      },
+
+      signup: async (credentails: SignupTypes) => {
+        try {
+          const res = await axiosInstance.post("/auth/signup", {
+            name: credentails.name,
+            phone: credentails.phone,
+            role: credentails.role,
+            address: credentails.address
+          })
+
+          if (res.data.user) {
+            set({ user: res.data.user })
+          }
+          return res.data
+        } catch (error: any) {
+          set({ user: null }); // Reset state on error
+          const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Signup failed";
+          throw new Error(message);
+        }
+      },
+
+      logout: async () => {
+        try {
+          const res = await axiosInstance.post("/auth/logout")
+          if (res.data.success) {
+            set({ user: null })
+            return res.data
+          }
+        } catch (error: any) {
+          const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Logout failed";
+          throw new Error(message);
+        }
       }
-      return res.data;
-    } catch (error: any) {
-      set({ user: null }); // Reset state on error
-      const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Authentication failed";
-      throw new Error(message);
+    }),
+    {
+      name: "auth-storage", // Unique key name for device storage
+      storage: createJSONStorage(() => AsyncStorage), // Tells Zustand to use device disk space
     }
-  },
-
-  login: async (credentials: LoginTypes) => {
-    try {
-      const res = await axiosInstance.post("/auth/login", {
-        phone: credentials.phone
-      })
-      if (res.data.user) {
-        set({ user: res.data.user })
-      }
-
-      return res.data
-
-    } catch (error: any) {
-      set({ user: null }); // Reset state on error
-      const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Login failed";
-      throw new Error(message);
-    }
-  },
-
-  signup: async (credentails: SignupTypes) => {
-    try {
-      const res = await axiosInstance.post("/auth/signup", {
-        name: credentails.name,
-        phone: credentails.phone,
-        role: credentails.role,
-        address: credentails.address
-      })
-
-      if (res.data.user) {
-        set({ user: res.data.user })
-      }
-      return res.data
-    } catch (error: any) {
-      set({ user: null }); // Reset state on error
-      const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Signup failed";
-      throw new Error(message);
-    }
-  },
-
-  logout: async () => {
-    try {
-      const res = await axiosInstance.post("/auth/logout")
-      if (res.data.success) {
-        set({ user: null })
-        return res.data
-      }
-    } catch (error: any) {
-      const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Logout failed";
-      throw new Error(message);
-    }
-  }
-}))
+  ))

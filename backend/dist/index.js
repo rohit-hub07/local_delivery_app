@@ -9,6 +9,7 @@ import customerSubscriptionRouter from "./routes/customers.subscription.routes.j
 import requestRouter from "./routes/requests.routes.js";
 dotenv.config();
 const app = express();
+// hard coded apis for develeopment will change this once the app is ready
 const allowedOrigins = [
     'http://192.168.29.151:8081',
     'http://127.0.0.1:8081',
@@ -31,19 +32,15 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cookieParser());
 const PORT = Number(process.env.PORT) || 5000;
-const mountApiRoutes = (basePath) => {
-    app.use(`${basePath}/auth`, userRouter);
-    app.use(`${basePath}/vendor`, vendorRouter);
-    app.use(`${basePath}/product`, productRouter);
-    app.use(`${basePath}/customer`, vendorCustomers);
-    app.use(`${basePath}/subscription`, customerSubscriptionRouter);
-    app.use(`${basePath}/request`, requestRouter);
-};
 app.get("/", async (req, res) => {
     res.status(200).send("App is working");
 });
-mountApiRoutes("");
-mountApiRoutes("/api");
+app.use("/auth", userRouter);
+app.use("/vendor", vendorRouter);
+app.use("/product", productRouter);
+app.use("/customer", vendorCustomers);
+app.use("/subscription", customerSubscriptionRouter);
+app.use("/request", requestRouter);
 app.listen(PORT, () => {
     console.log(`App is listening to port: ${PORT}`);
 });
