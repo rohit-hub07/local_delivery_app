@@ -15,7 +15,10 @@ export type SignupTypes = {
   role: string,
   address: string
 }
-
+export enum RoleTypes{
+  VENDOR = "VENDOR",
+  CUSTOMER = "CUSTOMER"
+}
 
 
 interface AuthState {
@@ -45,7 +48,6 @@ export const useAuthStore = create<AuthState>()(
           throw new Error(message);
         }
       },
-
       login: async (credentials: LoginTypes) => {
         try {
           const res = await axiosInstance.post("/auth/login", {
