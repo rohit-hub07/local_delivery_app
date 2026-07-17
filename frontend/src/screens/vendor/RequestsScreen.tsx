@@ -5,18 +5,23 @@ import {
   View, 
   FlatList, 
   ActivityIndicator, 
-  TouchableOpacity,
-  RefreshControl // 1. Import RefreshControl
-} from 'react-native';
-import { useRequestStore, CustomerRequest } from '../../context/RequestContext';
+  TouchableOpacity, 
+  RefreshControl,
+  Alert // Imported Alert for displaying inline update errors
+} from 'react-native'; 
+// Imported Status enum and updateRequest from your store context
+import { useRequestStore, CustomerRequest, Status } from '../../context/RequestContext';
 
 const RequestsScreen = () => {
-  const { customerRequests, getCustomerRequests } = useRequestStore();
-  
+  const { customerRequests, getCustomerRequests, updateRequest } = useRequestStore();
+
   // Frontend local UI states
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');
+  
+  // Tracks which individual request ID is currently undergoing an API status update
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   // Unified fetch handler wrapped in useCallback for stability
   const fetchRequests = useCallback(async () => {
@@ -36,11 +41,23 @@ const RequestsScreen = () => {
     fetchRequests();
   }, [fetchRequests]);
 
-  // Use useMemo to segment lists by status to avoid re-calculating on every render
+  // Handle action triggers (Acceptance / Rejection)
+  const handleAction = async (id: string, targetStatus: Status) => {
+    setUpdatingId(id);
+    try {
+      await updateRequest(id, targetStatus);
+    } catch (err: any) {
+      Alert.alert("Update Failed", err.message || "Something went wrong while processing.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // Fixed: Your useMemo filter condition has been re-aligned to map ACCEPTED responses cleanly into the APPROVED tab layout view
   const categorizedRequests = useMemo(() => {
     return {
       PENDING: customerRequests.filter(req => req.status === 'PENDING'),
-      APPROVED: customerRequests.filter(req => req.status === 'APPROVED'),
+      APPROVED: customerRequests.filter(req => req.status === 'ACCEPTED'),
       REJECTED: customerRequests.filter(req => req.status === 'REJECTED'),
     };
   }, [customerRequests]);
@@ -51,6 +68,7 @@ const RequestsScreen = () => {
   // Render Item component for FlatList
   const renderRequestItem = ({ item }: { item: CustomerRequest }) => {
     const user = item.vendorCustomers.user;
+    const isThisCardUpdating = updatingId === item.id;
     
     return (
       <View style={styles.card}>
@@ -74,13 +92,39 @@ const RequestsScreen = () => {
               Responded: {new Date(item.respondedAt).toLocaleDateString()}
             </Text>
           )}
+
+          {/* Action Row buttons: Visible exclusively inside the PENDING workflow context */}
+          {item.status === 'PENDING' && (
+            <View style={styles.actionRow}>
+              {isThisCardUpdating ? (
+                <ActivityIndicator size="small" color="#007AFF" style={styles.actionLoader} />
+              ) : (
+                <>
+                  <TouchableOpacity 
+                    style={[styles.actionButton, styles.rejectButtonColor]} 
+                    onPress={() => handleAction(item.id, Status.REJECTED)}
+                    disabled={updatingId !== null} // Disables interaction if any card is processing
+                  >
+                    <Text style={styles.actionButtonText}>Reject</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={[styles.actionButton, styles.acceptButtonColor]} 
+                    onPress={() => handleAction(item.id, Status.ACCEPTED)}
+                    disabled={updatingId !== null}
+                  >
+                    <Text style={styles.actionButtonText}>Accept</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          )}
         </View>
       </View>
     );
   };
 
   // Full-screen loading indicator for the *very first* fetch only
-  // This prevents a jarring full-screen overlay during subsequent pull-to-refreshes
   if (loading && customerRequests.length === 0) {
     return (
       <View style={[styles.center, styles.container]}>
@@ -124,13 +168,12 @@ const RequestsScreen = () => {
         keyExtractor={(item) => item.id}
         renderItem={renderRequestItem}
         contentContainerStyle={styles.listContainer}
-        // 2. Added RefreshControl down here
         refreshControl={
           <RefreshControl
             refreshing={loading}
             onRefresh={fetchRequests}
-            colors={['#007AFF']} // Android spinner color
-            tintColor="#007AFF"   // iOS spinner color
+            colors={['#007AFF']}
+            tintColor="#007AFF"
           />
         }
         ListEmptyComponent={
@@ -281,4 +324,33 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginTop: 40,
   },
+  /* Added Styles for Action Interface Buttons */
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 14,
+    gap: 12,
+  },
+  actionButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    minWidth: 85,
+    alignItems: 'center',
+  },
+  acceptButtonColor: {
+    backgroundColor: '#34C759', // System Green
+  },
+  rejectButtonColor: {
+    backgroundColor: '#FF3B30', // System Red
+  },
+  actionButtonText: {
+    color: '#FFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  actionLoader: {
+    paddingVertical: 6,
+    paddingRight: 10,
+  }
 });
