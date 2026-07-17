@@ -1,6 +1,7 @@
 import { Request, Response } from "express"
 import { VendorSchema } from "../generated/zod/index.js"
 import { db } from "../libs/db.js";
+import { includes } from "zod";
 
 
 
@@ -83,8 +84,12 @@ export const vendorProfile = async(req: Request, res: Response) =>{
     }
     // const id = req.params.id as string
     const vendorProfile = await db.vendor.findUnique({where: {
-      userId: user.id
-    }});
+      userId: user.id,
+    },
+    include: {
+      user: true
+    }
+    });
     if(!vendorProfile){
       return res.status(404).json({
         message: "Vendor profile doesn't exists!",

@@ -11,12 +11,14 @@ interface VendorState {
   hasVendorProfile: boolean,
   vendorProfile: (credentials: VenorProfileTypes) => Promise<any>
   isCreatedVendorProfile: () => Promise<boolean>
+  resetVendorProfile: () => void
 }
 
 
 export const useVendorContextStore = create<VendorState>()((set) => ({
   vendorAccount: null,
   hasVendorProfile: false,
+  resetVendorProfile: () => set({ vendorAccount: null, hasVendorProfile: false }),
   vendorProfile: async (credentials: VenorProfileTypes) => {
     try {
       const res = await axiosInstance.post("/vendor/create/vendor-profile", {
@@ -47,7 +49,7 @@ export const useVendorContextStore = create<VendorState>()((set) => ({
       }
       return false
     } catch (error: any) {
-      set({ hasVendorProfile: false, vendorAccount:null });
+      set({ hasVendorProfile: false, vendorAccount: null });
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Error while getting the vendor profile!";
       throw new Error(message);
     }

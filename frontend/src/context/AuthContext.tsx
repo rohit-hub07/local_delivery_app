@@ -3,6 +3,7 @@ import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { axiosInstance } from "../api/axios"
+import { useVendorContextStore } from "./VendorContext"
 
 export type LoginTypes = {
   phone: string
@@ -33,10 +34,12 @@ export const useAuthStore = create<AuthState>()(
         try {
           const res = await axiosInstance.get("/auth/me")
           if (res.data.user) {
+            useVendorContextStore.getState().resetVendorProfile()
             set({ user: res.data.user })
           }
           return res.data;
         } catch (error: any) {
+          useVendorContextStore.getState().resetVendorProfile()
           set({ user: null }); // Reset state on error
           const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Authentication failed";
           throw new Error(message);
@@ -49,6 +52,7 @@ export const useAuthStore = create<AuthState>()(
             phone: credentials.phone
           })
           if (res.data.user) {
+            useVendorContextStore.getState().resetVendorProfile()
             set({ user: res.data.user })
           }
 
@@ -71,6 +75,7 @@ export const useAuthStore = create<AuthState>()(
           })
 
           if (res.data.user) {
+            useVendorContextStore.getState().resetVendorProfile()
             set({ user: res.data.user })
           }
           return res.data
@@ -85,17 +90,25 @@ export const useAuthStore = create<AuthState>()(
         try {
           const res = await axiosInstance.post("/auth/logout")
           if (res.data.success) {
+            // await CookieManager.clearAll(true)
+            useVendorContextStore.getState().resetVendorProfile()
             set({ user: null })
             return res.data
           }
         } catch (error: any) {
+          // await CookieManager.clearAll(true)
+          useVendorContextStore.getState().resetVendorProfile()
           const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Logout failed";
           throw new Error(message);
+        } finally {
+          await AsyncStorage.removeItem("auth-storage");
+          useVendorContextStore.getState().resetVendorProfile()
+          set({ user: null });
         }
       }
     }),
     {
-      name: "auth-storage", // Unique key name for device storage
+      name: "auth-storage",
       storage: createJSONStorage(() => AsyncStorage), // Tells Zustand to use device disk space
     }
   ))

@@ -214,7 +214,12 @@ export const vendorSubscibedProducts = async (req, res) => {
                 }
             },
             include: {
-                product: true
+                product: true,
+                vendorCustomers: {
+                    include: {
+                        user: true
+                    }
+                }
             }
         });
         if (!subscribedProducts) {

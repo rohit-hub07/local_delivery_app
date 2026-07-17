@@ -30,7 +30,7 @@ export const signupController = async (req: Request, res: Response) => {
     }
 
 
-    const { name, phone, role,address } = validateBody.data;
+    const { name, phone, role, address } = validateBody.data;
 
     // console.log("Before check the users:")
 
@@ -155,15 +155,15 @@ export const loginController = async (req: Request, res: Response) => {
 
 export const logoutController = async (req: Request, res: Response) => {
   try {
-    res.cookie("token", ' ', {
+    res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      path: "/",
     })
 
-     res.status(200).json({
-       message: "User logout successfully!",
+    res.status(200).json({
+      message: "User logout successfully!",
       success: true,
     })
   } catch (error: any) {
@@ -174,14 +174,14 @@ export const logoutController = async (req: Request, res: Response) => {
   }
 }
 
-export const currentUserController = async(req: Request, res: Response) =>{
+export const currentUserController = async (req: Request, res: Response) => {
   try {
     // const userid = await isAuthenticated(req, res);
 
     // const user = await db.user.findUnique({where: {id: userid}})
     const user = req.user;
     // console.log("user inside of curr controller: ", user)
-    if(!user){
+    if (!user) {
       return res.status(404).json({
         message: "Unauthorize",
         success: false
