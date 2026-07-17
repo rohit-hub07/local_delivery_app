@@ -35,9 +35,23 @@ export const addCustomers = async (req: Request, res: Response) => {
     }
 
     const vendorId = req.vendor.id
-    if(!vendorId){
+    if (!vendorId) {
       return res.status(401).json({
         message: "Vendor doesn't exist!",
+        success: false
+      })
+    }
+    // check if the user is already a customer of the vendor or not
+    const isCustomer = await db.vendorCustomers.findFirst({
+      where: {
+        user: {
+        id: user.id
+        }
+      }
+    })
+    if(isCustomer){
+      return res.status(400).json({
+        message: "Customer already exists!",
         success: false
       })
     }
@@ -82,7 +96,7 @@ export const removeCustomer = async (req: Request, res: Response) => {
 
 
     const vendorId = req.vendor.id;
-    if(!vendorId){
+    if (!vendorId) {
       return res.status(401).json({
         message: "Vendor doesn't exist!",
         success: false
@@ -113,3 +127,39 @@ export const removeCustomer = async (req: Request, res: Response) => {
   }
 }
 
+export const getAllVendorCustomer = async (req: Request, res: Response) => {
+  try {
+    const vendor = req.vendor;
+    if (!vendor) {
+      return res.status(404).json({
+        message: "Please login with your vendor profile",
+        success: false,
+      })
+    }
+    const customers = await db.vendorCustomers.findMany({
+      where: {
+        vendorId: vendor.id
+      },
+      include:{
+        user: true
+      }
+    })
+    if (!customers) {
+      return res.status(404).json({
+        message: "No vendor customers available",
+        success: false
+      })
+    }
+    return res.status(200).json({
+      message: "Vendor customers fetched successfully!",
+      success: true,
+      customers: customers
+    })
+  } catch (error: any) {
+    console.log("Error fetching all vendor customer: ", error.message)
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false
+    })
+  }
+}

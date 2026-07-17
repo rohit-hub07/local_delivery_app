@@ -96,7 +96,14 @@ export const getCustomerRequests = async (req: Request, res: Response) => {
     const requests = await db.requests.findMany({
       where: {
         vendorCustomers: {
-          vendorId: vendorId
+          vendorId: vendorId,
+        }
+      },
+      include:{
+        vendorCustomers:{
+          select:{
+            user: true
+          }
         }
       }
     })
