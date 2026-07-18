@@ -1,15 +1,15 @@
 import React, { useState } from "react";
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
   ActivityIndicator,
   Alert
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message"; 
+import Toast from "react-native-toast-message";
 import { useAuthStore } from "../../context/AuthContext";
 
 export default function SignupScreen({ navigation }: any) {
@@ -19,7 +19,7 @@ export default function SignupScreen({ navigation }: any) {
   const [address, setAddress] = useState("");
   const [role, setRole] = useState<"CUSTOMER" | "VENDOR">("CUSTOMER");
   const [loading, setLoading] = useState(false);
-  const {signup} = useAuthStore()
+  const { signup } = useAuthStore()
 
 
   const handleSignup = async () => {
@@ -60,7 +60,7 @@ export default function SignupScreen({ navigation }: any) {
           position: "top",
           visibilityTime: 2200,
         });
-        
+
         // Navigate to Login after short delay
         setTimeout(() => {
           navigation.navigate("Login");
@@ -132,8 +132,8 @@ export default function SignupScreen({ navigation }: any) {
         </View>
 
         {/* Submit Button */}
-        <TouchableOpacity 
-          style={styles.submitButton} 
+        <TouchableOpacity
+          style={styles.submitButton}
           onPress={handleSignup}
           disabled={loading}
         >
@@ -145,8 +145,8 @@ export default function SignupScreen({ navigation }: any) {
         </TouchableOpacity>
 
         {/* Navigation Link */}
-        <TouchableOpacity 
-          style={styles.linkButton} 
+        <TouchableOpacity
+          style={styles.linkButton}
           onPress={() => navigation.navigate("Login")}
         >
           <Text style={styles.linkText}>Already have an account? Login instead</Text>

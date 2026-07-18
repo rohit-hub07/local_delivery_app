@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  FlatList, 
-  ActivityIndicator, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
   RefreshControl,
   Alert // Imported Alert for displaying inline update errors
-} from 'react-native'; 
+} from 'react-native';
 // Imported Status enum and updateRequest from your store context
 import { useRequestStore, CustomerRequest, Status } from '../../context/RequestContext';
 
@@ -19,7 +19,7 @@ const RequestsScreen = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');
-  
+
   // Tracks which individual request ID is currently undergoing an API status update
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
@@ -69,7 +69,7 @@ const RequestsScreen = () => {
   const renderRequestItem = ({ item }: { item: CustomerRequest }) => {
     const user = item.vendorCustomers.user;
     const isThisCardUpdating = updatingId === item.id;
-    
+
     return (
       <View style={styles.card}>
         <View style={styles.userInfo}>
@@ -77,11 +77,11 @@ const RequestsScreen = () => {
           <Text style={styles.userPhone}>📞 {user.phone}</Text>
           <Text style={styles.userAddress}>📍 {user.address}</Text>
         </View>
-        
+
         <View style={styles.requestDetails}>
           <Text style={styles.typeBadge}>{item.type.toUpperCase()}</Text>
           <Text style={styles.messageText}>"{item.message}"</Text>
-          
+
           <View style={styles.dateContainer}>
             <Text style={styles.dateText}>Start: {new Date(item.start_date).toLocaleDateString()}</Text>
             <Text style={styles.dateText}>End: {new Date(item.end_date).toLocaleDateString()}</Text>
@@ -100,16 +100,16 @@ const RequestsScreen = () => {
                 <ActivityIndicator size="small" color="#007AFF" style={styles.actionLoader} />
               ) : (
                 <>
-                  <TouchableOpacity 
-                    style={[styles.actionButton, styles.rejectButtonColor]} 
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.rejectButtonColor]}
                     onPress={() => handleAction(item.id, Status.REJECTED)}
                     disabled={updatingId !== null} // Disables interaction if any card is processing
                   >
                     <Text style={styles.actionButtonText}>Reject</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
-                    style={[styles.actionButton, styles.acceptButtonColor]} 
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.acceptButtonColor]}
                     onPress={() => handleAction(item.id, Status.ACCEPTED)}
                     disabled={updatingId !== null}
                   >
@@ -150,8 +150,8 @@ const RequestsScreen = () => {
       {/* Tab Navigation Menu */}
       <View style={styles.tabBar}>
         {(['PENDING', 'APPROVED', 'REJECTED'] as const).map((tab) => (
-          <TouchableOpacity 
-            key={tab} 
+          <TouchableOpacity
+            key={tab}
             style={[styles.tab, activeTab === tab && styles.activeTab]}
             onPress={() => setActiveTab(tab)}
           >

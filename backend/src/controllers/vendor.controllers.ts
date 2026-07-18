@@ -74,7 +74,7 @@ export const createVendorProfile = async(req: Request, res: Response) =>{
 export const vendorProfile = async(req: Request, res: Response) =>{
   try {
     // check if vendor profile exists or not
-    console.log("Request is hitting vendorProfile")
+    // console.log("Request is hitting vendorProfile")
     const user = req.user
     if(user.role == "CUSTOMER"){
       return res.status(403).json({

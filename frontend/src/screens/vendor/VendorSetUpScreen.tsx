@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  Text, 
-  View, 
-  TextInput, 
-  TouchableOpacity, 
-  ActivityIndicator, 
-  StyleSheet, 
-  KeyboardAvoidingView, 
-  Platform, 
-  ScrollView, 
-  Alert 
+import {
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../context/AuthContext';
@@ -53,12 +53,12 @@ const VendorSetUpScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-          
+
           {/* Header Section */}
           <View style={styles.header}>
             <Text style={styles.title}>Business Setup</Text>
@@ -94,7 +94,7 @@ const VendorSetUpScreen = () => {
             </View>
 
             {/* Action Buttons */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.primaryButton, isSubmitting && styles.buttonDisabled]}
               onPress={handleCreateProfile}
               disabled={isSubmitting}

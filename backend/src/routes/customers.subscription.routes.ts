@@ -12,7 +12,7 @@ customerSubscriptionRouter.post("/product/add/:id", isAuthenticated,subscribePro
 // allow customers to remove vendor products
 customerSubscriptionRouter.delete("/product/unsubscribe-product/:id",isAuthenticated,unsubscribeProduct)
 
-// show all the subscribed products 
+// show all the subscribed products to the customer
 customerSubscriptionRouter.get("/get/subscribed-product", isAuthenticated, customerSubscribedProduct)
 
 // show all the customer subscribed products to the vendor

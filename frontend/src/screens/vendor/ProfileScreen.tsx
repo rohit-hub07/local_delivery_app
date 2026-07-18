@@ -2,14 +2,14 @@ import React from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { useAuthStore } from '../../context/AuthContext';
 import { useVendorContextStore } from '../../context/VendorContext';
-import {SafeAreaView} from "react-native-safe-area-context"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 const ProfileScreen = () => {
   const { logout } = useAuthStore();
-  
+
   // Destructure vendorAccount from your store
   const { vendorAccount } = useVendorContextStore();
-  
+
   // Extract vendorProfile based on your exact API response structure
   const profile = vendorAccount
 
@@ -20,7 +20,7 @@ const ProfileScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        
+
         {/* Header Avatar Section */}
         <View style={styles.headerSection}>
           <View style={styles.avatarContainer}>
@@ -36,14 +36,14 @@ const ProfileScreen = () => {
         {/* Business Details Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Business Information</Text>
-          
+
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Business Phone</Text>
             <Text style={styles.infoValue}>{profile?.businessPhone || 'Not Provided'}</Text>
           </View>
-          
+
           <View style={styles.divider} />
-          
+
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Business Name</Text>
             <Text style={styles.infoValueId} numberOfLines={1} ellipsizeMode="tail">
@@ -55,14 +55,14 @@ const ProfileScreen = () => {
         {/* Personal Details Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Owner Details</Text>
-          
+
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Personal Phone</Text>
             <Text style={styles.infoValue}>{profile?.user?.phone || 'Not Provided'}</Text>
           </View>
-          
+
           <View style={styles.divider} />
-          
+
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Address</Text>
             <Text style={styles.infoValue}>{profile?.user?.address || 'Not Provided'}</Text>
@@ -70,8 +70,8 @@ const ProfileScreen = () => {
         </View>
 
         {/* Action Buttons */}
-        <TouchableOpacity 
-          style={styles.logoutButton} 
+        <TouchableOpacity
+          style={styles.logoutButton}
           onPress={async () => await logout()}
           activeOpacity={0.8}
         >
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#6366f1', 
+    backgroundColor: '#6366f1',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#6366f1',
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   infoValueId: {
     fontSize: 13,
     color: '#6b7280',
-    fontFamily: 'Courier' 
+    fontFamily: 'Courier'
   },
   divider: {
     height: 1,

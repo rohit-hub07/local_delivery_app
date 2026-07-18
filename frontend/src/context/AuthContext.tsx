@@ -15,7 +15,7 @@ export type SignupTypes = {
   role: string,
   address: string
 }
-export enum RoleTypes{
+export enum RoleTypes {
   VENDOR = "VENDOR",
   CUSTOMER = "CUSTOMER"
 }

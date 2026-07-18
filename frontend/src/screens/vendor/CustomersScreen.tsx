@@ -23,7 +23,7 @@ const CustomerScreen = () => {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [phone, setPhone] = useState("");
   const [addCustomerError, setAddCustomerError] = useState("");
-  const {subscribedCustomers} = useCustomerSubscriptionStore()
+  const { subscribedCustomers } = useCustomerSubscriptionStore()
   const fetchCustomers = async () => {
     try {
       setLoading(true);

@@ -1,8 +1,9 @@
 import express from "express"
-import { addProduct, getAllProducts, getProductById, removeProduct } from "../controllers/product.controllers.js";
+import { addProduct, getAllProducts, getProductById, removeProduct, showProductsToAddedCustomer } from "../controllers/product.controllers.js";
 import { isVendor } from "../middlewares/isVendor.js";
 import { isAuthenticated } from "../middlewares/isAuthenticated.js";
 import { isCreatedVendorProfile } from "../middlewares/isCreatedVendorProfile.js";
+import { isRoleVendor } from "../middlewares/isRoleVendor.js";
 
 const productRouter = express.Router();
 
@@ -10,10 +11,13 @@ productRouter.post("/add-product",isAuthenticated,isCreatedVendorProfile,isVendo
 
 productRouter.delete("/delete-product/:id",isAuthenticated,isCreatedVendorProfile,isVendor, removeProduct)
 
-// show all product of vendor
-productRouter.get("/all-products/:id",isAuthenticated, getAllProducts)
+// show all product of vendor to the vendor
+productRouter.get("/all-products",isAuthenticated,isRoleVendor,isVendor, getAllProducts)
 
 // get product by id
 productRouter.get("/vendor/product/:id", isAuthenticated, getProductById)
+
+// show all the vendor products to vendor customer
+productRouter.get("/vendor-products", isAuthenticated, showProductsToAddedCustomer)
 
 export default productRouter;

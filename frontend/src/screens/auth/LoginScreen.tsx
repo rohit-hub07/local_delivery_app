@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  StyleSheet, 
-  Alert, 
-  TouchableOpacity, 
-  ActivityIndicator 
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+  ActivityIndicator
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -16,7 +16,7 @@ import { useAuthStore } from "../../context/AuthContext";
 export default function LoginScreen({ navigation }: any) {
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-  const { login} = useAuthStore()
+  const { login } = useAuthStore()
   const handleLogin = async () => {
     if (!phoneNumber.trim()) {
       Alert.alert("Error", "Please enter your phone number");
@@ -44,8 +44,8 @@ export default function LoginScreen({ navigation }: any) {
     try {
       setLoading(true);
       // Removed name parameter to only pass phone number string
-      const res = await login({phone: normalizedNumber}); 
-      
+      const res = await login({ phone: normalizedNumber });
+
       if (res.success || res) {
         Toast.show({
           type: "success",
@@ -74,19 +74,19 @@ export default function LoginScreen({ navigation }: any) {
 
         {/* Phone Number Input Field */}
         <Text style={styles.label}>Phone Number</Text>
-        <TextInput 
-          style={styles.input} 
-          placeholder="Enter your phone number" 
-          placeholderTextColor="#999" 
-          value={phoneNumber} 
-          onChangeText={setPhoneNumber} 
-          keyboardType="phone-pad" 
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your phone number"
+          placeholderTextColor="#999"
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+          keyboardType="phone-pad"
           editable={!loading}
         />
 
         {/* Custom Login Button with Loader */}
-        <TouchableOpacity 
-          style={[styles.primaryButton, loading && styles.disabledButton]} 
+        <TouchableOpacity
+          style={[styles.primaryButton, loading && styles.disabledButton]}
           onPress={handleLogin}
           disabled={loading}
         >
@@ -98,8 +98,8 @@ export default function LoginScreen({ navigation }: any) {
         </TouchableOpacity>
 
         {/* Professional Navigation Link */}
-        <TouchableOpacity 
-          style={styles.linkContainer} 
+        <TouchableOpacity
+          style={styles.linkContainer}
           onPress={() => !loading && navigation.navigate("Signup")}
           disabled={loading}
           activeOpacity={0.7}
