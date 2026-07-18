@@ -4,6 +4,7 @@ import { isVendor } from "../middlewares/isVendor.js";
 import { isAuthenticated } from "../middlewares/isAuthenticated.js";
 import { isCreatedVendorProfile } from "../middlewares/isCreatedVendorProfile.js";
 import { isRoleVendor } from "../middlewares/isRoleVendor.js";
+import { isRoleCustomer } from "../middlewares/isRoleCustomer.js";
 
 const productRouter = express.Router();
 
@@ -18,6 +19,6 @@ productRouter.get("/all-products",isAuthenticated,isRoleVendor,isVendor, getAllP
 productRouter.get("/vendor/product/:id", isAuthenticated, getProductById)
 
 // show all the vendor products to vendor customer
-productRouter.get("/vendor-products", isAuthenticated, showProductsToAddedCustomer)
+productRouter.get("/vendor-products", isAuthenticated, isRoleCustomer,showProductsToAddedCustomer)
 
 export default productRouter;

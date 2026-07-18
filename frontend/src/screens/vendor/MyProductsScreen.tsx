@@ -254,7 +254,6 @@ export const MyProductsScreen = () => {
     <View style={[styles.container, { paddingTop: insets.top + SPACING.md }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Products</Text>
         {memoizedProducts.length > 0 && (
           <Text style={styles.headerSubtitle}>
             {memoizedProducts.length} {memoizedProducts.length === 1 ? 'item' : 'items'}

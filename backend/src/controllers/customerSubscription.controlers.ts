@@ -181,6 +181,7 @@ export const customerSubscribedProduct = async (req: Request, res: Response) => 
         success: false
       })
     }
+    
 
     const subscribedCustomerProduct = await db.product.findMany({
       where: {
@@ -193,6 +194,9 @@ export const customerSubscribedProduct = async (req: Request, res: Response) => 
             }
           }
         }
+      },
+      include: {
+        vendor: true
       }
     })
 

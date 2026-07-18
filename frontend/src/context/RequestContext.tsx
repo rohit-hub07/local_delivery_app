@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { axiosInstance } from "../api/axios";
+import { useCustomerHomeContext } from "./customerContext/CustomerHomeContext";
 
 
 interface CustomerUser {
@@ -71,6 +72,7 @@ export const useRequestStore = create<RequestState>()((set, get) => ({
       const res = await axiosInstance.put<UpdateResponse>(`request/update-request/${id}`, { status })
       if (res.data.success) {
         await get().getCustomerRequests()
+        await useCustomerHomeContext.getState().getAllRequestCustomer()
       }
     } catch (error: any) {
       const message =

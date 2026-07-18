@@ -5,10 +5,9 @@ import { Platform } from 'react-native';
 import { Home, ShoppingBag, BellRing, User } from 'lucide-react-native';
 
 import HomeScreen from "../screens/customer/HomeScreen";
-import { MyProductsScreen } from "../screens/customer/MyProductsScreen";
 import RequestsScreen from "../screens/customer/RequestsScreen";
 import ProfileScreen from "../screens/customer/ProfileScreen";
-
+import { VendorScreen } from '../screens/customer/VendorScreen';
 const Tab = createBottomTabNavigator();
 
 export default function CustomerTabNavigator() {
@@ -43,7 +42,7 @@ export default function CustomerTabNavigator() {
           switch (route.name) {
             case 'Home':
               return <Home color={color} size={iconSize} />;
-            case 'My Products':
+            case 'Vendor':
               return <ShoppingBag color={color} size={iconSize} />;
             case 'Requests':
               return <BellRing color={color} size={iconSize} />;
@@ -56,7 +55,7 @@ export default function CustomerTabNavigator() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="My Products" component={MyProductsScreen} />
+      <Tab.Screen name="Vendor" component={VendorScreen} />
       <Tab.Screen name="Requests" component={RequestsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
