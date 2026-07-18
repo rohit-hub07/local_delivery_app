@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { axiosInstance } from "../api/axios";
-import { useCustomerHomeContext } from "./customerContext/CustomerHomeContext";
+import { axiosInstance } from "../../api/axios";
+import { useCustomerHomeContext } from "../customerContext/CustomerHomeContext";
 
 
 interface CustomerUser {

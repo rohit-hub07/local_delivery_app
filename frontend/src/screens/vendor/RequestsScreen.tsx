@@ -1,29 +1,25 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  FlatList,
-  ActivityIndicator,
-  TouchableOpacity,
-  RefreshControl,
-  Alert // Imported Alert for displaying inline update errors
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  FlatList, 
+  ActivityIndicator, 
+  TouchableOpacity, 
+  RefreshControl, 
+  Alert
 } from 'react-native';
-// Imported Status enum and updateRequest from your store context
-import { useRequestStore, CustomerRequest, Status } from '../../context/RequestContext';
+import {SafeAreaView} from "react-native-safe-area-context"
+import { useRequestStore, CustomerRequest, Status } from '../../context/vendorContext/RequestContext';
 
 const RequestsScreen = () => {
   const { customerRequests, getCustomerRequests, updateRequest } = useRequestStore();
 
-  // Frontend local UI states
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');
-
-  // Tracks which individual request ID is currently undergoing an API status update
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Unified fetch handler wrapped in useCallback for stability
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -36,12 +32,10 @@ const RequestsScreen = () => {
     }
   }, [getCustomerRequests]);
 
-  // Initial fetch on component mount
   useEffect(() => {
     fetchRequests();
   }, [fetchRequests]);
 
-  // Handle action triggers (Acceptance / Rejection)
   const handleAction = async (id: string, targetStatus: Status) => {
     setUpdatingId(id);
     try {
@@ -53,7 +47,6 @@ const RequestsScreen = () => {
     }
   };
 
-  // Fixed: Your useMemo filter condition has been re-aligned to map ACCEPTED responses cleanly into the APPROVED tab layout view
   const categorizedRequests = useMemo(() => {
     return {
       PENDING: customerRequests.filter(req => req.status === 'PENDING'),
@@ -62,10 +55,8 @@ const RequestsScreen = () => {
     };
   }, [customerRequests]);
 
-  // Get current active data based on selection tab
   const currentData = categorizedRequests[activeTab];
 
-  // Render Item component for FlatList
   const renderRequestItem = ({ item }: { item: CustomerRequest }) => {
     const user = item.vendorCustomers.user;
     const isThisCardUpdating = updatingId === item.id;
@@ -81,7 +72,7 @@ const RequestsScreen = () => {
         <View style={styles.requestDetails}>
           <Text style={styles.typeBadge}>{item.type.toUpperCase()}</Text>
           <Text style={styles.messageText}>"{item.message}"</Text>
-
+          
           <View style={styles.dateContainer}>
             <Text style={styles.dateText}>Start: {new Date(item.start_date).toLocaleDateString()}</Text>
             <Text style={styles.dateText}>End: {new Date(item.end_date).toLocaleDateString()}</Text>
@@ -93,23 +84,21 @@ const RequestsScreen = () => {
             </Text>
           )}
 
-          {/* Action Row buttons: Visible exclusively inside the PENDING workflow context */}
           {item.status === 'PENDING' && (
             <View style={styles.actionRow}>
               {isThisCardUpdating ? (
                 <ActivityIndicator size="small" color="#007AFF" style={styles.actionLoader} />
               ) : (
                 <>
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.rejectButtonColor]}
+                  <TouchableOpacity 
+                    style={[styles.actionButton, styles.rejectButtonColor]} 
                     onPress={() => handleAction(item.id, Status.REJECTED)}
-                    disabled={updatingId !== null} // Disables interaction if any card is processing
+                    disabled={updatingId !== null}
                   >
                     <Text style={styles.actionButtonText}>Reject</Text>
                   </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.acceptButtonColor]}
+                  <TouchableOpacity 
+                    style={[styles.actionButton, styles.acceptButtonColor]} 
                     onPress={() => handleAction(item.id, Status.ACCEPTED)}
                     disabled={updatingId !== null}
                   >
@@ -124,29 +113,33 @@ const RequestsScreen = () => {
     );
   };
 
-  // Full-screen loading indicator for the *very first* fetch only
+  // Wrapped conditional states in SafeAreaView to maintain structural consistency
   if (loading && customerRequests.length === 0) {
     return (
-      <View style={[styles.center, styles.container]}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Fetching Requests...</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>Fetching Requests...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (error && customerRequests.length === 0) {
     return (
-      <View style={[styles.center, styles.container]}>
-        <Text style={styles.errorText}>⚠️ {error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchRequests}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.center}>
+          <Text style={styles.errorText}>⚠️ {error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchRequests}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Tab Navigation Menu */}
       <View style={styles.tabBar}>
         {(['PENDING', 'APPROVED', 'REJECTED'] as const).map((tab) => (
@@ -182,7 +175,7 @@ const RequestsScreen = () => {
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -324,7 +317,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginTop: 40,
   },
-  /* Added Styles for Action Interface Buttons */
   actionRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -339,10 +331,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   acceptButtonColor: {
-    backgroundColor: '#34C759', // System Green
+    backgroundColor: '#34C759',
   },
   rejectButtonColor: {
-    backgroundColor: '#FF3B30', // System Red
+    backgroundColor: '#FF3B30',
   },
   actionButtonText: {
     color: '#FFF',

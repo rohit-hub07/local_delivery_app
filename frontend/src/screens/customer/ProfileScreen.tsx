@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAuthStore } from '../../context/AuthContext'
+import { useAuthStore } from '../../context/vendorContext/AuthContext'
 import { Button, Text } from 'react-native'
 
 const ProfileScreen = () => {

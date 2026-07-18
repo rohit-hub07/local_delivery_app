@@ -62,7 +62,7 @@ interface CustomerHomeState {
   requestDetails: Request[]
 }
 
-export const useCustomerHomeContext = create<CustomerHomeState>()((set) => ({
+export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => ({
   requestDetails: [],
   subcribedProducts: [],
   getCustomerSubscribedProducts: async () => {
@@ -85,6 +85,7 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set) => ({
         type: credential.type,
         productId: credential.productId
       })
+      await get().getAllRequestCustomer()
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";
       throw new Error(message);

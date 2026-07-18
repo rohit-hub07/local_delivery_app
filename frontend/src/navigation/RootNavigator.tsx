@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native"; // Added for loading state
-import { useAuthStore } from "../context/AuthContext";
+import { useAuthStore } from "../context/vendorContext/AuthContext";
 import AuthNavigation from "./AuthNavigator";
 import CustomerTabNavigator from "./CustomerNavigator";
 import VendorTabNavigator from "./VendorNavigator";
 import VendorSetUpScreen from "../screens/vendor/VendorSetUpScreen";
-import { useVendorContextStore } from "../context/VendorContext";
+import { useVendorContextStore } from "../context/vendorContext/VendorContext";
 
 export default function RootNavigator() {
   const user = useAuthStore((state) => state.user);

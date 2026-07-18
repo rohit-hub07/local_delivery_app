@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { axiosInstance } from "../api/axios"
+import { axiosInstance } from "../../api/axios"
 
 interface CustomerSubscriptionState {
   subscribedProducts: any[];

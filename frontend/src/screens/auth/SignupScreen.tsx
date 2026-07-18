@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { useAuthStore } from "../../context/AuthContext";
+import { useAuthStore } from "../../context/vendorContext/AuthContext";
 
 export default function SignupScreen({ navigation }: any) {
   // Form states

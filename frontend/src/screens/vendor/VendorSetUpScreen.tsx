@@ -12,8 +12,8 @@ import {
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuthStore } from '../../context/AuthContext';
-import { useVendorContextStore } from '../../context/VendorContext';
+import { useAuthStore } from '../../context/vendorContext/AuthContext';
+import { useVendorContextStore } from '../../context/vendorContext/VendorContext';
 
 const VendorSetUpScreen = () => {
   const { logout } = useAuthStore();

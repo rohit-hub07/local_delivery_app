@@ -7,10 +7,14 @@ import {
   ActivityIndicator,
   StatusBar,
   RefreshControl,
+  Pressable,
+  Linking,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useCustomerSubscriptionStore } from "../../context/CustomerSubscriptionContex";
-import { useVendorContextStore } from "../../context/VendorContext";
+import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import { useCustomerSubscriptionStore } from "../../context/vendorContext/CustomerSubscriptionContex";
+import { useVendorContextStore } from "../../context/vendorContext/VendorContext";
 
 interface CustomerState {
   id: string;
@@ -20,23 +24,64 @@ interface CustomerState {
   products: string[];
 }
 
+const C = {
+  bg: "#F4F6FB", card: "#FFFFFF", ink: "#0F172A", inkSoft: "#475569", inkMuted: "#94A3B8",
+  primary: "#4F46E5", primarySoft: "#EEF2FF", addressBg: "#F6F8FC",
+  green: "#16A34A", greenSoft: "#DCFCE7",
+  orange: "#F59E0B", orangeSoft: "#FEF3C7",
+  blue: "#3B82F6", blueSoft: "#DBEAFE",
+  purple: "#7C3AED", purpleSoft: "#EDE9FE",
+  pink: "#EC4899", pinkSoft: "#FCE7F3",
+  red: "#EF4444", redSoft: "#FEE2E2",
+  amber: "#D97706", amberSoft: "#FEF3C7",
+};
+
+type ChipStyle = { icon: React.ReactNode; bg: string; fg: string };
+const FALLBACKS: ChipStyle[] = [
+  { bg: C.primarySoft, fg: C.primary, icon: <MaterialCommunityIcons name="package-variant-closed" size={14} color={C.primary} /> },
+  { bg: C.orangeSoft, fg: C.orange, icon: <MaterialCommunityIcons name="package-variant-closed" size={14} color={C.orange} /> },
+  { bg: C.greenSoft, fg: C.green, icon: <MaterialCommunityIcons name="package-variant-closed" size={14} color={C.green} /> },
+  { bg: C.purpleSoft, fg: C.purple, icon: <MaterialCommunityIcons name="package-variant-closed" size={14} color={C.purple} /> },
+  { bg: C.pinkSoft, fg: C.pink, icon: <MaterialCommunityIcons name="package-variant-closed" size={14} color={C.pink} /> },
+];
+const chipForProduct = (name: string): ChipStyle => {
+  const n = name.toLowerCase();
+  if (n.includes("news") || n.includes("paper")) return { bg: C.orangeSoft, fg: C.orange, icon: <MaterialCommunityIcons name="newspaper-variant" size={14} color={C.orange} /> };
+  if (n.includes("water")) return { bg: C.blueSoft, fg: C.blue, icon: <Ionicons name="water" size={14} color={C.blue} /> };
+  if (n.includes("milk") || n.includes("dairy")) return { bg: C.purpleSoft, fg: C.purple, icon: <MaterialCommunityIcons name="bottle-tonic" size={14} color={C.purple} /> };
+  if (n.includes("veg") || n.includes("sabzi") || n.includes("vegetable")) return { bg: C.greenSoft, fg: C.green, icon: <MaterialCommunityIcons name="carrot" size={14} color={C.green} /> };
+  if (n.includes("gas") || n.includes("cylinder")) return { bg: C.redSoft, fg: C.red, icon: <MaterialCommunityIcons name="fire" size={14} color={C.red} /> };
+  if (n.includes("bread")) return { bg: C.amberSoft, fg: C.amber, icon: <MaterialCommunityIcons name="bread-slice" size={14} color={C.amber} /> };
+  if (n.includes("egg")) return { bg: C.orangeSoft, fg: C.orange, icon: <MaterialCommunityIcons name="egg" size={14} color={C.orange} /> };
+  if (n.includes("fruit")) return { bg: C.pinkSoft, fg: C.pink, icon: <MaterialCommunityIcons name="fruit-cherries" size={14} color={C.pink} /> };
+  const idx = Math.abs(n.split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % FALLBACKS.length;
+  return FALLBACKS[idx];
+};
+
+const AVATARS = [
+  { bg: C.blueSoft, fg: C.blue }, { bg: C.orangeSoft, fg: C.orange },
+  { bg: C.greenSoft, fg: C.green }, { bg: C.purpleSoft, fg: C.purple },
+  { bg: C.pinkSoft, fg: C.pink },
+];
+const paletteFor = (id: string) => AVATARS[id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % AVATARS.length];
+const formatPhone = (p: string) => {
+  const d = (p || "").replace(/\D/g, "");
+  return d.length === 10 ? `${d.slice(0, 5)} ${d.slice(5)}` : p;
+};
+
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  // 1. 🔥 Pull raw subscription array and action from store
   const { subscribedProducts, subscribedCustomers, error: storeError } = useCustomerSubscriptionStore();
   const { vendorAccount } = useVendorContextStore();
 
-  // 2. 🔥 Automatically compute mapped customers when 'subscribedProducts' updates globally
   const vendorCustomers = useMemo(() => {
     const customerMap = new Map<string, CustomerState>();
-
     subscribedProducts.forEach((item: any) => {
       const user = item.vendorCustomers?.user;
       if (!user) return;
-
       if (!customerMap.has(user.id)) {
         customerMap.set(user.id, {
           id: user.id,
@@ -46,20 +91,23 @@ export default function HomeScreen() {
           products: [],
         });
       }
-
       const customer = customerMap.get(user.id);
       if (item.product?.productName && !customer!.products.includes(item.product.productName)) {
         customer!.products.push(item.product.productName);
       }
     });
-
     return Array.from(customerMap.values());
   }, [subscribedProducts]);
 
-  // Combined error message tracking
+  const totalSubscriptions = useMemo(() => vendorCustomers.reduce((n, c) => n + c.products.length, 0), [vendorCustomers]);
+  const uniqueProducts = useMemo(() => {
+    const s = new Set<string>();
+    vendorCustomers.forEach((c) => c.products.forEach((p) => s.add(p)));
+    return s.size;
+  }, [vendorCustomers]);
+
   const activeError = storeError || localError;
 
-  // 3. Core fetch wrapper
   const handleFetch = async () => {
     try {
       setLocalError(null);
@@ -69,7 +117,6 @@ export default function HomeScreen() {
     }
   };
 
-  // 4. Initial load sequence
   useEffect(() => {
     const initFetch = async () => {
       if (vendorAccount?.id) {
@@ -83,7 +130,6 @@ export default function HomeScreen() {
     initFetch();
   }, [vendorAccount?.id]);
 
-  // 5. Native user pull down processing
   const onRefresh = useCallback(async () => {
     if (!vendorAccount?.id) return;
     setRefreshing(true);
@@ -91,38 +137,77 @@ export default function HomeScreen() {
     setRefreshing(false);
   }, [vendorAccount?.id]);
 
-  const renderCustomerCard = ({ item }: { item: CustomerState }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
-        </View>
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.customerName} numberOfLines={1}>{item.name}</Text>
-          <Text style={styles.customerPhone}>{item.phone}</Text>
-        </View>
-      </View>
-      <Text style={styles.sectionLabel}>Active Subscriptions</Text>
-      <View style={styles.badgesContainer}>
-        {item.products.map((product, index) => (
-          <View key={index} style={styles.badge}>
-            <Text style={styles.badgeText}>{product}</Text>
+  const renderCustomerCard = ({ item }: { item: CustomerState }) => {
+    const av = paletteFor(item.id);
+    const callCustomer = () => {
+      const digits = (item.phone || "").replace(/\D/g, "");
+      if (!digits) return;
+      const url = `tel:${digits}`;
+      Linking.canOpenURL(url).then((ok) => ok && Linking.openURL(url));
+    };
+
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardTopRow}>
+          <View style={[styles.avatar, { backgroundColor: av.bg }]}>
+            <Text style={[styles.avatarText, { color: av.fg }]}>{(item.name?.[0] || "?").toUpperCase()}</Text>
           </View>
-        ))}
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={styles.customerName} numberOfLines={1}>{item.name}</Text>
+            <View style={styles.phoneRow}>
+              <Ionicons name="call" size={12} color={C.inkSoft} />
+              <Text style={styles.customerPhone}>{formatPhone(item.phone)}</Text>
+            </View>
+          </View>
+          <Pressable onPress={callCustomer} style={({ pressed }) => [styles.callBtn, pressed && { transform: [{ scale: 0.95 }] }]} hitSlop={8}>
+            <Ionicons name="call" size={18} color="#FFFFFF" />
+          </Pressable>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <MaterialCommunityIcons name="package-variant-closed" size={13} color={C.inkMuted} />
+          <Text style={styles.sectionLabel}>ACTIVE SUBSCRIPTIONS</Text>
+          <View style={styles.countBubble}>
+            <Text style={styles.countBubbleText}>{item.products.length}</Text>
+          </View>
+        </View>
+
+        <View style={styles.badgesContainer}>
+          {item.products.map((product, index) => {
+            const s = chipForProduct(product);
+            return (
+              <View key={`${item.id}-${product}-${index}`} style={[styles.badge, { backgroundColor: s.bg }]}>
+                {s.icon}
+                <Text style={[styles.badgeText, { color: s.fg }]} numberOfLines={1}>{product}</Text>
+              </View>
+            );
+          })}
+        </View>
+
+        <View style={styles.addressContainer}>
+          <View style={styles.addressIconWrap}>
+            <Ionicons name="location-sharp" size={16} color={C.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.addressLabel}>Delivery Address</Text>
+            <Text style={styles.addressValue} numberOfLines={2}>{item.address}</Text>
+          </View>
+        </View>
       </View>
-      <View style={styles.addressContainer}>
-        <Text style={styles.addressLabel}>Delivery Address</Text>
-        <Text style={styles.addressValue} numberOfLines={2}>{item.address}</Text>
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F4F6F9" />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
+
       <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>Dashboard</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.hello}>Namaste 👋</Text>
+          <Text style={styles.headerTitle}>Dashboard</Text>
+        </View>
         <View style={styles.counterBadge}>
+          <MaterialCommunityIcons name="account-group" size={14} color={C.primary} />
           <Text style={styles.counterText}>
             {vendorCustomers.length} {vendorCustomers.length === 1 ? "Subscriber" : "Subscribers"}
           </Text>
@@ -131,25 +216,24 @@ export default function HomeScreen() {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="small" color="#4F46E5" />
+          <ActivityIndicator size="small" color={C.primary} />
           <Text style={styles.loadingText}>Updating live records...</Text>
         </View>
       ) : activeError ? (
-        <View style={styles.centerContainer}>
-          <View style={styles.errorIconBox}>
-            <Text style={styles.errorIconText}>!</Text>
-          </View>
-          <Text style={styles.errorText}>{activeError}</Text>
-          <FlatList
-            data={[]}
-            renderItem={() => null}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#4F46E5"]} />
-            }
-            contentContainerStyle={styles.listContainer}
-            ListEmptyComponent={<Text style={styles.emptyText}>Pull down to retry connection.</Text>}
-          />
-        </View>
+        <FlatList
+          data={[]}
+          renderItem={() => null}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[C.primary]} tintColor={C.primary} />}
+          contentContainerStyle={styles.listContainer}
+          ListEmptyComponent={
+            <View style={styles.centerContainer}>
+              <View style={styles.errorIconBox}><Feather name="alert-triangle" size={22} color={C.red} /></View>
+              <Text style={styles.errorTitle}>Something went wrong</Text>
+              <Text style={styles.errorText}>{activeError}</Text>
+              <Text style={styles.emptyText}>Pull down to retry connection.</Text>
+            </View>
+          }
+        />
       ) : (
         <FlatList
           data={vendorCustomers}
@@ -157,11 +241,23 @@ export default function HomeScreen() {
           renderItem={renderCustomerCard}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#4F46E5"]} tintColor="#4F46E5" />
+          ListHeaderComponent={
+            vendorCustomers.length > 0 ? (
+              <>
+                <View style={styles.statsRow}>
+                  <StatChip icon={<Ionicons name="people" size={18} color={C.primary} />} tone={C.primarySoft} value={String(vendorCustomers.length)} label="Customers" />
+                  <StatChip icon={<MaterialCommunityIcons name="package-variant-closed" size={18} color={C.green} />} tone={C.greenSoft} value={String(totalSubscriptions)} label="Active" />
+                  <StatChip icon={<Feather name="box" size={18} color={C.orange} />} tone={C.orangeSoft} value={String(uniqueProducts)} label="Products" />
+                </View>
+                <Text style={styles.listSectionTitle}>Your Customers</Text>
+              </>
+            ) : null
           }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[C.primary]} tintColor={C.primary} />}
           ListEmptyComponent={
             <View style={styles.centerContainer}>
+              <View style={styles.emptyIconBox}><MaterialCommunityIcons name="account-search-outline" size={28} color={C.inkMuted} /></View>
+              <Text style={styles.emptyTitle}>No subscribers yet</Text>
               <Text style={styles.emptyText}>No subscribers active today.</Text>
             </View>
           }
@@ -171,31 +267,71 @@ export default function HomeScreen() {
   );
 }
 
+function StatChip({ icon, tone, value, label }: { icon: React.ReactNode; tone: string; value: string; label: string; }) {
+  return (
+    <View style={styles.statChip}>
+      <View style={[styles.statIconWrap, { backgroundColor: tone }]}>{icon}</View>
+      <View style={{ marginLeft: 10 }}>
+        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F4F6F9" },
-  headerContainer: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingTop: 20, paddingBottom: 16 },
-  headerTitle: { fontSize: 28, fontWeight: "800", color: "#1E1B4B", letterSpacing: -0.5 },
-  counterBadge: { backgroundColor: "#EEF2F6", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, borderWidth: 1, borderColor: "#E2E8F0" },
-  counterText: { fontSize: 12, fontWeight: "700", color: "#4F46E5" },
-  listContainer: { paddingHorizontal: 20, paddingBottom: 40 },
-  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 20, marginBottom: 16, shadowColor: "#0F172A", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 3, borderWidth: 1, borderColor: "rgba(241, 245, 249, 0.6)" },
-  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
-  avatarContainer: { width: 44, height: 44, borderRadius: 14, backgroundColor: "#EEF2F6", justifyContent: "center", alignItems: "center", marginRight: 14 },
-  avatarText: { fontSize: 16, fontWeight: "700", color: "#334155" },
-  headerTextContainer: { flex: 1 },
-  customerName: { fontSize: 16, fontWeight: "700", color: "#0F172A", letterSpacing: -0.2, marginBottom: 2 },
-  customerPhone: { fontSize: 13, fontWeight: "500", color: "#64748B" },
-  sectionLabel: { fontSize: 11, fontWeight: "700", color: "#94A3B8", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 },
-  badgesContainer: { flexDirection: "row", flexWrap: "wrap", marginBottom: 16, gap: 6 },
-  badge: { backgroundColor: "#EEF2F6", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
-  badgeText: { fontSize: 12, fontWeight: "600", color: "#334155" },
-  addressContainer: { backgroundColor: "#F8FAFC", padding: 12, borderRadius: 12 },
-  addressLabel: { fontSize: 11, fontWeight: "600", color: "#64748B", marginBottom: 4 },
-  addressValue: { fontSize: 13, color: "#334155", lineHeight: 18, fontWeight: "400" },
-  centerContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 40 },
-  loadingText: { marginTop: 12, color: "#64748B", fontSize: 14, fontWeight: "500" },
-  errorIconBox: { width: 48, height: 48, borderRadius: 24, backgroundColor: "#FEE2E2", justifyContent: "center", alignItems: "center", marginBottom: 12 },
-  errorIconText: { color: "#EF4444", fontSize: 20, fontWeight: "700" },
-  errorText: { color: "#64748B", fontSize: 14, textAlign: "center", lineHeight: 20, marginBottom: 10 },
-  emptyText: { color: "#94A3B8", fontSize: 15, fontWeight: "500" },
+  container: { flex: 1, backgroundColor: C.bg },
+  headerContainer: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, gap: 10 },
+  hello: { fontSize: 13, color: C.inkSoft, fontWeight: "500", marginBottom: 2 },
+  headerTitle: { fontSize: 28, fontWeight: "800", color: C.ink, letterSpacing: -0.5 },
+  counterBadge: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: C.primarySoft, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 99 },
+  counterText: { fontSize: 12.5, fontWeight: "700", color: C.primary },
+
+  statsRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
+  statChip: {
+    flex: 1, backgroundColor: C.card, borderRadius: 16, padding: 12, flexDirection: "row", alignItems: "center",
+    ...Platform.select({ ios: { shadowColor: "#0F172A", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 }, android: { elevation: 1 } }),
+  },
+  statIconWrap: { width: 34, height: 34, borderRadius: 11, alignItems: "center", justifyContent: "center" },
+  statValue: { fontSize: 17, fontWeight: "800", color: C.ink, lineHeight: 19 },
+  statLabel: { fontSize: 11, color: C.inkSoft, marginTop: 2, fontWeight: "600" },
+  listSectionTitle: { fontSize: 15, fontWeight: "700", color: C.ink, marginBottom: 12, letterSpacing: -0.2 },
+
+  listContainer: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 4 },
+  card: {
+    backgroundColor: C.card, borderRadius: 22, padding: 18, marginBottom: 14,
+    ...Platform.select({ ios: { shadowColor: "#0F172A", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 16 }, android: { elevation: 2 } }),
+  },
+  cardTopRow: { flexDirection: "row", alignItems: "center" },
+  avatar: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  avatarText: { fontSize: 20, fontWeight: "800" },
+  customerName: { fontSize: 18, fontWeight: "800", color: C.ink, letterSpacing: -0.3, textTransform: "capitalize" },
+  phoneRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
+  customerPhone: { fontSize: 13.5, color: C.inkSoft, fontWeight: "600", letterSpacing: 0.3 },
+  callBtn: {
+    width: 42, height: 42, borderRadius: 21, backgroundColor: C.green, alignItems: "center", justifyContent: "center",
+    ...Platform.select({ ios: { shadowColor: C.green, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }, android: { elevation: 3 } }),
+  },
+
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 16, marginBottom: 10 },
+  sectionLabel: { fontSize: 11, fontWeight: "700", color: C.inkMuted, letterSpacing: 1.1 },
+  countBubble: { marginLeft: 2, minWidth: 20, height: 20, paddingHorizontal: 6, borderRadius: 10, backgroundColor: C.primarySoft, alignItems: "center", justifyContent: "center" },
+  countBubbleText: { color: C.primary, fontSize: 11, fontWeight: "800" },
+  badgesContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  badge: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 99 },
+  badgeText: { fontSize: 12.5, fontWeight: "700" },
+
+  addressContainer: { marginTop: 14, backgroundColor: C.addressBg, borderRadius: 14, padding: 12, flexDirection: "row", alignItems: "center", gap: 12 },
+  addressIconWrap: { width: 34, height: 34, borderRadius: 11, backgroundColor: C.primarySoft, alignItems: "center", justifyContent: "center" },
+  addressLabel: { fontSize: 11, fontWeight: "700", color: C.inkMuted, letterSpacing: 0.5, marginBottom: 2 },
+  addressValue: { fontSize: 14, color: C.ink, fontWeight: "600", lineHeight: 18 },
+
+  centerContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 40, minHeight: 320 },
+  loadingText: { marginTop: 12, color: C.inkSoft, fontSize: 14, fontWeight: "500" },
+  errorIconBox: { width: 52, height: 52, borderRadius: 26, backgroundColor: C.redSoft, justifyContent: "center", alignItems: "center", marginBottom: 12 },
+  errorTitle: { fontSize: 15, fontWeight: "700", color: C.ink, marginBottom: 4 },
+  errorText: { color: C.inkSoft, fontSize: 13.5, textAlign: "center", lineHeight: 20, marginBottom: 10 },
+  emptyIconBox: { width: 60, height: 60, borderRadius: 30, backgroundColor: C.primarySoft, justifyContent: "center", alignItems: "center", marginBottom: 12 },
+  emptyTitle: { fontSize: 15, fontWeight: "700", color: C.ink, marginBottom: 4 },
+  emptyText: { color: C.inkMuted, fontSize: 14, fontWeight: "500", textAlign: "center" },
 });

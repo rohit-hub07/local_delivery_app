@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import {
   Text,
   View,
@@ -9,14 +9,12 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
-  Animated,
-  Pressable,
-  Platform,
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useProductStore } from '../../context/ProductContext'
+import { Feather } from '@expo/vector-icons'
+import { useProductStore } from '../../context/vendorContext/ProductContext'
 
 // ---------------------------------------------------------------------------
 // Design tokens — 8dp spacing scale + a small, consistent color palette.
@@ -25,74 +23,65 @@ import { useProductStore } from '../../context/ProductContext'
 const SPACING = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 40 }
 
 const COLORS = {
-  background: '#F7F8FA',
-  surface: '#FFFFFF',
-  border: '#E7E9EC',
-  primary: '#3366FF',
-  primaryPressed: '#274FCC',
-  danger: '#E5484D',
-  dangerSurface: '#FDECEC',
-  dangerPressed: '#C93F42',
-  textPrimary: '#151824',
-  textSecondary: '#6B7280',
-  textTertiary: '#9CA3AF',
-  overlay: 'rgba(15, 17, 26, 0.45)',
+  background: '#FFFFFF',
+  surface: '#FAFAF8',
+  surfaceAlt: '#F1EFE8',
+  border: '#EDEBE3',
+  primary: '#2F6FED',
+  primarySurface: '#E6F1FB',
+  primaryText: '#0C447C',
+  danger: '#A32D2D',
+  dangerSurface: '#FCEBEB',
+  textPrimary: '#1A1A18',
+  textSecondary: '#5F5E5A',
+  textTertiary: '#9A9990',
+  overlay: 'rgba(20, 20, 18, 0.55)',
   white: '#FFFFFF',
 }
 
-const RADIUS = { sm: 8, md: 14, lg: 20, pill: 999 }
+const RADIUS = { sm: 10, md: 16, lg: 20, pill: 999 }
 
-const ProductCard = ({ item, index, onDelete }: any) => {
-  const anim = useRef(new Animated.Value(0)).current
-  const pressScale = useRef(new Animated.Value(1)).current
+const PRODUCT_COLORS = [
+  { bg: '#E1F5EE', text: '#085041' },
+  { bg: '#FAECE7', text: '#712B13' },
+  { bg: '#E6F1FB', text: '#0C447C' },
+  { bg: '#FBEAF0', text: '#72243E' },
+  { bg: '#FAEEDA', text: '#633806' },
+]
 
-  useEffect(() => {
-    Animated.timing(anim, {
-      toValue: 1,
-      duration: 280,
-      delay: Math.min(index, 8) * 35,
-      useNativeDriver: true,
-    }).start()
-  }, [anim, index])
+const getProductColor = (id: string) => {
+  const sum = id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)
+  return PRODUCT_COLORS[sum % PRODUCT_COLORS.length]
+}
 
-  const handlePressIn = () => {
-    Animated.spring(pressScale, { toValue: 0.97, useNativeDriver: true, speed: 40, bounciness: 0 }).start()
-  }
-  const handlePressOut = () => {
-    Animated.spring(pressScale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 0 }).start()
-  }
+const ProductCard = ({ item, onDelete }: any) => {
+  const color = getProductColor(item.id)
 
   return (
-    <Animated.View
-      style={{
-        opacity: anim,
-        transform: [
-          { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) },
-          { scale: pressScale },
-        ],
-      }}
-    >
-      <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut} style={styles.productCard}>
-        <View style={styles.productInfo}>
-          <Text style={styles.productTitle} numberOfLines={1}>
-            {item.productName}
-          </Text>
-          <Text style={styles.productDesc} numberOfLines={2}>
-            {item.description}
-          </Text>
-        </View>
+    <View style={styles.productCard}>
+      <View style={[styles.productIcon, { backgroundColor: color.bg }]}>
+        <Feather name="package" size={20} color={color.text} />
+      </View>
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={`Delete ${item.productName}`}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.deleteButton}
-          onPress={() => onDelete(item.id)}
-        >
-          <Text style={styles.deleteButtonText}>Delete</Text>
-        </TouchableOpacity>
-      </Pressable>
-    </Animated.View>
+      <View style={styles.productInfo}>
+        <Text style={styles.productTitle} numberOfLines={1}>
+          {item.productName}
+        </Text>
+        <Text style={styles.productDesc} numberOfLines={2}>
+          {item.description}
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={`Delete ${item.productName}`}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        style={styles.deleteButton}
+        onPress={() => onDelete(item.id)}
+      >
+        <Feather name="trash-2" size={17} color={COLORS.danger} />
+      </TouchableOpacity>
+    </View>
   )
 }
 
@@ -115,9 +104,6 @@ export const MyProductsScreen = () => {
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
-  // FAB press animation
-  const fabScale = useRef(new Animated.Value(1)).current
-
   const loadProducts = useCallback(async () => {
     setLoadError(null)
     try {
@@ -130,10 +116,10 @@ export const MyProductsScreen = () => {
   // Initial data pull on component mount
   useEffect(() => {
     let mounted = true
-    ;(async () => {
-      await loadProducts()
-      if (mounted) setIsInitialLoading(false)
-    })()
+      ; (async () => {
+        await loadProducts()
+        if (mounted) setIsInitialLoading(false)
+      })()
     return () => {
       mounted = false
     }
@@ -177,13 +163,6 @@ export const MyProductsScreen = () => {
     [removeProduct]
   )
 
-  const handleFabPressIn = () => {
-    Animated.spring(fabScale, { toValue: 0.92, useNativeDriver: true, speed: 40, bounciness: 0 }).start()
-  }
-  const handleFabPressOut = () => {
-    Animated.spring(fabScale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 8 }).start()
-  }
-
   // Reserve room at the bottom of the list so the FAB never sits on top of
   // the last card, and respect the device's safe-area inset.
   const fabBottomOffset = insets.bottom + SPACING.lg
@@ -203,7 +182,7 @@ export const MyProductsScreen = () => {
       return (
         <View style={styles.centerState}>
           <View style={styles.errorIconCircle}>
-            <Text style={styles.errorIconText}>!</Text>
+            <Feather name="alert-circle" size={24} color={COLORS.danger} />
           </View>
           <Text style={styles.centerStateTitle}>Couldn't load products</Text>
           <Text style={styles.centerStateText}>{loadError}</Text>
@@ -227,7 +206,7 @@ export const MyProductsScreen = () => {
         ListEmptyComponent={
           <View style={styles.centerState}>
             <View style={styles.emptyIconCircle}>
-              <Text style={styles.emptyIconText}>+</Text>
+              <Feather name="inbox" size={26} color={COLORS.primary} />
             </View>
             <Text style={styles.centerStateTitle}>No products yet</Text>
             <Text style={styles.centerStateText}>
@@ -243,9 +222,7 @@ export const MyProductsScreen = () => {
             tintColor={COLORS.primary}
           />
         }
-        renderItem={({ item, index }) => (
-          <ProductCard item={item} index={index} onDelete={handleDelete} />
-        )}
+        renderItem={({ item }) => <ProductCard item={item} onDelete={handleDelete} />}
       />
     )
   }
@@ -254,37 +231,31 @@ export const MyProductsScreen = () => {
     <View style={[styles.container, { paddingTop: insets.top + SPACING.md }]}>
       {/* Header */}
       <View style={styles.header}>
+        <Text style={styles.headerTitle}>My products</Text>
         {memoizedProducts.length > 0 && (
-          <Text style={styles.headerSubtitle}>
-            {memoizedProducts.length} {memoizedProducts.length === 1 ? 'item' : 'items'}
-          </Text>
+          <View style={styles.headerBadge}>
+            <Text style={styles.headerBadgeText}>{memoizedProducts.length}</Text>
+          </View>
         )}
       </View>
 
       {renderContent()}
 
       {/* Floating Action Button — anchored above safe area, clear of the list */}
-      <Animated.View
-        style={[
-          styles.fabWrapper,
-          { bottom: fabBottomOffset, transform: [{ scale: fabScale }] },
-        ]}
-      >
+      <View style={[styles.fabWrapper, { bottom: fabBottomOffset }]}>
         <TouchableOpacity
-          activeOpacity={0.9}
+          activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="Add new product"
           style={styles.floatingButton}
-          onPressIn={handleFabPressIn}
-          onPressOut={handleFabPressOut}
           onPress={() => {
             setErrorMessage(null)
             setIsModalOpen(true)
           }}
         >
-          <Text style={styles.floatingButtonText}>+</Text>
+          <Feather name="plus" size={26} color={COLORS.white} />
         </TouchableOpacity>
-      </Animated.View>
+      </View>
 
       {/* Add Product Modal */}
       <Modal
@@ -298,13 +269,14 @@ export const MyProductsScreen = () => {
             <TouchableWithoutFeedback>
               <View style={[styles.modalContent, { paddingBottom: insets.bottom + SPACING.md }]}>
                 <View style={styles.modalHandle} />
-                <Text style={styles.modalTitle}>Add New Product</Text>
+                <Text style={styles.modalTitle}>Add new product</Text>
                 <Text style={styles.modalSubtitle}>
                   Fill in the details below to add it to your catalog.
                 </Text>
 
                 {errorMessage && (
                   <View style={styles.errorBanner}>
+                    <Feather name="alert-circle" size={15} color={COLORS.danger} />
                     <Text style={styles.errorText}>{errorMessage}</Text>
                   </View>
                 )}
@@ -348,7 +320,7 @@ export const MyProductsScreen = () => {
                     {isSubmitting ? (
                       <ActivityIndicator color={COLORS.white} size="small" />
                     ) : (
-                      <Text style={styles.submitBtnText}>Add Product</Text>
+                      <Text style={styles.submitBtnText}>Add product</Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -371,21 +343,28 @@ const styles = StyleSheet.create({
   // Header
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: SPACING.md,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '700',
     color: COLORS.textPrimary,
     letterSpacing: -0.4,
   },
-  headerSubtitle: {
+  headerBadge: {
+    backgroundColor: COLORS.primarySurface,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 32,
+    alignItems: 'center',
+  },
+  headerBadgeText: {
+    color: COLORS.primaryText,
+    fontWeight: '700',
     fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
-    marginBottom: 4,
   },
 
   // List
@@ -419,19 +398,12 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   emptyIconCircle: {
-    width: 64,
-    height: 64,
+    width: 60,
+    height: 60,
     borderRadius: RADIUS.pill,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: COLORS.primarySurface,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  emptyIconText: {
-    fontSize: 28,
-    fontWeight: '300',
-    color: COLORS.primary,
   },
   errorIconCircle: {
     width: 56,
@@ -440,11 +412,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.dangerSurface,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  errorIconText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.danger,
   },
   retryButton: {
     marginTop: SPACING.lg,
@@ -471,11 +438,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
-    shadowColor: '#0F111A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+  },
+  productIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: SPACING.sm + 4,
   },
   productInfo: {
     flex: 1,
@@ -494,28 +464,18 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   deleteButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: COLORS.dangerSurface,
-    paddingHorizontal: SPACING.sm + 4,
-    minHeight: 44,
-    minWidth: 44,
-    borderRadius: RADIUS.sm,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  deleteButtonText: {
-    color: COLORS.danger,
-    fontWeight: '600',
-    fontSize: 13,
   },
 
   // FAB
   fabWrapper: {
     position: 'absolute',
     right: SPACING.lg,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
   },
   floatingButton: {
     backgroundColor: COLORS.primary,
@@ -524,13 +484,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 6,
-  },
-  floatingButtonText: {
-    color: COLORS.white,
-    fontSize: 30,
-    fontWeight: '300',
-    marginTop: -2,
+    elevation: 4,
   },
 
   // Modal
@@ -540,7 +494,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.background,
     width: '100%',
     borderTopLeftRadius: RADIUS.lg,
     borderTopRightRadius: RADIUS.lg,
@@ -568,6 +522,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: COLORS.dangerSurface,
     padding: SPACING.sm + 2,
     borderRadius: RADIUS.sm,
@@ -577,6 +534,7 @@ const styles = StyleSheet.create({
     color: COLORS.danger,
     fontSize: 13.5,
     fontWeight: '500',
+    flexShrink: 1,
   },
   inputLabel: {
     fontSize: 12.5,
@@ -590,7 +548,7 @@ const styles = StyleSheet.create({
   inputField: {
     borderWidth: 1,
     borderColor: COLORS.border,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.surfaceAlt,
     borderRadius: RADIUS.sm,
     paddingHorizontal: SPACING.md,
     paddingVertical: 12,
@@ -619,9 +577,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cancelBtn: {
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: COLORS.surfaceAlt,
   },
   cancelBtnText: {
     color: COLORS.textSecondary,

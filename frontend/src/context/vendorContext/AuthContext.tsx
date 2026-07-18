@@ -2,7 +2,7 @@
 import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { axiosInstance } from "../api/axios"
+import { axiosInstance } from "../../api/axios"
 import { useVendorContextStore } from "./VendorContext"
 
 export type LoginTypes = {

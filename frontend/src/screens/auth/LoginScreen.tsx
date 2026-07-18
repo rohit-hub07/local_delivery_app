@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 // import { loginUser } from "../../api/auth.api";
-import { useAuthStore } from "../../context/AuthContext";
+import { useAuthStore } from "../../context/vendorContext/AuthContext";
 
 export default function LoginScreen({ navigation }: any) {
   const [phoneNumber, setPhoneNumber] = useState<string>("");

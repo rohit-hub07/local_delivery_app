@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { axiosInstance } from "../api/axios"
+import { axiosInstance } from "../../api/axios"
 
 type AddProductType = {
   productName: string,
@@ -13,7 +13,7 @@ interface ProductState {
   getAllProducts: () => Promise<void>
 }
 
-interface VendorProductState{
+interface VendorProductState {
   id: string
   vendorId: string,
   productName: string
@@ -22,8 +22,8 @@ interface VendorProductState{
   updatedAt: string
 }
 
-interface AllProductResponse{
-  message: string 
+interface AllProductResponse {
+  message: string
   success: boolean
   allProducts: VendorProductState[]
 }
