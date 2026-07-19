@@ -1,5 +1,7 @@
 import { create } from "zustand"
 import { axiosInstance } from "../../api/axios"
+import { useRequestStore } from "../vendorContext/RequestContext"
+import { useCustomerSubscriptionStore } from "../vendorContext/CustomerSubscriptionContex"
 
 interface VendorState {
   id: string
@@ -87,6 +89,7 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
         productId: credential.productId
       })
       await get().getAllRequestCustomer()
+      await useRequestStore.getState().getCustomerRequests()
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";
       throw new Error(message);
@@ -97,6 +100,7 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
       const res = await axiosInstance.get<RequestApiResponse>("/request/request-status")
       if(res.data.success){
         set({requestDetails: res.data.requestStatus})
+        await useRequestStore.getState().getCustomerRequests()
       }
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";
@@ -108,6 +112,7 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
       const res = await axiosInstance.delete(`/subscription/product/unsubscribe-product/${id}`)
       if(res.data.success){
         await get().getCustomerSubscribedProducts()
+        await useCustomerSubscriptionStore.getState().subscribedCustomers()
       }
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";
