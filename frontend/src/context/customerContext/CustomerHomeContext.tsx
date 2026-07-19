@@ -1,7 +1,6 @@
 import { create } from "zustand"
 import { axiosInstance } from "../../api/axios"
 import { io, Socket } from "socket.io-client"
-import { useCustomerSubscriptionStore } from "../vendorContext/CustomerSubscriptionContex"
 
 interface VendorState {
   id: string

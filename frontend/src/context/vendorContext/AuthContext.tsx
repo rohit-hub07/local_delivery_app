@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { axiosInstance } from "../../api/axios"
 import { useVendorContextStore } from "./VendorContext"
 import { useRequestStore } from "./RequestContext";
-import { useCustomerHomeContext } from "../customerContext/CustomerHomeContext";
+
 
 export type LoginTypes = {
   phone: string
