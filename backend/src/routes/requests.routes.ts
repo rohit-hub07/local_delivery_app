@@ -17,6 +17,6 @@ requestRouter.get("/all-requests",isAuthenticated,isCreatedVendorProfile,isVendo
 requestRouter.put("/update-request/:id", isAuthenticated,isCreatedVendorProfile,isVendor,vendorResponse)
 
 // list the status of request to the customer
-requestRouter.get("/request-status", isAuthenticated, customerRequestStatus)
+requestRouter.get("/request-status", isAuthenticated, isRoleCustomer,customerRequestStatus)
 
 export default requestRouter;

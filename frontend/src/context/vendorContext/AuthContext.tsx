@@ -112,6 +112,7 @@ export const useAuthStore = create<AuthState>()(
             // await CookieManager.clearAll(true)
             useVendorContextStore.getState().resetVendorProfile()
             set({ user: null })
+            useRequestStore.getState().disconnectSocket()
             return res.data
           }
         } catch (error: any) {

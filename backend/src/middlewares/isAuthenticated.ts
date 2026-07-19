@@ -26,13 +26,13 @@ interface CustomJwt {
 
 export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
   const token = req.cookies?.token
-  console.log("token: ", token)
+  // console.log(" token: ", token)
   if (!token) {
     return res.status(401).json({ message: "No token" });
   }
   const decode = jwt.verify(token, process.env.JWT_SECRET as string) as CustomJwt
 
-  console.log(`decode value: ${decode.id}`);
+  // console.log(`decode value: ${decode.id}`);
   // return decode.id;
 
   const user = await db.user.findUnique({

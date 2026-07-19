@@ -87,7 +87,9 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
 
     socket.on("vendor_update_response",(updatedRequest: Request ) =>{
       set((state) =>({
-        requestDetails: [updatedRequest, ...state.requestDetails]
+        requestDetails: state.requestDetails.map((request) =>
+          request.id == updatedRequest.id ? updatedRequest: request
+        )
       }))
     })
     set({ socket });
@@ -134,7 +136,6 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
       const res = await axiosInstance.delete(`/subscription/product/unsubscribe-product/${id}`)
       if (res.data.success) {
         await get().getCustomerSubscribedProducts()
-        await useCustomerSubscriptionStore.getState().subscribedCustomers()
       }
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";
