@@ -31,7 +31,7 @@ export const customerRequest = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Product doesn't exist!", success: false })
     }
     const user = req.user
-    if(!user){
+    if (!user) {
       return res.status(401).json({
         message: "Unauthorize",
         success: false
@@ -62,6 +62,13 @@ export const customerRequest = async (req: Request, res: Response) => {
         start_date: start_date,
         end_date: end_date,
         type: type
+      },
+      include: {
+        vendorCustomers: {
+          select: {
+            user: true
+          }
+        }
       }
     })
     if (!newRequest) {
@@ -70,6 +77,11 @@ export const customerRequest = async (req: Request, res: Response) => {
         success: false
       })
     }
+
+    if (product.vendorId) {
+      req.io.to(product.vendorId).emit("new_request_created", newRequest);
+    }
+
     return res.status(201).json({
       message: 'Request added successfully!',
       success: true,
@@ -87,7 +99,7 @@ export const customerRequest = async (req: Request, res: Response) => {
 export const getCustomerRequests = async (req: Request, res: Response) => {
   try {
     const vendorId = req.vendor.id;
-    if(!vendorId){
+    if (!vendorId) {
       return res.status(401).json({
         message: "Vendor doesn't exist!",
         success: false
@@ -99,9 +111,9 @@ export const getCustomerRequests = async (req: Request, res: Response) => {
           vendorId: vendorId,
         }
       },
-      include:{
-        vendorCustomers:{
-          select:{
+      include: {
+        vendorCustomers: {
+          select: {
             user: true
           }
         }
@@ -139,7 +151,20 @@ export const vendorResponse = async (req: Request, res: Response) => {
       })
     }
 
-    const request = await db.requests.findUnique({ where: { id: requestId } })
+    const request = await db.requests.findUnique({
+      where: {
+        id: requestId
+      },
+      include: {
+        vendorCustomers: {
+          select: {
+            user: true
+          }
+        }
+      }
+    })
+
+
 
     if (!request) {
       return res.status(404).json({
@@ -147,6 +172,9 @@ export const vendorResponse = async (req: Request, res: Response) => {
         success: false,
       })
     }
+
+    console.log("request after update: ", request.vendorCustomers.user.id)
+
     const requestData = RequestsSchema.omit({
       id: true,
       createdAt: true,
@@ -170,8 +198,6 @@ export const vendorResponse = async (req: Request, res: Response) => {
     }
 
     const { status } = validateBody.data
-
-    // update the request
     const updatedRequest = await db.requests.update({
       where: { id: requestId },
       data: {
@@ -185,6 +211,14 @@ export const vendorResponse = async (req: Request, res: Response) => {
         success: false
       })
     }
+    // find user to pass it in socket
+    // const user = await db.requests
+    // update the request
+    const userId = request.vendorCustomers.user.id
+    if (userId) {
+      req.io.to(userId).emit("vendor_update_response", updatedRequest)
+    }
+
     return res.status(200).json({
       message: "Updated request successfully!",
       success: true,
@@ -202,7 +236,7 @@ export const vendorResponse = async (req: Request, res: Response) => {
 export const customerRequestStatus = async (req: Request, res: Response) => {
   try {
     const user = req.user
-    if(!user){
+    if (!user) {
       return res.status(401).json({
         message: "Unauthorize",
         success: false

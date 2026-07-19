@@ -3,11 +3,12 @@ import { isAuthenticated } from "../middlewares/isAuthenticated.js";
 import { customerRequest, customerRequestStatus, getCustomerRequests, vendorResponse } from "../controllers/request.controllers.js";
 import { isCreatedVendorProfile } from "../middlewares/isCreatedVendorProfile.js";
 import { isVendor } from "../middlewares/isVendor.js";
+import { isRoleCustomer } from "../middlewares/isRoleCustomer.js";
 
 const requestRouter = express.Router()
 
 // allow customer to request vendor
-requestRouter.post("/new-request", isAuthenticated, customerRequest)
+requestRouter.post("/new-request", isAuthenticated, isRoleCustomer,customerRequest)
 
 // list all the requests of customers to the vendor
 requestRouter.get("/all-requests",isAuthenticated,isCreatedVendorProfile,isVendor, getCustomerRequests)

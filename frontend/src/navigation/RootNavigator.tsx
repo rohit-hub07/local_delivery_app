@@ -6,6 +6,7 @@ import CustomerTabNavigator from "./CustomerNavigator";
 import VendorTabNavigator from "./VendorNavigator";
 import VendorSetUpScreen from "../screens/vendor/VendorSetUpScreen";
 import { useVendorContextStore } from "../context/vendorContext/VendorContext";
+import { useCustomerHomeContext } from "../context/customerContext/CustomerHomeContext";
 
 export default function RootNavigator() {
   const user = useAuthStore((state) => state.user);
@@ -13,6 +14,7 @@ export default function RootNavigator() {
   // Renamed this selector to match your store's check function
   const checkVendorProfileStatus = useVendorContextStore((state) => state.isCreatedVendorProfile);
   const resetVendorProfile = useVendorContextStore((state) => state.resetVendorProfile);
+  
 
   // Loading state to prevent rendering the wrong navigator before the API responds
   const [isLoading, setIsLoading] = useState(true);
@@ -29,6 +31,9 @@ export default function RootNavigator() {
 
       if (user.role !== "VENDOR") {
         resetVendorProfile();
+        console.log("----------------------")
+        console.log("userId: ",user.id)
+        useCustomerHomeContext.getState().initCustomerSocket(user.id)
         setIsLoading(false);
         return;
       }

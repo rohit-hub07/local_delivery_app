@@ -53,7 +53,7 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
       message: "User not found",
     })
   }
-  console.log("user inside of isAuthenticated: ", user)
+  // console.log("user inside of isAuthenticated: ", user)
 
   req.user = user
   return next()

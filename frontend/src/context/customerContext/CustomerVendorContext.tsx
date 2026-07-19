@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { AxiosInstance } from "axios"
+import {io, Socket} from "socket.io-client"
 import { axiosInstance } from "../../api/axios"
 import { useCustomerHomeContext } from "./CustomerHomeContext"
 
@@ -51,7 +51,7 @@ interface VendorProductApiResponse {
   vendorProducts: VendorProductsTypes[]
 }
 
-export const useCustomerVendorStore = create<CustomerVendorState>()((set) => ({
+export const useCustomerVendorStore = create<CustomerVendorState>()((set,get) => ({
   vendorProducts: [],
   vendorProfiles: [],
   getAllVendorProducts: async (vendorId: string) => {

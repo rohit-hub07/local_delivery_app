@@ -4,6 +4,8 @@ import { persist, createJSONStorage } from "zustand/middleware"
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { axiosInstance } from "../../api/axios"
 import { useVendorContextStore } from "./VendorContext"
+import { useRequestStore } from "./RequestContext";
+import { useCustomerHomeContext } from "../customerContext/CustomerHomeContext";
 
 export type LoginTypes = {
   phone: string
@@ -35,6 +37,7 @@ interface AuthApiResponse{
 }
 
 interface AuthState {
+  // customerUserId: string | null,
   user: User | null,
   authUser: () => Promise<any>
   login: (credentials: LoginTypes) => Promise<any>
@@ -45,6 +48,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
+      // customerUserId: null,
       user: null,
       authUser: async () => {
         try {
@@ -118,6 +122,7 @@ export const useAuthStore = create<AuthState>()(
         } finally {
           await AsyncStorage.removeItem("auth-storage");
           useVendorContextStore.getState().resetVendorProfile()
+          useRequestStore.getState().disconnectSocket()
           set({ user: null });
         }
       }

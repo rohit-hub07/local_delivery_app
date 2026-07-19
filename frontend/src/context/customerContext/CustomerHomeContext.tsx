@@ -1,6 +1,6 @@
 import { create } from "zustand"
 import { axiosInstance } from "../../api/axios"
-import { useRequestStore } from "../vendorContext/RequestContext"
+import { io, Socket } from "socket.io-client"
 import { useCustomerSubscriptionStore } from "../vendorContext/CustomerSubscriptionContex"
 
 interface VendorState {
@@ -36,7 +36,7 @@ interface RequestType {
 
 
 
-interface Request{
+interface Request {
   id: string
   vendorCustomerId: string
   productId: string
@@ -50,13 +50,15 @@ interface Request{
   updatedAt: string
 }
 
-interface RequestApiResponse{
+interface RequestApiResponse {
   message: string
   success: boolean
   requestStatus: Request[]
 }
 
 interface CustomerHomeState {
+  socket: Socket | null,
+  initCustomerSocket: (userId: string) => Promise<void>
   getCustomerSubscribedProducts: () => Promise<void>,
   customerRequest: (credential: RequestType) => Promise<void>,
   getAllRequestCustomer: () => Promise<void>,
@@ -66,8 +68,30 @@ interface CustomerHomeState {
 }
 
 export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => ({
+  socket: null,
   requestDetails: [],
   subcribedProducts: [],
+  initCustomerSocket: async (userId: string) => {
+    if (get().socket) return
+    const socket = io(process.env.EXPO_PUBLIC_BACKEND_URL, {
+      transports: ["websocket"],
+      autoConnect: true
+    })
+
+    // connect to backend socket
+    socket.on("connect",() =>{
+      socket.emit("join_room",userId)
+    })
+
+    socket.on("connect_error", (err) => console.log("Socket error: ", err.message))
+
+    socket.on("vendor_update_response",(updatedRequest: Request ) =>{
+      set((state) =>({
+        requestDetails: [updatedRequest, ...state.requestDetails]
+      }))
+    })
+    set({ socket });
+  },
   getCustomerSubscribedProducts: async () => {
     try {
       const res = await axiosInstance.get<subscribeProductApiresponse>("/subscription/get/subscribed-product")
@@ -89,28 +113,26 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
         productId: credential.productId
       })
       await get().getAllRequestCustomer()
-      await useRequestStore.getState().getCustomerRequests()
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";
       throw new Error(message);
     }
   },
-  getAllRequestCustomer: async() =>{
+  getAllRequestCustomer: async () => {
     try {
       const res = await axiosInstance.get<RequestApiResponse>("/request/request-status")
-      if(res.data.success){
-        set({requestDetails: res.data.requestStatus})
-        await useRequestStore.getState().getCustomerRequests()
+      if (res.data.success) {
+        set({ requestDetails: res.data.requestStatus })
       }
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";
       throw new Error(message);
     }
   },
-  unsubcribeProduct: async(id: string) =>{
+  unsubcribeProduct: async (id: string) => {
     try {
       const res = await axiosInstance.delete(`/subscription/product/unsubscribe-product/${id}`)
-      if(res.data.success){
+      if (res.data.success) {
         await get().getCustomerSubscribedProducts()
         await useCustomerSubscriptionStore.getState().subscribedCustomers()
       }

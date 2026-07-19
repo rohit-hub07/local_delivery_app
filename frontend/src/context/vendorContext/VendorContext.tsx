@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { axiosInstance } from "../../api/axios";
+import { useRequestStore } from "./RequestContext";
 
 type VenorProfileTypes = {
   businessName: string
@@ -46,6 +47,7 @@ export const useVendorContextStore = create<VendorState>()((set) => ({
           hasVendorProfile: true,
           vendorAccount: res.data.vendorProfile
         })
+        useRequestStore.getState().initVendorSocket(res.data.vendorProfile.id)
       }
       return false
     } catch (error: any) {
