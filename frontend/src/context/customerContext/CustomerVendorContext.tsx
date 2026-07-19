@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import { AxiosInstance } from "axios"
 import { axiosInstance } from "../../api/axios"
+import { useCustomerHomeContext } from "./CustomerHomeContext"
 
 // one api to fetch vendor profile
 
@@ -38,8 +39,9 @@ interface VendorProfileApiResponse {
 interface CustomerVendorState {
   vendorProducts: VendorProductsTypes[]
   vendorProfiles: VendorProfileState[]
-  getAllVendorProducts: () => Promise<void>
+  getAllVendorProducts: (vendorId: string) => Promise<void>
   getAllVendorProfile: () => Promise<void>
+  subscribeProduct: (id: string) => Promise<void>
   clearVendorProducts: () => void;
 }
 
@@ -52,9 +54,9 @@ interface VendorProductApiResponse {
 export const useCustomerVendorStore = create<CustomerVendorState>()((set) => ({
   vendorProducts: [],
   vendorProfiles: [],
-  getAllVendorProducts: async () => {
+  getAllVendorProducts: async (vendorId: string) => {
     try {
-      const res = await axiosInstance.get<VendorProductApiResponse>("/product/vendor-products");
+      const res = await axiosInstance.get<VendorProductApiResponse>(`/product/vendor-products/${vendorId}`);
       if (res.data.success) {
         set({ vendorProducts: res.data.vendorProducts })
       }
@@ -74,5 +76,16 @@ export const useCustomerVendorStore = create<CustomerVendorState>()((set) => ({
       throw new Error(message);
     }
   },
-  clearVendorProducts: () => set({ vendorProducts: [] })
+  clearVendorProducts: () => set({ vendorProducts: [] }),
+  subscribeProduct: async(id: string) =>{
+    try {
+      const res = await axiosInstance.post(`/subscription/product/add/${id}`)
+      if(res.data.success){
+        await useCustomerHomeContext.getState().getCustomerSubscribedProducts()
+      }
+    } catch (error: any) {
+      const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";
+      throw new Error(message);
+    }
+  }
 }))

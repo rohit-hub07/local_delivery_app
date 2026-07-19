@@ -58,6 +58,7 @@ interface CustomerHomeState {
   getCustomerSubscribedProducts: () => Promise<void>,
   customerRequest: (credential: RequestType) => Promise<void>,
   getAllRequestCustomer: () => Promise<void>,
+  unsubcribeProduct: (id: string) => Promise<void>,
   subcribedProducts: SubscribeProductState[],
   requestDetails: Request[]
 }
@@ -96,6 +97,17 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
       const res = await axiosInstance.get<RequestApiResponse>("/request/request-status")
       if(res.data.success){
         set({requestDetails: res.data.requestStatus})
+      }
+    } catch (error: any) {
+      const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";
+      throw new Error(message);
+    }
+  },
+  unsubcribeProduct: async(id: string) =>{
+    try {
+      const res = await axiosInstance.delete(`/subscription/product/unsubscribe-product/${id}`)
+      if(res.data.success){
+        await get().getCustomerSubscribedProducts()
       }
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";

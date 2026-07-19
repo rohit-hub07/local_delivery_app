@@ -18,7 +18,7 @@ productRouter.get("/all-products",isAuthenticated,isRoleVendor,isVendor, getAllP
 // get product by id
 productRouter.get("/vendor/product/:id", isAuthenticated, getProductById)
 
-// show all the vendor products to vendor customer
-productRouter.get("/vendor-products", isAuthenticated, isRoleCustomer,showProductsToAddedCustomer)
+// show all the vendor products to vendor customer using vendor id
+productRouter.get("/vendor-products/:vendorId", isAuthenticated, isRoleCustomer,showProductsToAddedCustomer)
 
 export default productRouter;

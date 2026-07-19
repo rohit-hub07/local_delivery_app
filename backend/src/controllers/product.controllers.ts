@@ -165,15 +165,10 @@ export const showProductsToAddedCustomer = async(req: Request, res: Response) =>
         success: false
       })
     }
+    const vendorId = req.params.vendorId as string
     const vendorProducts = await db.product.findMany({
       where:{
-        vendor:{
-          vendorcustomers:{
-            some:{
-              customerPhone: user.phone
-            }
-          }
-        }
+        vendorId
       },
       include:{
         vendor: true

@@ -143,7 +143,8 @@ export const loginController = async (req: Request, res: Response) => {
         id: user.id,
         phone: user.phone,
         name: user.name,
-        role: user.role
+        role: user.role,
+        address: user.address
       }
     })
   } catch (error) {

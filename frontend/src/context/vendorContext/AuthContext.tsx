@@ -20,9 +20,22 @@ export enum RoleTypes {
   CUSTOMER = "CUSTOMER"
 }
 
+type User ={
+  id: string,
+  name: string,
+  role: RoleTypes,
+  phone: string,
+  address: string,
+}
+
+interface AuthApiResponse{
+  message: string,
+  success: boolean,
+  user: User
+}
 
 interface AuthState {
-  user: any | null,
+  user: User | null,
   authUser: () => Promise<any>
   login: (credentials: LoginTypes) => Promise<any>
   signup: (credentials: SignupTypes) => Promise<any>
@@ -35,7 +48,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       authUser: async () => {
         try {
-          const res = await axiosInstance.get("/auth/me")
+          const res = await axiosInstance.get<AuthApiResponse>("/auth/me")
           if (res.data.user) {
             useVendorContextStore.getState().resetVendorProfile()
             set({ user: res.data.user })
