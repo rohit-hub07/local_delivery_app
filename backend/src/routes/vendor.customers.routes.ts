@@ -3,6 +3,7 @@ import { isAuthenticated } from "../middlewares/isAuthenticated.js";
 import { isVendor } from "../middlewares/isVendor.js";
 import { addCustomers, getAllVendorCustomer, removeCustomer } from "../controllers/vendorCustomers.controllers.js";
 import { isCreatedVendorProfile } from "../middlewares/isCreatedVendorProfile.js";
+import { isRoleCustomer } from "../middlewares/isRoleCustomer.js";
 
 const vendorCustomers = express.Router();
 

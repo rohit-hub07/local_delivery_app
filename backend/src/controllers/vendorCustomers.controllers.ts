@@ -12,6 +12,7 @@ export const addCustomers = async (req: Request, res: Response) => {
       createdAt: true,
       updatedAt: true,
       vendorId: true,
+      customerId: true
     })
 
     const validateBody = customer.safeParse(req.body);
@@ -26,8 +27,8 @@ export const addCustomers = async (req: Request, res: Response) => {
     const { customerPhone } = validateBody.data
     const user = await db.user.findUnique({ where: { phone: customerPhone } })
 
-    // allow vendor to add only customers 
-    if (!user || user.role == "VENDOR") {
+
+    if (!user) {
       return res.status(404).json({
         message: "Customer doesn't exist!",
         success: false,
@@ -42,14 +43,15 @@ export const addCustomers = async (req: Request, res: Response) => {
       })
     }
     // check if the user is already a customer of the vendor or not
-    const isCustomer = await db.vendorCustomers.findFirst({
+    const isCustomer = await db.vendorCustomers.findUnique({
       where: {
-        user: {
-        id: user.id
+        vendorId_customerId:{
+          vendorId: vendorId,
+          customerId: user.id
         }
       }
     })
-    if(isCustomer){
+    if (isCustomer) {
       return res.status(400).json({
         message: "Customer already exists!",
         success: false
@@ -59,7 +61,8 @@ export const addCustomers = async (req: Request, res: Response) => {
     const newCustomer = await db.vendorCustomers.create({
       data: {
         vendorId,
-        customerPhone
+        customerPhone,
+        customerId: user.id
       }
     })
 
@@ -105,9 +108,9 @@ export const removeCustomer = async (req: Request, res: Response) => {
     await db.vendorCustomers.delete(
       {
         where: {
-          vendorId_customerPhone: {
+          vendorId_customerId: {
             vendorId: vendorId,
-            customerPhone: customer.phone
+            customerId: customer.id
           }
         }
       }
@@ -140,7 +143,7 @@ export const getAllVendorCustomer = async (req: Request, res: Response) => {
       where: {
         vendorId: vendor.id
       },
-      include:{
+      include: {
         user: true
       }
     })

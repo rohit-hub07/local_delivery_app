@@ -66,13 +66,13 @@ export const signupController = async (req: Request, res: Response) => {
       })
     }
 
-    const token = jwt.sign({ id: newUser.id }, process.env.JWT_SECRET as string, { expiresIn: '7d' })
+    const token = jwt.sign({ id: newUser.id }, process.env.JWT_SECRET as string, { expiresIn: '60d' })
 
     res.cookie("token", token, {
       httpOnly: true,
       sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      expires: new Date(Date.now() +60 * 24 * 60 * 60 * 1000)
     })
 
 
@@ -126,13 +126,14 @@ export const loginController = async (req: Request, res: Response) => {
         success: false,
       })
     }
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, { expiresIn: '60d' });
 
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      expires: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
+      // maxAge: 
     })
 
     return res.status(200).json({
@@ -160,6 +161,7 @@ export const logoutController = async (req: Request, res: Response) => {
       secure: process.env.NODE_ENV === 'production',
       sameSite: "strict",
       path: "/",
+      expires: new Date(0)
     })
 
     res.status(200).json({

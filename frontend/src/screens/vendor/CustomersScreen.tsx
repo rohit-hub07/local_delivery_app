@@ -69,26 +69,26 @@ const CustomerScreen = () => {
     }
 
     // 1. Remove spaces, hyphens, brackets, and periods
-    let normalizedNumber = phone.trim().replace(/[\s\-().]/g, "");
+    // let normalizedNumber = phone.trim().replace(/[\s\-().]/g, "");
 
     // 2. Automatically strip "+91" or "91" if present at the start
-    if (normalizedNumber.startsWith("+91")) {
-      normalizedNumber = normalizedNumber.slice(3);
-    } else if (normalizedNumber.startsWith("91") && normalizedNumber.length > 10) {
-      normalizedNumber = normalizedNumber.slice(2);
-    }
+    // if (normalizedNumber.startsWith("+91")) {
+    //   normalizedNumber = normalizedNumber.slice(3);
+    // } else if (normalizedNumber.startsWith("91") && normalizedNumber.length > 10) {
+    //   normalizedNumber = normalizedNumber.slice(2);
+    // }
 
     // 3. Validate that it is exactly a 10-digit Indian phone number
-    const phoneRegex = /^[6-9]\d{9}$/;
+    // const phoneRegex = /^[6-9]\d{9}$/;
 
-    if (!phoneRegex.test(normalizedNumber)) {
-      Alert.alert("Invalid Phone Number", "Please enter a valid 10-digit number.");
-      return;
-    }
+    // if (!phoneRegex.test(normalizedNumber)) {
+    //   Alert.alert("Invalid Phone Number", "Please enter a valid 10-digit number.");
+    //   return;
+    // }
 
     try {
       setAddCustomerError("");
-      const res = await addCustomer(normalizedNumber);
+      const res = await addCustomer(phone);
 
       if (res?.success) {
         setPhone("");

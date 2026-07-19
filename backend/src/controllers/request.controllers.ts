@@ -40,9 +40,9 @@ export const customerRequest = async (req: Request, res: Response) => {
     // find vendor customer id
     const vendorCustomer = await db.vendorCustomers.findUnique({
       where: {
-        vendorId_customerPhone: {
+        vendorId_customerId: {
           vendorId: product.vendorId,
-          customerPhone: user.phone
+          customerId: user.id
         }
       }
     })
@@ -211,7 +211,7 @@ export const customerRequestStatus = async (req: Request, res: Response) => {
     const requestStatus = await db.requests.findMany({
       where: {
         vendorCustomers: {
-          customerPhone: user.phone
+          customerId: user.id
         }
       }
     })

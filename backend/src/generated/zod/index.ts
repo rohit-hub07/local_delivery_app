@@ -18,7 +18,7 @@ export const VendorScalarFieldEnumSchema = z.enum(['id','userId','businessName',
 
 export const ProductScalarFieldEnumSchema = z.enum(['id','vendorId','productName','description','createdAt','updatedAt']);
 
-export const VendorCustomersScalarFieldEnumSchema = z.enum(['id','vendorId','customerPhone','createdAt','updatedAt']);
+export const VendorCustomersScalarFieldEnumSchema = z.enum(['id','vendorId','customerId','customerPhone','createdAt','updatedAt']);
 
 export const CustomerSubscriptionScalarFieldEnumSchema = z.enum(['id','vendorCustomerId','productId','createdAt','updatedAt']);
 
@@ -95,7 +95,8 @@ export type Product = z.infer<typeof ProductSchema>
 export const VendorCustomersSchema = z.object({
   id: z.uuid(),
   vendorId: z.string(),
-  customerPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerId: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerPhone: z.string(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
@@ -277,6 +278,7 @@ export const VendorCustomersCountOutputTypeSelectSchema: z.ZodType<Prisma.Vendor
 export const VendorCustomersSelectSchema: z.ZodType<Prisma.VendorCustomersSelect> = z.object({
   id: z.boolean().optional(),
   vendorId: z.boolean().optional(),
+  customerId: z.boolean().optional(),
   customerPhone: z.boolean().optional(),
   createdAt: z.boolean().optional(),
   updatedAt: z.boolean().optional(),
@@ -577,6 +579,7 @@ export const VendorCustomersWhereInputSchema: z.ZodType<Prisma.VendorCustomersWh
   NOT: z.union([ z.lazy(() => VendorCustomersWhereInputSchema), z.lazy(() => VendorCustomersWhereInputSchema).array() ]).optional(),
   id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   vendorId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  customerId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   customerPhone: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
@@ -589,6 +592,7 @@ export const VendorCustomersWhereInputSchema: z.ZodType<Prisma.VendorCustomersWh
 export const VendorCustomersOrderByWithRelationInputSchema: z.ZodType<Prisma.VendorCustomersOrderByWithRelationInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
   vendorId: z.lazy(() => SortOrderSchema).optional(),
+  customerId: z.lazy(() => SortOrderSchema).optional(),
   customerPhone: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
@@ -601,23 +605,24 @@ export const VendorCustomersOrderByWithRelationInputSchema: z.ZodType<Prisma.Ven
 export const VendorCustomersWhereUniqueInputSchema: z.ZodType<Prisma.VendorCustomersWhereUniqueInput> = z.union([
   z.object({
     id: z.uuid(),
-    vendorId_customerPhone: z.lazy(() => VendorCustomersVendorIdCustomerPhoneCompoundUniqueInputSchema),
+    vendorId_customerId: z.lazy(() => VendorCustomersVendorIdCustomerIdCompoundUniqueInputSchema),
   }),
   z.object({
     id: z.uuid(),
   }),
   z.object({
-    vendorId_customerPhone: z.lazy(() => VendorCustomersVendorIdCustomerPhoneCompoundUniqueInputSchema),
+    vendorId_customerId: z.lazy(() => VendorCustomersVendorIdCustomerIdCompoundUniqueInputSchema),
   }),
 ])
 .and(z.strictObject({
   id: z.uuid().optional(),
-  vendorId_customerPhone: z.lazy(() => VendorCustomersVendorIdCustomerPhoneCompoundUniqueInputSchema).optional(),
+  vendorId_customerId: z.lazy(() => VendorCustomersVendorIdCustomerIdCompoundUniqueInputSchema).optional(),
   AND: z.union([ z.lazy(() => VendorCustomersWhereInputSchema), z.lazy(() => VendorCustomersWhereInputSchema).array() ]).optional(),
   OR: z.lazy(() => VendorCustomersWhereInputSchema).array().optional(),
   NOT: z.union([ z.lazy(() => VendorCustomersWhereInputSchema), z.lazy(() => VendorCustomersWhereInputSchema).array() ]).optional(),
   vendorId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
-  customerPhone: z.union([ z.lazy(() => StringFilterSchema), z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }) ]).optional(),
+  customerId: z.union([ z.lazy(() => StringFilterSchema), z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }) ]).optional(),
+  customerPhone: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   vendor: z.union([ z.lazy(() => VendorScalarRelationFilterSchema), z.lazy(() => VendorWhereInputSchema) ]).optional(),
@@ -629,6 +634,7 @@ export const VendorCustomersWhereUniqueInputSchema: z.ZodType<Prisma.VendorCusto
 export const VendorCustomersOrderByWithAggregationInputSchema: z.ZodType<Prisma.VendorCustomersOrderByWithAggregationInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
   vendorId: z.lazy(() => SortOrderSchema).optional(),
+  customerId: z.lazy(() => SortOrderSchema).optional(),
   customerPhone: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
@@ -643,6 +649,7 @@ export const VendorCustomersScalarWhereWithAggregatesInputSchema: z.ZodType<Pris
   NOT: z.union([ z.lazy(() => VendorCustomersScalarWhereWithAggregatesInputSchema), z.lazy(() => VendorCustomersScalarWhereWithAggregatesInputSchema).array() ]).optional(),
   id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   vendorId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
+  customerId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   customerPhone: z.union([ z.lazy(() => StringWithAggregatesFilterSchema), z.string() ]).optional(),
   createdAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema), z.coerce.date() ]).optional(),
@@ -1030,6 +1037,7 @@ export const ProductUncheckedUpdateManyInputSchema: z.ZodType<Prisma.ProductUnch
 
 export const VendorCustomersCreateInputSchema: z.ZodType<Prisma.VendorCustomersCreateInput> = z.strictObject({
   id: z.uuid().optional(),
+  customerPhone: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   vendor: z.lazy(() => VendorCreateNestedOneWithoutVendorcustomersInputSchema),
@@ -1041,7 +1049,8 @@ export const VendorCustomersCreateInputSchema: z.ZodType<Prisma.VendorCustomersC
 export const VendorCustomersUncheckedCreateInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedCreateInput> = z.strictObject({
   id: z.uuid().optional(),
   vendorId: z.string(),
-  customerPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerId: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerPhone: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   subscription: z.lazy(() => CustomerSubscriptionUncheckedCreateNestedManyWithoutVendorCustomersInputSchema).optional(),
@@ -1050,6 +1059,7 @@ export const VendorCustomersUncheckedCreateInputSchema: z.ZodType<Prisma.VendorC
 
 export const VendorCustomersUpdateInputSchema: z.ZodType<Prisma.VendorCustomersUpdateInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   vendor: z.lazy(() => VendorUpdateOneRequiredWithoutVendorcustomersNestedInputSchema).optional(),
@@ -1061,7 +1071,8 @@ export const VendorCustomersUpdateInputSchema: z.ZodType<Prisma.VendorCustomersU
 export const VendorCustomersUncheckedUpdateInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   vendorId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  customerPhone: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerId: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   subscription: z.lazy(() => CustomerSubscriptionUncheckedUpdateManyWithoutVendorCustomersNestedInputSchema).optional(),
@@ -1071,13 +1082,15 @@ export const VendorCustomersUncheckedUpdateInputSchema: z.ZodType<Prisma.VendorC
 export const VendorCustomersCreateManyInputSchema: z.ZodType<Prisma.VendorCustomersCreateManyInput> = z.strictObject({
   id: z.uuid().optional(),
   vendorId: z.string(),
-  customerPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerId: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerPhone: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
 });
 
 export const VendorCustomersUpdateManyMutationInputSchema: z.ZodType<Prisma.VendorCustomersUpdateManyMutationInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
@@ -1085,7 +1098,8 @@ export const VendorCustomersUpdateManyMutationInputSchema: z.ZodType<Prisma.Vend
 export const VendorCustomersUncheckedUpdateManyInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateManyInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   vendorId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  customerPhone: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerId: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
@@ -1454,14 +1468,15 @@ export const ProductMinOrderByAggregateInputSchema: z.ZodType<Prisma.ProductMinO
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
 });
 
-export const VendorCustomersVendorIdCustomerPhoneCompoundUniqueInputSchema: z.ZodType<Prisma.VendorCustomersVendorIdCustomerPhoneCompoundUniqueInput> = z.strictObject({
+export const VendorCustomersVendorIdCustomerIdCompoundUniqueInputSchema: z.ZodType<Prisma.VendorCustomersVendorIdCustomerIdCompoundUniqueInput> = z.strictObject({
   vendorId: z.string(),
-  customerPhone: z.string(),
+  customerId: z.string(),
 });
 
 export const VendorCustomersCountOrderByAggregateInputSchema: z.ZodType<Prisma.VendorCustomersCountOrderByAggregateInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
   vendorId: z.lazy(() => SortOrderSchema).optional(),
+  customerId: z.lazy(() => SortOrderSchema).optional(),
   customerPhone: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
@@ -1470,6 +1485,7 @@ export const VendorCustomersCountOrderByAggregateInputSchema: z.ZodType<Prisma.V
 export const VendorCustomersMaxOrderByAggregateInputSchema: z.ZodType<Prisma.VendorCustomersMaxOrderByAggregateInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
   vendorId: z.lazy(() => SortOrderSchema).optional(),
+  customerId: z.lazy(() => SortOrderSchema).optional(),
   customerPhone: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
@@ -1478,6 +1494,7 @@ export const VendorCustomersMaxOrderByAggregateInputSchema: z.ZodType<Prisma.Ven
 export const VendorCustomersMinOrderByAggregateInputSchema: z.ZodType<Prisma.VendorCustomersMinOrderByAggregateInput> = z.strictObject({
   id: z.lazy(() => SortOrderSchema).optional(),
   vendorId: z.lazy(() => SortOrderSchema).optional(),
+  customerId: z.lazy(() => SortOrderSchema).optional(),
   customerPhone: z.lazy(() => SortOrderSchema).optional(),
   createdAt: z.lazy(() => SortOrderSchema).optional(),
   updatedAt: z.lazy(() => SortOrderSchema).optional(),
@@ -2233,6 +2250,7 @@ export const VendorCreateOrConnectWithoutUserInputSchema: z.ZodType<Prisma.Vendo
 
 export const VendorCustomersCreateWithoutUserInputSchema: z.ZodType<Prisma.VendorCustomersCreateWithoutUserInput> = z.strictObject({
   id: z.uuid().optional(),
+  customerPhone: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   vendor: z.lazy(() => VendorCreateNestedOneWithoutVendorcustomersInputSchema),
@@ -2243,6 +2261,7 @@ export const VendorCustomersCreateWithoutUserInputSchema: z.ZodType<Prisma.Vendo
 export const VendorCustomersUncheckedCreateWithoutUserInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedCreateWithoutUserInput> = z.strictObject({
   id: z.uuid().optional(),
   vendorId: z.string(),
+  customerPhone: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   subscription: z.lazy(() => CustomerSubscriptionUncheckedCreateNestedManyWithoutVendorCustomersInputSchema).optional(),
@@ -2312,6 +2331,7 @@ export const VendorCustomersScalarWhereInputSchema: z.ZodType<Prisma.VendorCusto
   NOT: z.union([ z.lazy(() => VendorCustomersScalarWhereInputSchema), z.lazy(() => VendorCustomersScalarWhereInputSchema).array() ]).optional(),
   id: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   vendorId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
+  customerId: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   customerPhone: z.union([ z.lazy(() => StringFilterSchema), z.string() ]).optional(),
   createdAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
   updatedAt: z.union([ z.lazy(() => DateTimeFilterSchema), z.coerce.date() ]).optional(),
@@ -2376,6 +2396,7 @@ export const ProductCreateManyVendorInputEnvelopeSchema: z.ZodType<Prisma.Produc
 
 export const VendorCustomersCreateWithoutVendorInputSchema: z.ZodType<Prisma.VendorCustomersCreateWithoutVendorInput> = z.strictObject({
   id: z.uuid().optional(),
+  customerPhone: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   user: z.lazy(() => UserCreateNestedOneWithoutVendorcustomersInputSchema),
@@ -2385,7 +2406,8 @@ export const VendorCustomersCreateWithoutVendorInputSchema: z.ZodType<Prisma.Ven
 
 export const VendorCustomersUncheckedCreateWithoutVendorInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedCreateWithoutVendorInput> = z.strictObject({
   id: z.uuid().optional(),
-  customerPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerId: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerPhone: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   subscription: z.lazy(() => CustomerSubscriptionUncheckedCreateNestedManyWithoutVendorCustomersInputSchema).optional(),
@@ -2865,6 +2887,7 @@ export const RequestsUpdateManyWithWhereWithoutVendorCustomersInputSchema: z.Zod
 
 export const VendorCustomersCreateWithoutSubscriptionInputSchema: z.ZodType<Prisma.VendorCustomersCreateWithoutSubscriptionInput> = z.strictObject({
   id: z.uuid().optional(),
+  customerPhone: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   vendor: z.lazy(() => VendorCreateNestedOneWithoutVendorcustomersInputSchema),
@@ -2875,7 +2898,8 @@ export const VendorCustomersCreateWithoutSubscriptionInputSchema: z.ZodType<Pris
 export const VendorCustomersUncheckedCreateWithoutSubscriptionInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedCreateWithoutSubscriptionInput> = z.strictObject({
   id: z.uuid().optional(),
   vendorId: z.string(),
-  customerPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerId: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerPhone: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   request: z.lazy(() => RequestsUncheckedCreateNestedManyWithoutVendorCustomersInputSchema).optional(),
@@ -2924,6 +2948,7 @@ export const VendorCustomersUpdateToOneWithWhereWithoutSubscriptionInputSchema: 
 
 export const VendorCustomersUpdateWithoutSubscriptionInputSchema: z.ZodType<Prisma.VendorCustomersUpdateWithoutSubscriptionInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   vendor: z.lazy(() => VendorUpdateOneRequiredWithoutVendorcustomersNestedInputSchema).optional(),
@@ -2934,7 +2959,8 @@ export const VendorCustomersUpdateWithoutSubscriptionInputSchema: z.ZodType<Pris
 export const VendorCustomersUncheckedUpdateWithoutSubscriptionInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateWithoutSubscriptionInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   vendorId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  customerPhone: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerId: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   request: z.lazy(() => RequestsUncheckedUpdateManyWithoutVendorCustomersNestedInputSchema).optional(),
@@ -2973,6 +2999,7 @@ export const ProductUncheckedUpdateWithoutSubscriptionInputSchema: z.ZodType<Pri
 
 export const VendorCustomersCreateWithoutRequestInputSchema: z.ZodType<Prisma.VendorCustomersCreateWithoutRequestInput> = z.strictObject({
   id: z.uuid().optional(),
+  customerPhone: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   vendor: z.lazy(() => VendorCreateNestedOneWithoutVendorcustomersInputSchema),
@@ -2983,7 +3010,8 @@ export const VendorCustomersCreateWithoutRequestInputSchema: z.ZodType<Prisma.Ve
 export const VendorCustomersUncheckedCreateWithoutRequestInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedCreateWithoutRequestInput> = z.strictObject({
   id: z.uuid().optional(),
   vendorId: z.string(),
-  customerPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerId: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerPhone: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
   subscription: z.lazy(() => CustomerSubscriptionUncheckedCreateNestedManyWithoutVendorCustomersInputSchema).optional(),
@@ -3032,6 +3060,7 @@ export const VendorCustomersUpdateToOneWithWhereWithoutRequestInputSchema: z.Zod
 
 export const VendorCustomersUpdateWithoutRequestInputSchema: z.ZodType<Prisma.VendorCustomersUpdateWithoutRequestInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   vendor: z.lazy(() => VendorUpdateOneRequiredWithoutVendorcustomersNestedInputSchema).optional(),
@@ -3042,7 +3071,8 @@ export const VendorCustomersUpdateWithoutRequestInputSchema: z.ZodType<Prisma.Ve
 export const VendorCustomersUncheckedUpdateWithoutRequestInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateWithoutRequestInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   vendorId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  customerPhone: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerId: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   subscription: z.lazy(() => CustomerSubscriptionUncheckedUpdateManyWithoutVendorCustomersNestedInputSchema).optional(),
@@ -3082,12 +3112,14 @@ export const ProductUncheckedUpdateWithoutRequestInputSchema: z.ZodType<Prisma.P
 export const VendorCustomersCreateManyUserInputSchema: z.ZodType<Prisma.VendorCustomersCreateManyUserInput> = z.strictObject({
   id: z.uuid().optional(),
   vendorId: z.string(),
+  customerPhone: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
 });
 
 export const VendorCustomersUpdateWithoutUserInputSchema: z.ZodType<Prisma.VendorCustomersUpdateWithoutUserInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   vendor: z.lazy(() => VendorUpdateOneRequiredWithoutVendorcustomersNestedInputSchema).optional(),
@@ -3098,6 +3130,7 @@ export const VendorCustomersUpdateWithoutUserInputSchema: z.ZodType<Prisma.Vendo
 export const VendorCustomersUncheckedUpdateWithoutUserInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateWithoutUserInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   vendorId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   subscription: z.lazy(() => CustomerSubscriptionUncheckedUpdateManyWithoutVendorCustomersNestedInputSchema).optional(),
@@ -3107,6 +3140,7 @@ export const VendorCustomersUncheckedUpdateWithoutUserInputSchema: z.ZodType<Pri
 export const VendorCustomersUncheckedUpdateManyWithoutUserInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateManyWithoutUserInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   vendorId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });
@@ -3121,7 +3155,8 @@ export const ProductCreateManyVendorInputSchema: z.ZodType<Prisma.ProductCreateM
 
 export const VendorCustomersCreateManyVendorInputSchema: z.ZodType<Prisma.VendorCustomersCreateManyVendorInput> = z.strictObject({
   id: z.uuid().optional(),
-  customerPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerId: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),
+  customerPhone: z.string(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
 });
@@ -3156,6 +3191,7 @@ export const ProductUncheckedUpdateManyWithoutVendorInputSchema: z.ZodType<Prism
 
 export const VendorCustomersUpdateWithoutVendorInputSchema: z.ZodType<Prisma.VendorCustomersUpdateWithoutVendorInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   user: z.lazy(() => UserUpdateOneRequiredWithoutVendorcustomersNestedInputSchema).optional(),
@@ -3165,7 +3201,8 @@ export const VendorCustomersUpdateWithoutVendorInputSchema: z.ZodType<Prisma.Ven
 
 export const VendorCustomersUncheckedUpdateWithoutVendorInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateWithoutVendorInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  customerPhone: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerId: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   subscription: z.lazy(() => CustomerSubscriptionUncheckedUpdateManyWithoutVendorCustomersNestedInputSchema).optional(),
@@ -3174,7 +3211,8 @@ export const VendorCustomersUncheckedUpdateWithoutVendorInputSchema: z.ZodType<P
 
 export const VendorCustomersUncheckedUpdateManyWithoutVendorInputSchema: z.ZodType<Prisma.VendorCustomersUncheckedUpdateManyWithoutVendorInput> = z.strictObject({
   id: z.union([ z.uuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
-  customerPhone: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerId: z.union([ z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  customerPhone: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
   createdAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
   updatedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 });

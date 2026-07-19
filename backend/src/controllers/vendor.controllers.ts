@@ -110,3 +110,38 @@ export const vendorProfile = async(req: Request, res: Response) =>{
     })
   }
 }
+
+// show all the vendor profile to the added customers
+export const getALlVendorProfile = async (req: Request, res: Response) => {
+  try {
+    const user = req.user
+    const allVendorProfile = await db.vendor.findMany({
+      where: {
+        vendorcustomers: {
+          some: {
+            customerId: user.id
+          }
+        }
+      }
+    })
+
+    if (!allVendorProfile) {
+      return res.status(404).json({
+        message: "No vendor profile available",
+        success: false
+      })
+    }
+
+    return res.status(200).json({
+      message: "Vendor profiles fetched successfully!",
+      success: true,
+      allVendorProfile: allVendorProfile
+    })
+  } catch (error: any) {
+    console.log("Error fetching vendor profiles to the added customer: ", error.message)
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false
+    })
+  }
+}

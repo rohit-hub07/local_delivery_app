@@ -228,8 +228,7 @@ export default function HomeScreen() {
           ListEmptyComponent={
             <View style={styles.centerContainer}>
               <View style={styles.errorIconBox}><Feather name="alert-triangle" size={22} color={C.red} /></View>
-              <Text style={styles.errorTitle}>Something went wrong</Text>
-              <Text style={styles.errorText}>{activeError}</Text>
+              <Text style={styles.errorTitle}>{activeError}</Text>
               <Text style={styles.emptyText}>Pull down to retry connection.</Text>
             </View>
           }
