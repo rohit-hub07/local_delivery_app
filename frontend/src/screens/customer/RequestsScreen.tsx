@@ -1,15 +1,21 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  FlatList, 
-  ActivityIndicator, 
-  TouchableOpacity, 
-  RefreshControl 
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
+  RefreshControl
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCustomerHomeContext } from "../../context/customerContext/CustomerHomeContext";
+
+const TABS = [
+  { key: "PENDING" as const, label: "Waiting", icon: "🕓" },
+  { key: "APPROVED" as const, label: "Accepted", icon: "✅" },
+  { key: "REJECTED" as const, label: "Rejected", icon: "✕" },
+];
 
 export default function RequestsScreen() {
   const { requestDetails, getAllRequestCustomer } = useCustomerHomeContext();
@@ -60,26 +66,60 @@ export default function RequestsScreen() {
     return isNaN(date.getTime()) ? dateString : date.toLocaleDateString();
   };
 
+  // Small status pill shown on every card so it's clear at a glance, even outside its tab
+  const renderStatusPill = (status: string | undefined) => {
+    const normalized = status?.toUpperCase();
+    if (normalized === "APPROVED" || normalized === "ACCEPTED") {
+      return (
+        <View style={[styles.statusPill, styles.statusPillAccepted]}>
+          <Text style={styles.statusPillTextAccepted}>✅ Accepted</Text>
+        </View>
+      );
+    }
+    if (normalized === "REJECTED" || normalized === "DECLINED") {
+      return (
+        <View style={[styles.statusPill, styles.statusPillRejected]}>
+          <Text style={styles.statusPillTextRejected}>✕ Rejected</Text>
+        </View>
+      );
+    }
+    return (
+      <View style={[styles.statusPill, styles.statusPillPending]}>
+        <Text style={styles.statusPillTextPending}>🕓 Waiting</Text>
+      </View>
+    );
+  };
+
   // Render Item component for FlatList
   const renderRequestItem = ({ item }: { item: typeof requestDetails[0] }) => {
     return (
       <View style={styles.card}>
         <View style={styles.requestHeader}>
-          <Text style={styles.typeBadge}>{item.type?.toUpperCase() || "REQUEST"}</Text>
-          <Text style={styles.requestIdText}>ID: #{item.id?.substring(0, 8)}</Text>
+          <Text style={styles.typeBadge}>{item.type}</Text>
+          {renderStatusPill(item.status)}
         </View>
 
         <View style={styles.requestBody}>
-          <Text style={styles.messageText}>"{item.message}"</Text>
-          
+          {item.message ? (
+            <View style={styles.messageBox}>
+              <Text style={styles.messageText}>{item.message}</Text>
+            </View>
+          ) : null}
+
           <View style={styles.dateContainer}>
-            <Text style={styles.dateText}>📅 Start: {formatDate(item.start_date)}</Text>
-            <Text style={styles.dateText}>🏁 End: {formatDate(item.end_date)}</Text>
+            <View style={styles.dateBlock}>
+              <Text style={styles.dateLabel}>Start Date</Text>
+              <Text style={styles.dateText}>{formatDate(item.start_date)}</Text>
+            </View>
+            <View style={styles.dateBlock}>
+              <Text style={styles.dateLabel}>End Date</Text>
+              <Text style={styles.dateText}>{formatDate(item.end_date)}</Text>
+            </View>
           </View>
 
           {item.respondedAt && (
             <Text style={styles.respondedText}>
-              🔄 Responded: {formatDate(item.respondedAt)}
+              Vendor replied on {formatDate(item.respondedAt)}
             </Text>
           )}
         </View>
@@ -91,8 +131,8 @@ export default function RequestsScreen() {
   if (loading && requestDetails.length === 0) {
     return (
       <SafeAreaView style={[styles.center, styles.container]}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Fetching Requests...</Text>
+        <ActivityIndicator size="large" color="#2563EB" />
+        <Text style={styles.loadingText}>Loading your requests…</Text>
       </SafeAreaView>
     );
   }
@@ -101,9 +141,10 @@ export default function RequestsScreen() {
   if (error && requestDetails.length === 0) {
     return (
       <SafeAreaView style={[styles.center, styles.container]}>
-        <Text style={styles.errorText}>⚠️ {error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchRequests}>
-          <Text style={styles.retryText}>Retry</Text>
+        <Text style={styles.errorIcon}>⚠️</Text>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={fetchRequests} activeOpacity={0.85}>
+          <Text style={styles.retryText}>Try Again</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -111,17 +152,28 @@ export default function RequestsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Requests</Text>
+      </View>
+
       {/* Dynamic Tab Navigation Menu */}
       <View style={styles.tabBar}>
-        {(["PENDING", "APPROVED", "REJECTED"] as const).map((tab) => (
+        {TABS.map((tab) => (
           <TouchableOpacity
-            key={tab}
-            style={[styles.tab, activeTab === tab && styles.activeTab]}
-            onPress={() => setActiveTab(tab)}
+            key={tab.key}
+            style={[styles.tab, activeTab === tab.key && styles.activeTab]}
+            onPress={() => setActiveTab(tab.key)}
+            activeOpacity={0.8}
           >
-            <Text style={[styles.tabLabel, activeTab === tab && styles.activeTabLabel]}>
-              {tab} ({categorizedRequests[tab].length})
+            <Text style={styles.tabIcon}>{tab.icon}</Text>
+            <Text style={[styles.tabLabel, activeTab === tab.key && styles.activeTabLabel]}>
+              {tab.label}
             </Text>
+            <View style={[styles.tabCount, activeTab === tab.key && styles.activeTabCount]}>
+              <Text style={[styles.tabCountText, activeTab === tab.key && styles.activeTabCountText]}>
+                {categorizedRequests[tab.key].length}
+              </Text>
+            </View>
           </TouchableOpacity>
         ))}
       </View>
@@ -136,13 +188,16 @@ export default function RequestsScreen() {
           <RefreshControl
             refreshing={loading}
             onRefresh={fetchRequests}
-            colors={["#007AFF"]}
-            tintColor="#007AFF"
+            colors={["#2563EB"]}
+            tintColor="#2563EB"
           />
         }
         ListEmptyComponent={
           <View style={styles.center}>
-            <Text style={styles.emptyText}>No {activeTab.toLowerCase()} requests available.</Text>
+            <Text style={styles.emptyIcon}>📭</Text>
+            <Text style={styles.emptyText}>
+              No {activeTab === "PENDING" ? "waiting" : activeTab.toLowerCase()} requests right now.
+            </Text>
           </View>
         }
       />
@@ -153,129 +208,234 @@ export default function RequestsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#F4F6FB",
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 24,
   },
   loadingText: {
-    marginTop: 10,
-    color: "#666",
+    marginTop: 12,
+    color: "#475569",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  errorIcon: {
+    fontSize: 34,
+    marginBottom: 10,
   },
   errorText: {
     fontSize: 16,
-    color: "#D9534F",
+    color: "#DC2626",
     textAlign: "center",
-    marginBottom: 15,
+    marginBottom: 18,
+    fontWeight: "600",
+    lineHeight: 22,
   },
   retryButton: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 5,
+    backgroundColor: "#2563EB",
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 14,
   },
   retryText: {
     color: "#FFF",
-    fontWeight: "bold",
+    fontWeight: "800",
+    fontSize: 15,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: -0.5,
   },
   tabBar: {
     flexDirection: "row",
     backgroundColor: "#FFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5EA",
+    marginHorizontal: 20,
+    borderRadius: 16,
+    padding: 6,
+    marginBottom: 8,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
   },
   tab: {
     flex: 1,
-    paddingVertical: 15,
+    flexDirection: "row",
+    paddingVertical: 12,
     alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    gap: 5,
   },
   activeTab: {
-    borderBottomWidth: 3,
-    borderBottomColor: "#007AFF",
+    backgroundColor: "#DBEAFE",
+  },
+  tabIcon: {
+    fontSize: 13,
   },
   tabLabel: {
     fontSize: 13,
-    color: "#8E8E93",
-    fontWeight: "600",
-  },
-  activeTabLabel: {
-    color: "#007AFF",
+    color: "#64748B",
     fontWeight: "700",
   },
+  activeTabLabel: {
+    color: "#1D4ED8",
+    fontWeight: "800",
+  },
+  tabCount: {
+    backgroundColor: "#F1F5F9",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 5,
+  },
+  activeTabCount: {
+    backgroundColor: "#2563EB",
+  },
+  tabCountText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#64748B",
+  },
+  activeTabCountText: {
+    color: "#FFFFFF",
+  },
   listContainer: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 30,
   },
   card: {
     backgroundColor: "#FFF",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 20,
+    padding: 18,
     marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: "#EEF1F8",
   },
   requestHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: "#F2F2F7",
-    paddingBottom: 10,
-    marginBottom: 10,
-  },
-  requestIdText: {
-    fontSize: 12,
-    color: "#8E8E93",
-    fontFamily: "System",
+    borderBottomColor: "#F1F5F9",
+    paddingBottom: 12,
+    marginBottom: 12,
   },
   requestBody: {
-    marginTop: 4,
+    marginTop: 2,
   },
   typeBadge: {
     alignSelf: "flex-start",
-    backgroundColor: "#E5F1FF",
-    color: "#007AFF",
-    fontSize: 11,
-    fontWeight: "700",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    backgroundColor: "#DBEAFE",
+    color: "#1D4ED8",
+    fontSize: 12,
+    fontWeight: "800",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     overflow: "hidden",
+  },
+  statusPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  statusPillPending: {
+    backgroundColor: "#FEF3C7",
+  },
+  statusPillAccepted: {
+    backgroundColor: "#DCFCE7",
+  },
+  statusPillRejected: {
+    backgroundColor: "#FEE2E2",
+  },
+  statusPillTextPending: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#B45309",
+  },
+  statusPillTextAccepted: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#15803D",
+  },
+  statusPillTextRejected: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#B91C1C",
+  },
+  messageBox: {
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+    marginBottom: 4,
   },
   messageText: {
     fontSize: 15,
-    color: "#2C2C2E",
-    fontStyle: "italic",
-    lineHeight: 20,
+    color: "#334155",
+    lineHeight: 21,
+    fontWeight: "500",
   },
   dateContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 12,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#F2F2F7",
+    gap: 12,
+    marginTop: 14,
+  },
+  dateBlock: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 10,
+    padding: 10,
+  },
+  dateLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#94A3B8",
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+    marginBottom: 3,
   },
   dateText: {
-    fontSize: 12,
-    color: "#636366",
+    fontSize: 14,
+    color: "#1E293B",
+    fontWeight: "700",
   },
   respondedText: {
     fontSize: 12,
-    color: "#8E8E93",
-    marginTop: 8,
+    color: "#94A3B8",
+    marginTop: 10,
     textAlign: "right",
-    fontWeight: "500",
+    fontWeight: "600",
+  },
+  emptyIcon: {
+    fontSize: 40,
+    marginBottom: 12,
   },
   emptyText: {
-    color: "#8E8E93",
-    fontSize: 15,
-    marginTop: 40,
+    color: "#64748B",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 20,
   },
 });

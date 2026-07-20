@@ -27,10 +27,16 @@ export const addCustomers = async (req: Request, res: Response) => {
     const { customerPhone } = validateBody.data
     const user = await db.user.findUnique({ where: { phone: customerPhone } })
 
-
     if (!user) {
       return res.status(404).json({
         message: "Customer doesn't exist!",
+        success: false,
+      })
+    }
+
+    if(user.role === "VENDOR"){
+      return res.status(400).json({
+        message: "You can not add vendor profile as your customer!",
         success: false,
       })
     }

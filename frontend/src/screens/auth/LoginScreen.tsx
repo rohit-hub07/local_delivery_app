@@ -19,7 +19,7 @@ export default function LoginScreen({ navigation }: any) {
   const { login } = useAuthStore()
   const handleLogin = async () => {
     if (!phoneNumber.trim()) {
-      Alert.alert("Error", "Please enter your phone number");
+      Alert.alert("Missing Number", "Please type your phone number to continue.");
       return;
     }
 
@@ -37,7 +37,7 @@ export default function LoginScreen({ navigation }: any) {
     const phoneRegex = /^[6-9]\d{9}$/;
 
     if (!phoneRegex.test(normalizedNumber)) {
-      Alert.alert("Invalid Phone Number", "Please enter a valid 10-digit number.");
+      Alert.alert("Check Your Number", "Please enter a correct 10-digit phone number.");
       return;
     }
 
@@ -49,7 +49,7 @@ export default function LoginScreen({ navigation }: any) {
       if (res.success || res) {
         Toast.show({
           type: "success",
-          text1: "Login successful",
+          text1: "Welcome! You're logged in",
           position: "top",
           visibilityTime: 2200,
         });
@@ -57,8 +57,8 @@ export default function LoginScreen({ navigation }: any) {
     } catch (error: any) {
       Toast.show({
         type: "error",
-        text1: "Login failed",
-        text2: error.message || "Something went wrong!",
+        text1: "Could Not Log In",
+        text2: error.message || "Something went wrong. Please try again.",
         position: "top",
         visibilityTime: 3000,
       });
@@ -70,30 +70,43 @@ export default function LoginScreen({ navigation }: any) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.formContainer}>
+        <View style={styles.iconCircle}>
+          <Text style={styles.iconText}>👋</Text>
+        </View>
+
         <Text style={styles.title}>Welcome Back</Text>
+        <Text style={styles.subtitle}>Enter your phone number to log in</Text>
 
         {/* Phone Number Input Field */}
-        <Text style={styles.label}>Phone Number</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your phone number"
-          placeholderTextColor="#999"
-          value={phoneNumber}
-          onChangeText={setPhoneNumber}
-          keyboardType="phone-pad"
-          editable={!loading}
-        />
+        <Text style={styles.label}>Your Phone Number</Text>
+        <View style={styles.inputRow}>
+          <View style={styles.countryCodeBox}>
+            <Text style={styles.countryCodeText}>🇮🇳 +91</Text>
+          </View>
+          <TextInput
+            style={styles.input}
+            placeholder="10-digit number"
+            placeholderTextColor="#94A3B8"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            keyboardType="phone-pad"
+            editable={!loading}
+            maxLength={15}
+          />
+        </View>
+        <Text style={styles.helperText}></Text>
 
         {/* Custom Login Button with Loader */}
         <TouchableOpacity
           style={[styles.primaryButton, loading && styles.disabledButton]}
           onPress={handleLogin}
           disabled={loading}
+          activeOpacity={0.85}
         >
           {loading ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Login</Text>
+            <Text style={styles.buttonText}>Log In</Text>
           )}
         </TouchableOpacity>
 
@@ -105,7 +118,7 @@ export default function LoginScreen({ navigation }: any) {
           activeOpacity={0.7}
         >
           <Text style={styles.linkText}>
-            Don't have an account? <Text style={styles.linkHighlight}>Sign up</Text>
+            New here? <Text style={styles.linkHighlight}>Create an account</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -116,71 +129,118 @@ export default function LoginScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F4F6FB",
   },
   formContainer: {
     flex: 1,
     padding: 24,
     justifyContent: "center",
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 32,
-    textAlign: "center",
-    color: "#111",
-    letterSpacing: -0.5,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 6,
-    color: "#444",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 16,
-    marginBottom: 20,
-    backgroundColor: "#f9f9f9",
-    color: "#000",
-  },
-  primaryButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 14,
-    borderRadius: 8,
+  iconCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: "#E7ECFB",
     alignItems: "center",
     justifyContent: "center",
-    height: 50,
-    marginTop: 10,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    alignSelf: "center",
+    marginBottom: 18,
+  },
+  iconText: {
+    fontSize: 34,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    marginBottom: 6,
+    textAlign: "center",
+    color: "#0F172A",
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#475569",
+    textAlign: "center",
+    marginBottom: 36,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 10,
+    color: "#1E293B",
+  },
+  inputRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  countryCodeBox: {
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    backgroundColor: "#F8FAFC",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  countryCodeText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
+    borderRadius: 14,
+    padding: 16,
+    fontSize: 18,
+    fontWeight: "600",
+    backgroundColor: "#F8FAFC",
+    color: "#0F172A",
+    letterSpacing: 0.5,
+  },
+  helperText: {
+    fontSize: 13,
+    color: "#94A3B8",
+    fontWeight: "600",
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  primaryButton: {
+    backgroundColor: "#2563EB",
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    height: 56,
+    shadowColor: "#2563EB",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
   disabledButton: {
-    backgroundColor: "#b3d7ff",
+    backgroundColor: "#93C5FD",
+    shadowOpacity: 0,
+    elevation: 0,
   },
   buttonText: {
     color: "#fff",
+    fontSize: 17,
+    fontWeight: "800",
+  },
+  linkContainer: {
+    marginTop: 28,
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  linkText: {
+    color: "#475569",
     fontSize: 16,
     fontWeight: "600",
   },
-  linkContainer: {
-    marginTop: 24,
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  linkText: {
-    color: "#666",
-    fontSize: 15,
-    fontWeight: "500",
-  },
   linkHighlight: {
-    color: "#007AFF",
-    fontWeight: "600",
+    color: "#2563EB",
+    fontWeight: "800",
   },
 });

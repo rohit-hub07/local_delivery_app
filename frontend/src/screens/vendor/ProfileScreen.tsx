@@ -25,10 +25,15 @@ const ProfileScreen = () => {
   const { logout } = useAuthStore();
 
   // Destructure vendorAccount from your store
-  const { vendorAccount } = useVendorContextStore();
+  const { vendorProfileDetails } = useVendorContextStore();
 
   // Extract vendorProfile based on your exact API response structure
-  const profile = vendorAccount;
+  const profile = vendorProfileDetails;
+
+  // const fetchVendorProfile = async() =>{
+  //   await vendorProfile()
+  // }
+
 
   // Get first letter of business name or default to 'V'
   const avatarLetter = profile?.businessName?.charAt(0).toUpperCase() || 'V';

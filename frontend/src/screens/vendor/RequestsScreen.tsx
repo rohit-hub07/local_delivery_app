@@ -1,16 +1,23 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  FlatList, 
-  ActivityIndicator, 
-  TouchableOpacity, 
-  RefreshControl, 
-  Alert
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
+  RefreshControl,
+  Alert,
+  Linking
 } from 'react-native';
 import {SafeAreaView} from "react-native-safe-area-context"
 import { useRequestStore, CustomerRequest, Status } from '../../context/vendorContext/RequestContext';
+
+const TABS = [
+  { key: 'PENDING' as const, label: 'New', icon: '🕓' },
+  { key: 'APPROVED' as const, label: 'Accepted', icon: '✅' },
+  { key: 'REJECTED' as const, label: 'Rejected', icon: '✕' },
+];
 
 const RequestsScreen = () => {
   const { customerRequests, getCustomerRequests, updateRequest } = useRequestStore();
@@ -47,6 +54,44 @@ const RequestsScreen = () => {
     }
   };
 
+  // Ask before accepting or rejecting so a mis-tap doesn't change a customer's request
+  const confirmAction = (id: string, targetStatus: Status, customerName: string) => {
+    const isAccepting = targetStatus === Status.ACCEPTED;
+    Alert.alert(
+      isAccepting ? "Accept This Request?" : "Reject This Request?",
+      isAccepting
+        ? `You will accept ${customerName}'s request.`
+        : `You will reject ${customerName}'s request. This cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: isAccepting ? "Yes, Accept" : "Yes, Reject",
+          style: isAccepting ? "default" : "destructive",
+          onPress: () => handleAction(id, targetStatus)
+        }
+      ]
+    );
+  };
+
+  const callCustomer = (phone: string) => {
+    const digits = (phone || "").replace(/\D/g, "");
+    if (!digits) {
+      Alert.alert("No Phone Number", "This customer hasn't shared a phone number.");
+      return;
+    }
+    Linking.canOpenURL(`tel:${digits}`)
+      .then((ok) => {
+        if (ok) {
+          Linking.openURL(`tel:${digits}`);
+        } else {
+          Alert.alert("Can't Call Right Now", "Your phone can't make this call right now.");
+        }
+      })
+      .catch(() => {
+        Alert.alert("Can't Call Right Now", "Something went wrong. Please try again.");
+      });
+  };
+
   const categorizedRequests = useMemo(() => {
     return {
       PENDING: customerRequests.filter(req => req.status === 'PENDING'),
@@ -63,46 +108,67 @@ const RequestsScreen = () => {
 
     return (
       <View style={styles.card}>
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>{user.name}</Text>
-          <Text style={styles.userPhone}>📞 {user.phone}</Text>
-          <Text style={styles.userAddress}>📍 {user.address}</Text>
+        <View style={styles.userRow}>
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarText}>{user.name?.charAt(0)?.toUpperCase() || "?"}</Text>
+          </View>
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{user.name}</Text>
+            <Text style={styles.userAddress}>📍 {user.address}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.callButton}
+            onPress={() => callCustomer(user.phone)}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.callButtonIcon}>📞</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.requestDetails}>
-          <Text style={styles.typeBadge}>{item.type.toUpperCase()}</Text>
-          <Text style={styles.messageText}>"{item.message}"</Text>
-          
+          <Text style={styles.typeBadge}>{item.type}</Text>
+          <View style={styles.messageBox}>
+            <Text style={styles.messageText}>{item.message}</Text>
+          </View>
+
           <View style={styles.dateContainer}>
-            <Text style={styles.dateText}>Start: {new Date(item.start_date).toLocaleDateString()}</Text>
-            <Text style={styles.dateText}>End: {new Date(item.end_date).toLocaleDateString()}</Text>
+            <View style={styles.dateBlock}>
+              <Text style={styles.dateLabel}>Start</Text>
+              <Text style={styles.dateText}>{new Date(item.start_date).toLocaleDateString()}</Text>
+            </View>
+            <View style={styles.dateBlock}>
+              <Text style={styles.dateLabel}>End</Text>
+              <Text style={styles.dateText}>{new Date(item.end_date).toLocaleDateString()}</Text>
+            </View>
           </View>
 
           {item.respondedAt && (
             <Text style={styles.respondedText}>
-              Responded: {new Date(item.respondedAt).toLocaleDateString()}
+              Answered on {new Date(item.respondedAt).toLocaleDateString()}
             </Text>
           )}
 
           {item.status === 'PENDING' && (
             <View style={styles.actionRow}>
               {isThisCardUpdating ? (
-                <ActivityIndicator size="small" color="#007AFF" style={styles.actionLoader} />
+                <ActivityIndicator size="small" color="#2563EB" style={styles.actionLoader} />
               ) : (
                 <>
-                  <TouchableOpacity 
-                    style={[styles.actionButton, styles.rejectButtonColor]} 
-                    onPress={() => handleAction(item.id, Status.REJECTED)}
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.rejectButtonColor]}
+                    onPress={() => confirmAction(item.id, Status.REJECTED, user.name)}
                     disabled={updatingId !== null}
+                    activeOpacity={0.8}
                   >
-                    <Text style={styles.actionButtonText}>Reject</Text>
+                    <Text style={styles.rejectButtonText}>Reject</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.actionButton, styles.acceptButtonColor]} 
-                    onPress={() => handleAction(item.id, Status.ACCEPTED)}
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.acceptButtonColor]}
+                    onPress={() => confirmAction(item.id, Status.ACCEPTED, user.name)}
                     disabled={updatingId !== null}
+                    activeOpacity={0.8}
                   >
-                    <Text style={styles.actionButtonText}>Accept</Text>
+                    <Text style={styles.acceptButtonText}>Accept</Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -118,8 +184,8 @@ const RequestsScreen = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Fetching Requests...</Text>
+          <ActivityIndicator size="large" color="#2563EB" />
+          <Text style={styles.loadingText}>Loading requests…</Text>
         </View>
       </SafeAreaView>
     );
@@ -129,9 +195,10 @@ const RequestsScreen = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.center}>
-          <Text style={styles.errorText}>⚠️ {error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchRequests}>
-            <Text style={styles.retryText}>Retry</Text>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchRequests} activeOpacity={0.85}>
+            <Text style={styles.retryText}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -140,17 +207,29 @@ const RequestsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Requests</Text>
+      </View>
+
       {/* Tab Navigation Menu */}
       <View style={styles.tabBar}>
-        {(['PENDING', 'APPROVED', 'REJECTED'] as const).map((tab) => (
+        {TABS.map((tab) => (
           <TouchableOpacity
-            key={tab}
-            style={[styles.tab, activeTab === tab && styles.activeTab]}
-            onPress={() => setActiveTab(tab)}
+            key={tab.key}
+            style={[styles.tab, activeTab === tab.key && styles.activeTab]}
+            onPress={() => setActiveTab(tab.key)}
+            activeOpacity={0.8}
           >
-            <Text style={[styles.tabLabel, activeTab === tab && styles.activeTabLabel]}>
-              {tab} ({categorizedRequests[tab].length})
+            <Text style={styles.tabIcon}>{tab.icon}</Text>
+            <Text style={[styles.tabLabel, activeTab === tab.key && styles.activeTabLabel]}>
+              {tab.label}
             </Text>
+            <View style={[styles.tabCount, activeTab === tab.key && styles.activeTabCount]}>
+              <Text style={[styles.tabCountText, activeTab === tab.key && styles.activeTabCountText]}>
+                {categorizedRequests[tab.key].length}
+              </Text>
+            </View>
           </TouchableOpacity>
         ))}
       </View>
@@ -165,13 +244,14 @@ const RequestsScreen = () => {
           <RefreshControl
             refreshing={loading}
             onRefresh={fetchRequests}
-            colors={['#007AFF']}
-            tintColor="#007AFF"
+            colors={['#2563EB']}
+            tintColor="#2563EB"
           />
         }
         ListEmptyComponent={
           <View style={styles.center}>
-            <Text style={styles.emptyText}>No {activeTab.toLowerCase()} requests available.</Text>
+            <Text style={styles.emptyIcon}>📭</Text>
+            <Text style={styles.emptyText}>No {activeTab === 'PENDING' ? 'new' : activeTab.toLowerCase()} requests right now.</Text>
           </View>
         }
       />
@@ -184,165 +264,284 @@ export default RequestsScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F4F6FB',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 24,
+    marginTop: 60,
   },
   loadingText: {
-    marginTop: 10,
-    color: '#666',
+    marginTop: 12,
+    color: '#475569',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  errorIcon: {
+    fontSize: 34,
+    marginBottom: 10,
   },
   errorText: {
     fontSize: 16,
-    color: '#D9534F',
+    color: '#DC2626',
     textAlign: 'center',
-    marginBottom: 15,
+    marginBottom: 18,
+    fontWeight: '600',
+    lineHeight: 22,
   },
   retryButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 5,
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 14,
   },
   retryText: {
     color: '#FFF',
-    fontWeight: 'bold',
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.5,
   },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    marginHorizontal: 20,
+    borderRadius: 16,
+    padding: 6,
+    marginBottom: 8,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
   },
   tab: {
     flex: 1,
-    paddingVertical: 15,
+    flexDirection: 'row',
+    paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    gap: 5,
   },
   activeTab: {
-    borderBottomWidth: 3,
-    borderBottomColor: '#007AFF',
+    backgroundColor: '#DBEAFE',
+  },
+  tabIcon: {
+    fontSize: 13,
   },
   tabLabel: {
-    fontSize: 10,
-    color: '#8E8E93',
-    fontWeight: '600',
-  },
-  activeTabLabel: {
-    color: '#007AFF',
+    fontSize: 13,
+    color: '#64748B',
     fontWeight: '700',
   },
+  activeTabLabel: {
+    color: '#1D4ED8',
+    fontWeight: '800',
+  },
+  tabCount: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  activeTabCount: {
+    backgroundColor: '#2563EB',
+  },
+  tabCountText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#64748B',
+  },
+  activeTabCountText: {
+    color: '#FFFFFF',
+  },
   listContainer: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 30,
   },
   card: {
     backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 20,
+    padding: 18,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: '#EEF1F8',
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    paddingBottom: 14,
+    marginBottom: 14,
+  },
+  avatarCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#2563EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 16,
   },
   userInfo: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F7',
-    paddingBottom: 10,
-    marginBottom: 10,
+    flex: 1,
   },
   userName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1C1C1E',
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#0F172A',
     textTransform: 'capitalize',
   },
-  userPhone: {
-    fontSize: 14,
-    color: '#3A3A3C',
-    marginTop: 4,
-  },
   userAddress: {
-    fontSize: 14,
-    color: '#8E8E93',
-    marginTop: 2,
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 3,
+  },
+  callButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#DCFCE7',
+    borderWidth: 1.5,
+    borderColor: '#BBF7D0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  callButtonIcon: {
+    fontSize: 17,
   },
   requestDetails: {
-    marginTop: 4,
+    marginTop: 2,
   },
   typeBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#E5F1FF',
-    color: '#007AFF',
-    fontSize: 11,
-    fontWeight: '700',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    backgroundColor: '#DBEAFE',
+    color: '#1D4ED8',
+    fontSize: 12,
+    fontWeight: '800',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: 10,
+  },
+  messageBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   messageText: {
     fontSize: 15,
-    color: '#2C2C2E',
-    fontStyle: 'italic',
-    lineHeight: 20,
+    color: '#334155',
+    lineHeight: 21,
+    fontWeight: '500',
   },
   dateContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F2F2F7',
+    gap: 12,
+    marginTop: 14,
+  },
+  dateBlock: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 10,
+  },
+  dateLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94A3B8',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    marginBottom: 3,
   },
   dateText: {
-    fontSize: 12,
-    color: '#636366',
+    fontSize: 14,
+    color: '#1E293B',
+    fontWeight: '700',
   },
   respondedText: {
     fontSize: 12,
-    color: '#8E8E93',
-    marginTop: 6,
+    color: '#94A3B8',
+    marginTop: 10,
+    fontWeight: '600',
     textAlign: 'right',
   },
+  emptyIcon: {
+    fontSize: 40,
+    marginBottom: 12,
+  },
   emptyText: {
-    color: '#8E8E93',
-    fontSize: 15,
-    marginTop: 40,
+    color: '#64748B',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   actionRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 14,
+    marginTop: 16,
     gap: 12,
   },
   actionButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    minWidth: 85,
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
     alignItems: 'center',
   },
   acceptButtonColor: {
-    backgroundColor: '#34C759',
+    backgroundColor: '#2563EB',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
   rejectButtonColor: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1.5,
+    borderColor: '#FECACA',
   },
-  actionButtonText: {
+  acceptButtonText: {
     color: '#FFF',
-    fontWeight: '600',
-    fontSize: 14,
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  rejectButtonText: {
+    color: '#DC2626',
+    fontWeight: '800',
+    fontSize: 15,
   },
   actionLoader: {
-    paddingVertical: 6,
-    paddingRight: 10,
+    paddingVertical: 10,
+    alignSelf: 'center',
   }
 });

@@ -12,13 +12,15 @@ interface VendorState {
   hasVendorProfile: boolean,
   vendorProfile: (credentials: VenorProfileTypes) => Promise<any>
   isCreatedVendorProfile: () => Promise<boolean>
-  resetVendorProfile: () => void
+  resetVendorProfile: () => void,
+  vendorProfileDetails: any | null
 }
 
 
 export const useVendorContextStore = create<VendorState>()((set) => ({
   vendorAccount: null,
   hasVendorProfile: false,
+  vendorProfileDetails: null,
   resetVendorProfile: () => set({ vendorAccount: null, hasVendorProfile: false }),
   vendorProfile: async (credentials: VenorProfileTypes) => {
     try {
@@ -33,7 +35,7 @@ export const useVendorContextStore = create<VendorState>()((set) => ({
       return res.data
 
     } catch (error: any) {
-      set({ vendorAccount: null }); // Reset state on error
+      set({ vendorAccount: null, vendorProfileDetails: null }); // Reset state on error
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Login failed";
       throw new Error(message);
     }
@@ -45,13 +47,14 @@ export const useVendorContextStore = create<VendorState>()((set) => ({
       if (res.data?.vendorProfile) {
         set({
           hasVendorProfile: true,
-          vendorAccount: res.data.vendorProfile
+          vendorAccount: res.data.vendorProfile,
+          vendorProfileDetails: res.data.vendorProfile
         })
         useRequestStore.getState().initVendorSocket(res.data.vendorProfile.id)
       }
       return false
     } catch (error: any) {
-      set({ hasVendorProfile: false, vendorAccount: null });
+      set({ hasVendorProfile: false, vendorAccount: null,vendorProfileDetails: null });
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Error while getting the vendor profile!";
       throw new Error(message);
     }
