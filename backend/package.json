@@ -21,7 +21,8 @@
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.22.0",
     "socket.io": "^4.8.3",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "zod-prisma-types": "^3.3.11"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
@@ -34,7 +35,6 @@
     "dotenv": "^17.4.2",
     "prisma": "^7.8.0",
     "tsx": "^4.23.0",
-    "typescript": "^7.0.2",
-    "zod-prisma-types": "^3.3.11"
+    "typescript": "^7.0.2"
   }
 }
