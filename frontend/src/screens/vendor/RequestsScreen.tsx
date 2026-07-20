@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#007AFF',
   },
   tabLabel: {
-    fontSize: 13,
+    fontSize: 10,
     color: '#8E8E93',
     fontWeight: '600',
   },

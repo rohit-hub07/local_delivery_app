@@ -16,6 +16,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker, { DateTimePickerChangeEvent } from "@react-native-community/datetimepicker";
 import { useCustomerHomeContext } from "../../context/customerContext/CustomerHomeContext";
 
+// Simple, plain-language options so people can tap instead of type.
+// "Other" reveals a free-text box for anything not covered above.
+const REQUEST_TYPES = [
+  { key: "general", label: "General Request" },
+  { key: "schedule", label: "Change Delivery Day" },
+  { key: "complaint", label: "Complaint / Problem" },
+  { key: "other", label: "Something Else" }
+];
+
 export default function HomeScreen() {
   const {
     getCustomerSubscribedProducts,
@@ -29,6 +38,7 @@ export default function HomeScreen() {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [selectedProductName, setSelectedProductName] = useState<string>("");
 
   // Unsubscribe specific loading state (tracks which card is mid-flight)
   const [unsubscribingId, setUnsubscribingId] = useState<string | null>(null);
@@ -36,6 +46,7 @@ export default function HomeScreen() {
   // Form Field States
   const [message, setMessage] = useState<string>("");
   const [requestType, setRequestType] = useState<string>("");
+  const [requestTypeKey, setRequestTypeKey] = useState<string>("");
 
   // Date Picker Specific States
   const [startDateObj, setStartDateObj] = useState<Date | null>(null);
@@ -58,9 +69,22 @@ export default function HomeScreen() {
     fetchProducts();
   }, []);
 
-  // Utility to safely format JS Date objects to YYYY-MM-DD strings
+  // Utility to safely format JS Date objects to a friendly, readable string
   const formatDateString = (date: Date | null): string => {
-    if (!date) return "Select Date";
+    if (!date) return "choose a date";
+    const day = String(date.getDate()).padStart(2, "0");
+    const monthNames = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    const month = monthNames[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
+  };
+
+  // API expects YYYY-MM-DD, kept separate from the friendly display string above
+  const formatDateForApi = (date: Date | null): string => {
+    if (!date) return "";
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
@@ -78,7 +102,7 @@ export default function HomeScreen() {
   const callVendor = (phone: string) => {
     const digits = (phone || "").replace(/\D/g, "");
     if (!digits) {
-      Alert.alert("No Phone Number", "This vendor hasn't provided a contact number.");
+      Alert.alert("No Phone Number", "This vendor hasn't shared a phone number yet.");
       return;
     }
     const url = `tel:${digits}`;
@@ -87,17 +111,29 @@ export default function HomeScreen() {
         if (ok) {
           Linking.openURL(url);
         } else {
-          Alert.alert("Unable to Call", "Your device can't place this call right now.");
+          Alert.alert("Can't Call Right Now", "Your phone can't make this call right now.");
         }
       })
       .catch(() => {
-        Alert.alert("Unable to Call", "Something went wrong trying to place the call.");
+        Alert.alert("Can't Call Right Now", "Something went wrong. Please try again.");
       });
   };
 
-  const handleOpenForm = (productId: string) => {
+  const handleOpenForm = (productId: string, productName: string) => {
     setSelectedProductId(productId);
+    setSelectedProductName(productName);
     setModalVisible(true);
+  };
+
+  const closeForm = () => {
+    setModalVisible(false);
+    setSelectedProductId(null);
+    setSelectedProductName("");
+    setMessage("");
+    setRequestType("");
+    setRequestTypeKey("");
+    setStartDateObj(null);
+    setEndDateObj(null);
   };
 
   // Open the native platform calendar modal
@@ -121,7 +157,7 @@ export default function HomeScreen() {
 
     if (pickerMode === "start") {
       if (chosenDate < today) {
-        Alert.alert("Invalid Date", "Start date cannot be in the past.");
+        Alert.alert("That Date Has Passed", "Please choose today or a date in the future.");
         return;
       }
       setStartDateObj(chosenDate);
@@ -132,21 +168,43 @@ export default function HomeScreen() {
       }
     } else {
       if (!startDateObj) {
-        Alert.alert("Validation Sequence", "Please pick a Start Date first.");
+        Alert.alert("Choose Start Date First", "Please pick a Start Date before the End Date.");
         return;
       }
       if (chosenDate < startDateObj) {
-        Alert.alert("Invalid Date", "End date cannot be earlier than the start date.");
+        Alert.alert("Date Problem", "End Date cannot be before Start Date.");
         return;
       }
       setEndDateObj(chosenDate);
     }
   };
 
+  // Pick a preset request type (or reveal free text for "Something Else")
+  const handleSelectRequestType = (key: string, label: string) => {
+    setRequestTypeKey(key);
+    if (key === "other") {
+      setRequestType("");
+    } else {
+      setRequestType(label);
+    }
+  };
+
   // Submit form data out to your API engine
   const handleRequestSubmit = async () => {
-    if (!message || !requestType || !startDateObj || !endDateObj || !selectedProductId) {
-      Alert.alert("Validation Error", "Please fill in all fields.");
+    if (!requestTypeKey) {
+      Alert.alert("Missing Info", "Please choose what kind of request this is.");
+      return;
+    }
+    if (requestTypeKey === "other" && !requestType.trim()) {
+      Alert.alert("Missing Info", "Please tell us what you need.");
+      return;
+    }
+    if (!startDateObj || !endDateObj) {
+      Alert.alert("Missing Info", "Please choose a Start Date and an End Date.");
+      return;
+    }
+    if (!selectedProductId) {
+      Alert.alert("Missing Info", "Please select a product first.");
       return;
     }
 
@@ -156,21 +214,14 @@ export default function HomeScreen() {
         productId: selectedProductId,
         message,
         type: requestType,
-        start_date: formatDateString(startDateObj),
-        end_date: formatDateString(endDateObj)
+        start_date: formatDateForApi(startDateObj),
+        end_date: formatDateForApi(endDateObj)
       });
 
-      Alert.alert("Success", "Your request has been submitted successfully!");
-
-      // Complete state sanitization reset
-      setMessage("");
-      setRequestType("");
-      setStartDateObj(null);
-      setEndDateObj(null);
-      setModalVisible(false);
-      setSelectedProductId(null);
+      Alert.alert("Request Sent", "Your request has been sent. The vendor will get back to you soon.");
+      closeForm();
     } catch (error: any) {
-      Alert.alert("Submission Failed", error.message || "Something went wrong");
+      Alert.alert("Could Not Send", error.message || "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -179,19 +230,19 @@ export default function HomeScreen() {
   // Confirm + perform unsubscribe for a given product
   const handleUnsubscribe = (productId: string, productName: string) => {
     Alert.alert(
-      "Unsubscribe",
-      `Are you sure you want to unsubscribe from "${productName}"? This action cannot be undone.`,
+      "Stop This Service?",
+      `Are you sure you want to stop "${productName}"? You will not get this service anymore.`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "No, Keep It", style: "cancel" },
         {
-          text: "Unsubscribe",
+          text: "Yes, Stop It",
           style: "destructive",
           onPress: async () => {
             setUnsubscribingId(productId);
             try {
               await unsubcribeProduct(productId);
             } catch (error: any) {
-              Alert.alert("Error", error.message || "Failed to unsubscribe. Please try again.");
+              Alert.alert("Error", error.message || "Could not stop the service. Please try again.");
             } finally {
               setUnsubscribingId(null);
             }
@@ -204,8 +255,8 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#6366F1" />
-        <Text style={styles.loadingText}>Loading your subscriptions…</Text>
+        <ActivityIndicator size="large" color="#2563EB" />
+        <Text style={styles.loadingText}>Loading your services…</Text>
       </SafeAreaView>
     );
   }
@@ -213,9 +264,9 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Subscriptions</Text>
+        <Text style={styles.headerTitle}>My Services</Text>
         <Text style={styles.headerSubtitle}>
-          {subcribedProducts.length} active {subcribedProducts.length === 1 ? "product" : "products"}
+          You have {subcribedProducts.length} active {subcribedProducts.length === 1 ? "service" : "services"}
         </Text>
       </View>
 
@@ -229,9 +280,9 @@ export default function HomeScreen() {
             <View style={styles.emptyIconCircle}>
               <Text style={styles.emptyIconText}>📦</Text>
             </View>
-            <Text style={styles.emptyTitle}>No subscriptions yet</Text>
+            <Text style={styles.emptyTitle}>No Services Yet</Text>
             <Text style={styles.emptyText}>
-              Products you subscribe to will show up here.
+              When you join a service, it will show up here.
             </Text>
           </View>
         }
@@ -240,12 +291,10 @@ export default function HomeScreen() {
           return (
             <View style={styles.productCard}>
               <View style={styles.cardTopRow}>
-                <View style={styles.productTitleBlock}>
-                  <Text style={styles.productName}>{item.productName}</Text>
-                  <View style={styles.activeBadge}>
-                    <View style={styles.activeDot} />
-                    <Text style={styles.activeBadgeText}>Active</Text>
-                  </View>
+                <Text style={styles.productName}>{item.productName}</Text>
+                <View style={styles.activeBadge}>
+                  <View style={styles.activeDot} />
+                  <Text style={styles.activeBadgeText}>Running</Text>
                 </View>
               </View>
 
@@ -258,6 +307,7 @@ export default function HomeScreen() {
                   <Text style={styles.avatarText}>{getInitials(item.vendor.businessName)}</Text>
                 </View>
                 <View style={styles.vendorInfo}>
+                  <Text style={styles.vendorLabel}>Delivered by</Text>
                   <Text style={styles.vendorName}>{item.vendor.businessName}</Text>
                   <Text style={styles.vendorDetail}>{item.vendor.businessPhone}</Text>
                 </View>
@@ -267,6 +317,7 @@ export default function HomeScreen() {
                   activeOpacity={0.75}
                 >
                   <Text style={styles.callButtonIcon}>📞</Text>
+                  <Text style={styles.callButtonText}>Call</Text>
                 </TouchableOpacity>
               </View>
 
@@ -280,16 +331,20 @@ export default function HomeScreen() {
                   {isUnsubscribing ? (
                     <ActivityIndicator size="small" color="#DC2626" />
                   ) : (
-                    <Text style={styles.unsubscribeButtonText}>Unsubscribe</Text>
+                    <>
+                      <Text style={styles.unsubscribeButtonIcon}>✕</Text>
+                      <Text style={styles.unsubscribeButtonText}>Stop Service</Text>
+                    </>
                   )}
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionButton, styles.requestButton]}
-                  onPress={() => handleOpenForm(item.id)}
+                  onPress={() => handleOpenForm(item.id, item.productName)}
                   disabled={isUnsubscribing}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.requestButtonText}>Request</Text>
+                  <Text style={styles.requestButtonIcon}>✉️</Text>
+                  <Text style={styles.requestButtonText}>Ask Vendor</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -302,36 +357,58 @@ export default function HomeScreen() {
         visible={modalVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={closeForm}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>New Product Request</Text>
-            <Text style={styles.modalSubtitle}>Fill in the details below to send your request.</Text>
+            <Text style={styles.modalTitle}>Send a Request</Text>
+            <Text style={styles.modalSubtitle}>For: {selectedProductName}</Text>
 
-            <Text style={styles.label}>Request Type</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Note, Request"
-              placeholderTextColor="#adb5bd"
-              value={requestType}
-              onChangeText={setRequestType}
-            />
+            <Text style={styles.label}>1. What do you need?</Text>
+            <View style={styles.chipWrap}>
+              {REQUEST_TYPES.map((opt) => {
+                const isSelected = requestTypeKey === opt.key;
+                return (
+                  <TouchableOpacity
+                    key={opt.key}
+                    style={[styles.chip, isSelected && styles.chipSelected]}
+                    onPress={() => handleSelectRequestType(opt.key, opt.label)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
 
-            {/* Date Picker Triggers */}
+            {requestTypeKey === "other" && (
+              <TextInput
+                style={styles.input}
+                placeholder="Type what you need here"
+                placeholderTextColor="#9CA3AF"
+                value={requestType}
+                onChangeText={setRequestType}
+              />
+            )}
+
+            <Text style={styles.label}>2. Choose your dates</Text>
             <View style={styles.dateRow}>
               <View style={styles.dateColumn}>
-                <Text style={styles.label}>Start Date</Text>
-                <TouchableOpacity style={styles.datePickerButton} onPress={() => openDatePicker("start")}>
+                <Text style={styles.dateColumnLabel}>Start Date</Text>
+                <TouchableOpacity style={styles.datePickerButton} onPress={() => openDatePicker("start")} activeOpacity={0.8}>
+                  <Text style={styles.datePickerIcon}>📅</Text>
                   <Text style={startDateObj ? styles.dateText : styles.placeholderText}>
                     {formatDateString(startDateObj)}
                   </Text>
                 </TouchableOpacity>
               </View>
               <View style={styles.dateColumn}>
-                <Text style={styles.label}>End Date</Text>
-                <TouchableOpacity style={styles.datePickerButton} onPress={() => openDatePicker("end")}>
+                <Text style={styles.dateColumnLabel}>End Date</Text>
+                <TouchableOpacity style={styles.datePickerButton} onPress={() => openDatePicker("end")} activeOpacity={0.8}>
+                  <Text style={styles.datePickerIcon}>📅</Text>
                   <Text style={endDateObj ? styles.dateText : styles.placeholderText}>
                     {formatDateString(endDateObj)}
                   </Text>
@@ -354,11 +431,11 @@ export default function HomeScreen() {
               />
             )}
 
-            <Text style={styles.label}>Message</Text>
+            <Text style={styles.label}>3. Add a note (Explain your request breifly)</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="Describe your request..."
-              placeholderTextColor="#adb5bd"
+              placeholder="Write any extra details here"
+              placeholderTextColor="#9CA3AF"
               multiline
               numberOfLines={4}
               value={message}
@@ -368,7 +445,7 @@ export default function HomeScreen() {
             <View style={styles.modalActionRow}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setModalVisible(false)}
+                onPress={closeForm}
                 disabled={submitting}
                 activeOpacity={0.7}
               >
@@ -383,7 +460,7 @@ export default function HomeScreen() {
                 {submitting ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Submit Request</Text>
+                  <Text style={styles.submitButtonText}>Send Request</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -395,130 +472,147 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F5F6FA" },
-  centerContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F5F6FA" },
-  loadingText: { marginTop: 12, color: "#6B7280", fontSize: 14, fontWeight: "500" },
+  container: { flex: 1, backgroundColor: "#F4F6FB" },
+  centerContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F4F6FB" },
+  loadingText: { marginTop: 12, color: "#4B5563", fontSize: 16, fontWeight: "600" },
 
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
-  headerTitle: { fontSize: 26, fontWeight: "800", color: "#111827", letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 14, color: "#6B7280", marginTop: 2, fontWeight: "500" },
+  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 18 },
+  headerTitle: { fontSize: 30, fontWeight: "800", color: "#0F172A", letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 16, color: "#475569", marginTop: 4, fontWeight: "600" },
 
   listContent: { paddingHorizontal: 20, paddingBottom: 24, flexGrow: 1 },
 
   emptyContainer: { alignItems: "center", justifyContent: "center", marginTop: 80, paddingHorizontal: 32 },
   emptyIconCircle: {
-    width: 72, height: 72, borderRadius: 36, backgroundColor: "#EEF0FB",
-    alignItems: "center", justifyContent: "center", marginBottom: 16
+    width: 84, height: 84, borderRadius: 42, backgroundColor: "#E7ECFB",
+    alignItems: "center", justifyContent: "center", marginBottom: 18
   },
-  emptyIconText: { fontSize: 30 },
-  emptyTitle: { fontSize: 17, fontWeight: "700", color: "#111827", marginBottom: 4 },
-  emptyText: { textAlign: "center", color: "#6B7280", fontSize: 14, lineHeight: 20 },
+  emptyIconText: { fontSize: 36 },
+  emptyTitle: { fontSize: 20, fontWeight: "800", color: "#0F172A", marginBottom: 6 },
+  emptyText: { textAlign: "center", color: "#475569", fontSize: 16, lineHeight: 22 },
 
   productCard: {
     backgroundColor: "#FFFFFF",
-    padding: 18,
-    borderRadius: 18,
-    marginBottom: 16,
-    shadowColor: "#111827",
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 18,
+    shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
+    shadowOpacity: 0.07,
+    shadowRadius: 14,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: "#F0F1F5"
+    borderColor: "#EEF1F8"
   },
-  cardTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  productTitleBlock: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flex: 1 },
-  productName: { fontSize: 17, fontWeight: "700", color: "#111827", flexShrink: 1, marginRight: 8 },
+  cardTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  productName: { fontSize: 20, fontWeight: "800", color: "#0F172A", flexShrink: 1, marginRight: 8 },
 
   activeBadge: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "#ECFDF5",
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20
+    flexDirection: "row", alignItems: "center", backgroundColor: "#DCFCE7",
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20
   },
-  activeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#10B981", marginRight: 5 },
-  activeBadgeText: { fontSize: 11, fontWeight: "700", color: "#059669" },
+  activeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#16A34A", marginRight: 6 },
+  activeBadgeText: { fontSize: 13, fontWeight: "800", color: "#15803D" },
 
-  productDesc: { fontSize: 14, color: "#6B7280", marginTop: 6, lineHeight: 20 },
+  productDesc: { fontSize: 15, color: "#475569", marginTop: 8, lineHeight: 21 },
 
-  vendorDivider: { height: 1, backgroundColor: "#F0F1F5", marginVertical: 14 },
+  vendorDivider: { height: 1, backgroundColor: "#EEF1F8", marginVertical: 16 },
 
   vendorRow: { flexDirection: "row", alignItems: "center" },
   avatarCircle: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: "#6366F1",
-    alignItems: "center", justifyContent: "center", marginRight: 12
+    width: 48, height: 48, borderRadius: 24, backgroundColor: "#2563EB",
+    alignItems: "center", justifyContent: "center", marginRight: 14
   },
-  avatarText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
+  avatarText: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 },
   vendorInfo: { flex: 1 },
-  vendorName: { fontSize: 14, fontWeight: "600", color: "#111827" },
-  vendorDetail: { fontSize: 13, color: "#6B7280", marginTop: 2 },
+  vendorLabel: { fontSize: 12, color: "#94A3B8", fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.3 },
+  vendorName: { fontSize: 16, fontWeight: "700", color: "#0F172A", marginTop: 1 },
+  vendorDetail: { fontSize: 14, color: "#64748B", marginTop: 2 },
 
   callButton: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: "#ECFDF5",
-    borderWidth: 1, borderColor: "#D1FAE5",
+    width: 60, height: 52, borderRadius: 14,
+    backgroundColor: "#DCFCE7",
+    borderWidth: 1.5, borderColor: "#BBF7D0",
     alignItems: "center", justifyContent: "center",
     marginLeft: 8
   },
-  callButtonIcon: { fontSize: 16 },
+  callButtonIcon: { fontSize: 18 },
+  callButtonText: { fontSize: 11, fontWeight: "800", color: "#15803D", marginTop: 1 },
 
-  actionRow: { flexDirection: "row", marginTop: 16, gap: 10 },
+  actionRow: { flexDirection: "row", marginTop: 18, gap: 12 },
   actionButton: {
-    flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center", justifyContent: "center"
+    flex: 1, flexDirection: "row", paddingVertical: 15, borderRadius: 14,
+    alignItems: "center", justifyContent: "center", gap: 6
   },
-  unsubscribeButton: { backgroundColor: "#FEF2F2", borderWidth: 1, borderColor: "#FECACA" },
-  unsubscribeButtonText: { color: "#DC2626", fontWeight: "700", fontSize: 14 },
+  unsubscribeButton: { backgroundColor: "#FEF2F2", borderWidth: 1.5, borderColor: "#FECACA" },
+  unsubscribeButtonIcon: { color: "#DC2626", fontWeight: "800", fontSize: 14 },
+  unsubscribeButtonText: { color: "#DC2626", fontWeight: "800", fontSize: 15 },
   requestButton: {
-    backgroundColor: "#6366F1",
-    shadowColor: "#6366F1",
+    backgroundColor: "#2563EB",
+    shadowColor: "#2563EB",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3
   },
-  requestButtonText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
+  requestButtonIcon: { fontSize: 15 },
+  requestButtonText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 },
 
-  modalOverlay: { flex: 1, backgroundColor: "rgba(17,24,39,0.55)", justifyContent: "flex-end" },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(15,23,42,0.6)", justifyContent: "flex-end" },
   modalContainer: {
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     padding: 24,
-    paddingBottom: 32
+    paddingBottom: 34,
+    maxHeight: "88%"
   },
   modalHandle: {
-    width: 40, height: 4, borderRadius: 2, backgroundColor: "#E5E7EB",
-    alignSelf: "center", marginBottom: 16
+    width: 44, height: 5, borderRadius: 3, backgroundColor: "#E2E8F0",
+    alignSelf: "center", marginBottom: 18
   },
-  modalTitle: { fontSize: 20, fontWeight: "800", color: "#111827", textAlign: "center" },
-  modalSubtitle: { fontSize: 13, color: "#6B7280", textAlign: "center", marginTop: 4, marginBottom: 20 },
+  modalTitle: { fontSize: 22, fontWeight: "800", color: "#0F172A", textAlign: "center" },
+  modalSubtitle: { fontSize: 15, color: "#2563EB", fontWeight: "700", textAlign: "center", marginTop: 4, marginBottom: 22 },
 
-  label: { fontSize: 13, fontWeight: "700", color: "#374151", marginBottom: 6 },
+  label: { fontSize: 16, fontWeight: "800", color: "#1E293B", marginBottom: 10 },
   input: {
-    borderWidth: 1.5, borderColor: "#E5E7EB", borderRadius: 12, padding: 12,
-    marginBottom: 14, fontSize: 14, backgroundColor: "#F9FAFB", color: "#111827"
+    borderWidth: 1.5, borderColor: "#E2E8F0", borderRadius: 14, padding: 14,
+    marginBottom: 16, fontSize: 16, backgroundColor: "#F8FAFC", color: "#0F172A"
   },
-  textArea: { height: 90, textAlignVertical: "top" },
+  textArea: { height: 100, textAlignVertical: "top" },
+
+  chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 18 },
+  chip: {
+    paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12,
+    backgroundColor: "#F1F5F9", borderWidth: 1.5, borderColor: "#E2E8F0"
+  },
+  chipSelected: { backgroundColor: "#DBEAFE", borderColor: "#2563EB" },
+  chipText: { fontSize: 15, fontWeight: "700", color: "#475569" },
+  chipTextSelected: { color: "#1D4ED8" },
 
   dateRow: { flexDirection: "row", gap: 12 },
   dateColumn: { flex: 1 },
+  dateColumnLabel: { fontSize: 13, fontWeight: "700", color: "#64748B", marginBottom: 6 },
   datePickerButton: {
-    borderWidth: 1.5, borderColor: "#E5E7EB", borderRadius: 12, padding: 12,
-    marginBottom: 14, backgroundColor: "#F9FAFB", justifyContent: "center"
+    flexDirection: "row", alignItems: "center", gap: 8,
+    borderWidth: 1.5, borderColor: "#E2E8F0", borderRadius: 14, padding: 14,
+    marginBottom: 16, backgroundColor: "#F8FAFC"
   },
-  dateText: { fontSize: 14, color: "#111827", fontWeight: "500" },
-  placeholderText: { fontSize: 14, color: "#9CA3AF" },
+  datePickerIcon: { fontSize: 16 },
+  dateText: { fontSize: 15, color: "#0F172A", fontWeight: "700" },
+  placeholderText: { fontSize: 14, color: "#94A3B8", fontWeight: "600" },
 
-  modalActionRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 8, gap: 12 },
-  modalButton: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: "center" },
-  cancelButton: { backgroundColor: "#F3F4F6" },
-  cancelButtonText: { color: "#374151", fontWeight: "700", fontSize: 14 },
+  modalActionRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 10, gap: 12 },
+  modalButton: { flex: 1, paddingVertical: 16, borderRadius: 14, alignItems: "center" },
+  cancelButton: { backgroundColor: "#F1F5F9" },
+  cancelButtonText: { color: "#334155", fontWeight: "800", fontSize: 15 },
   submitButton: {
-    backgroundColor: "#6366F1",
-    shadowColor: "#6366F1",
+    backgroundColor: "#2563EB",
+    shadowColor: "#2563EB",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3
   },
-  submitButtonText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 }
+  submitButtonText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 }
 });

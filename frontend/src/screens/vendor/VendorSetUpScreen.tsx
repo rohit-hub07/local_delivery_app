@@ -19,12 +19,14 @@ const VendorSetUpScreen = () => {
   const { logout } = useAuthStore();
   const { vendorProfile } = useVendorContextStore();
 
+
   // Form State
   const [businessName, setBusinessName] = useState('');
   const [businessPhone, setBusinessPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCreateProfile = async () => {
+
+  const handleCreateProfile = async ({navigation}: any) => {
     // 1. Validation
     if (!businessName.trim() || !businessPhone.trim()) {
       Alert.alert("Missing Information", "Please fill in all fields to complete your setup.");
@@ -106,13 +108,13 @@ const VendorSetUpScreen = () => {
               )}
             </TouchableOpacity>
 
-            {/* <TouchableOpacity 
+            <TouchableOpacity 
               style={styles.secondaryButton} 
-              onPress={async () => await logout()}
+              onPress={logout}
               disabled={isSubmitting}
             >
-              <Text style={styles.secondaryButtonText}>Log Out</Text>
-            </TouchableOpacity> */}
+              <Text style={styles.secondaryButtonText}>Logout & Go to Login</Text>
+            </TouchableOpacity>
           </View>
 
         </ScrollView>
