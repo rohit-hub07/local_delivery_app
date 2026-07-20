@@ -35,9 +35,9 @@ export const customerRequest = async (req, res) => {
         // find vendor customer id
         const vendorCustomer = await db.vendorCustomers.findUnique({
             where: {
-                vendorId_customerPhone: {
+                vendorId_customerId: {
                     vendorId: product.vendorId,
-                    customerPhone: user.phone
+                    customerId: user.id
                 }
             }
         });
@@ -55,6 +55,13 @@ export const customerRequest = async (req, res) => {
                 start_date: start_date,
                 end_date: end_date,
                 type: type
+            },
+            include: {
+                vendorCustomers: {
+                    select: {
+                        user: true
+                    }
+                }
             }
         });
         if (!newRequest) {
@@ -62,6 +69,9 @@ export const customerRequest = async (req, res) => {
                 message: "Something went wrong while creating request!",
                 success: false
             });
+        }
+        if (product.vendorId) {
+            req.io.to(product.vendorId).emit("new_request_created", newRequest);
         }
         return res.status(201).json({
             message: 'Request added successfully!',
@@ -89,7 +99,14 @@ export const getCustomerRequests = async (req, res) => {
         const requests = await db.requests.findMany({
             where: {
                 vendorCustomers: {
-                    vendorId: vendorId
+                    vendorId: vendorId,
+                }
+            },
+            include: {
+                vendorCustomers: {
+                    select: {
+                        user: true
+                    }
                 }
             }
         });
@@ -122,13 +139,25 @@ export const vendorResponse = async (req, res) => {
                 success: false,
             });
         }
-        const request = await db.requests.findUnique({ where: { id: requestId } });
+        const request = await db.requests.findUnique({
+            where: {
+                id: requestId
+            },
+            include: {
+                vendorCustomers: {
+                    select: {
+                        user: true
+                    }
+                }
+            }
+        });
         if (!request) {
             return res.status(404).json({
                 message: "No request available!",
                 success: false,
             });
         }
+        console.log("request after update: ", request.vendorCustomers.user.id);
         const requestData = RequestsSchema.omit({
             id: true,
             createdAt: true,
@@ -150,7 +179,6 @@ export const vendorResponse = async (req, res) => {
             });
         }
         const { status } = validateBody.data;
-        // update the request
         const updatedRequest = await db.requests.update({
             where: { id: requestId },
             data: {
@@ -163,6 +191,13 @@ export const vendorResponse = async (req, res) => {
                 message: "Something went wrong while updated the request!",
                 success: false
             });
+        }
+        // find user to pass it in socket
+        // const user = await db.requests
+        // update the request
+        const userId = request.vendorCustomers.user.id;
+        if (userId) {
+            req.io.to(userId).emit("vendor_update_response", updatedRequest);
         }
         return res.status(200).json({
             message: "Updated request successfully!",
@@ -190,7 +225,7 @@ export const customerRequestStatus = async (req, res) => {
         const requestStatus = await db.requests.findMany({
             where: {
                 vendorCustomers: {
-                    customerPhone: user.phone
+                    customerId: user.id
                 }
             }
         });

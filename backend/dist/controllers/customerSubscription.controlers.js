@@ -25,9 +25,9 @@ export const subscribeProduct = async (req, res) => {
         // find the vendor_customerid using vendor is and loggedin User phone number
         const vendor_customer = await db.vendorCustomers.findUnique({
             where: {
-                vendorId_customerPhone: {
+                vendorId_customerId: {
                     vendorId: vendorId,
-                    customerPhone: user.phone
+                    customerId: user.id
                 }
             }
         });
@@ -108,9 +108,9 @@ export const unsubscribeProduct = async (req, res) => {
         //check if the vendor customer exists
         const vendor_customer = await db.vendorCustomers.findUnique({
             where: {
-                vendorId_customerPhone: {
+                vendorId_customerId: {
                     vendorId: vendorId,
-                    customerPhone: user.phone
+                    customerId: user.id
                 }
             }
         });
@@ -176,6 +176,9 @@ export const customerSubscribedProduct = async (req, res) => {
                         }
                     }
                 }
+            },
+            include: {
+                vendor: true
             }
         });
         if (!subscribedCustomerProduct) {

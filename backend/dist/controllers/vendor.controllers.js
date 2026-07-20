@@ -62,7 +62,7 @@ export const createVendorProfile = async (req, res) => {
 export const vendorProfile = async (req, res) => {
     try {
         // check if vendor profile exists or not
-        console.log("Request is hitting vendorProfile");
+        // console.log("Request is hitting vendorProfile")
         const user = req.user;
         if (user.role == "CUSTOMER") {
             return res.status(403).json({
@@ -72,8 +72,12 @@ export const vendorProfile = async (req, res) => {
         }
         // const id = req.params.id as string
         const vendorProfile = await db.vendor.findUnique({ where: {
-                userId: user.id
-            } });
+                userId: user.id,
+            },
+            include: {
+                user: true
+            }
+        });
         if (!vendorProfile) {
             return res.status(404).json({
                 message: "Vendor profile doesn't exists!",
@@ -89,6 +93,39 @@ export const vendorProfile = async (req, res) => {
     }
     catch (error) {
         console.log("Error fetching vendor profile: ", error.message);
+        return res.status(500).json({
+            message: "Internal Server Error",
+            success: false
+        });
+    }
+};
+// show all the vendor profile to the added customers
+export const getALlVendorProfile = async (req, res) => {
+    try {
+        const user = req.user;
+        const allVendorProfile = await db.vendor.findMany({
+            where: {
+                vendorcustomers: {
+                    some: {
+                        customerId: user.id
+                    }
+                }
+            }
+        });
+        if (!allVendorProfile) {
+            return res.status(404).json({
+                message: "No vendor profile available",
+                success: false
+            });
+        }
+        return res.status(200).json({
+            message: "Vendor profiles fetched successfully!",
+            success: true,
+            allVendorProfile: allVendorProfile
+        });
+    }
+    catch (error) {
+        console.log("Error fetching vendor profiles to the added customer: ", error.message);
         return res.status(500).json({
             message: "Internal Server Error",
             success: false

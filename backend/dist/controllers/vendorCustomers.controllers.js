@@ -8,6 +8,7 @@ export const addCustomers = async (req, res) => {
             createdAt: true,
             updatedAt: true,
             vendorId: true,
+            customerId: true
         });
         const validateBody = customer.safeParse(req.body);
         if (!validateBody.success) {
@@ -19,10 +20,15 @@ export const addCustomers = async (req, res) => {
         }
         const { customerPhone } = validateBody.data;
         const user = await db.user.findUnique({ where: { phone: customerPhone } });
-        // allow vendor to add only customers 
-        if (!user || user.role == "VENDOR") {
+        if (!user) {
             return res.status(404).json({
                 message: "Customer doesn't exist!",
+                success: false,
+            });
+        }
+        if (user.role === "VENDOR") {
+            return res.status(400).json({
+                message: "You can not add vendor profile as your customer!",
                 success: false,
             });
         }
@@ -33,11 +39,27 @@ export const addCustomers = async (req, res) => {
                 success: false
             });
         }
+        // check if the user is already a customer of the vendor or not
+        const isCustomer = await db.vendorCustomers.findUnique({
+            where: {
+                vendorId_customerId: {
+                    vendorId: vendorId,
+                    customerId: user.id
+                }
+            }
+        });
+        if (isCustomer) {
+            return res.status(400).json({
+                message: "Customer already exists!",
+                success: false
+            });
+        }
         // add customer
         const newCustomer = await db.vendorCustomers.create({
             data: {
                 vendorId,
-                customerPhone
+                customerPhone,
+                customerId: user.id
             }
         });
         if (!newCustomer) {
@@ -79,9 +101,9 @@ export const removeCustomer = async (req, res) => {
         }
         await db.vendorCustomers.delete({
             where: {
-                vendorId_customerPhone: {
+                vendorId_customerId: {
                     vendorId: vendorId,
-                    customerPhone: customer.phone
+                    customerId: customer.id
                 }
             }
         });
@@ -92,6 +114,43 @@ export const removeCustomer = async (req, res) => {
     }
     catch (error) {
         console.log("Error while removing customer: ", error.message);
+        return res.status(500).json({
+            message: "Internal Server Error",
+            success: false
+        });
+    }
+};
+export const getAllVendorCustomer = async (req, res) => {
+    try {
+        const vendor = req.vendor;
+        if (!vendor) {
+            return res.status(404).json({
+                message: "Please login with your vendor profile",
+                success: false,
+            });
+        }
+        const customers = await db.vendorCustomers.findMany({
+            where: {
+                vendorId: vendor.id
+            },
+            include: {
+                user: true
+            }
+        });
+        if (!customers) {
+            return res.status(404).json({
+                message: "No vendor customers available",
+                success: false
+            });
+        }
+        return res.status(200).json({
+            message: "Vendor customers fetched successfully!",
+            success: true,
+            customers: customers
+        });
+    }
+    catch (error) {
+        console.log("Error fetching all vendor customer: ", error.message);
         return res.status(500).json({
             message: "Internal Server Error",
             success: false

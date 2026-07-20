@@ -83,6 +83,7 @@ export const ProductScalarFieldEnum = {
 export const VendorCustomersScalarFieldEnum = {
     id: 'id',
     vendorId: 'vendorId',
+    customerId: 'customerId',
     customerPhone: 'customerPhone',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'

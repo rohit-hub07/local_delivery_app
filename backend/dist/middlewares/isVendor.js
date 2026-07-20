@@ -12,7 +12,7 @@ export const isVendor = async (req, res, next) => {
             userId: user.id,
         },
     });
-    console.log("Vendor data inside of isVendor middleware", vendor);
+    // console.log("Vendor data inside of isVendor middleware", vendor)
     if (!vendor) {
         return res.status(404).json({
             message: "Please login with your vendor profile!",

@@ -1,0 +1,27 @@
+import { z } from 'zod';
+import { VendorIncludeSchema } from '../inputTypeSchemas/VendorIncludeSchema';
+import { VendorWhereUniqueInputSchema } from '../inputTypeSchemas/VendorWhereUniqueInputSchema';
+import { UserArgsSchema } from "../outputTypeSchemas/UserArgsSchema";
+import { ProductFindManyArgsSchema } from "../outputTypeSchemas/ProductFindManyArgsSchema";
+import { VendorCustomersFindManyArgsSchema } from "../outputTypeSchemas/VendorCustomersFindManyArgsSchema";
+import { VendorCountOutputTypeArgsSchema } from "../outputTypeSchemas/VendorCountOutputTypeArgsSchema";
+// Select schema needs to be in file to prevent circular imports
+//------------------------------------------------------
+export const VendorSelectSchema = z.object({
+    id: z.boolean().optional(),
+    userId: z.boolean().optional(),
+    businessName: z.boolean().optional(),
+    businessPhone: z.boolean().optional(),
+    createdAt: z.boolean().optional(),
+    updatedAt: z.boolean().optional(),
+    user: z.union([z.boolean(), z.lazy(() => UserArgsSchema)]).optional(),
+    product: z.union([z.boolean(), z.lazy(() => ProductFindManyArgsSchema)]).optional(),
+    vendorcustomers: z.union([z.boolean(), z.lazy(() => VendorCustomersFindManyArgsSchema)]).optional(),
+    _count: z.union([z.boolean(), z.lazy(() => VendorCountOutputTypeArgsSchema)]).optional(),
+}).strict();
+export const VendorFindUniqueArgsSchema = z.object({
+    select: VendorSelectSchema.optional(),
+    include: z.lazy(() => VendorIncludeSchema).optional(),
+    where: VendorWhereUniqueInputSchema,
+}).strict();
+export default VendorFindUniqueArgsSchema;

@@ -7,8 +7,22 @@ import productRouter from "./routes/product.routes.js";
 import vendorCustomers from "./routes/vendor.customers.routes.js";
 import customerSubscriptionRouter from "./routes/customers.subscription.routes.js";
 import requestRouter from "./routes/requests.routes.js";
+import { Server } from "socket.io";
+import http from "http";
 dotenv.config();
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
+io.on('connection', (socket) => {
+    socket.on('join_room', (userId) => {
+        console.log(`User: ${userId} joined room`);
+        socket.join(String(userId));
+    });
+});
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+});
 // hard coded apis for develeopment will change this once the app is ready
 const allowedOrigins = [
     'http://192.168.29.151:8081',
@@ -41,6 +55,6 @@ app.use("/product", productRouter);
 app.use("/customer", vendorCustomers);
 app.use("/subscription", customerSubscriptionRouter);
 app.use("/request", requestRouter);
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`App is listening to port: ${PORT}`);
 });

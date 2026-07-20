@@ -99,8 +99,12 @@ export const removeProduct = async (req, res) => {
 // all products of specific vendor
 export const getAllProducts = async (req, res) => {
     try {
-        const id = req.params.id;
-        const allProducts = await db.product.findMany({ where: { vendorId: id } });
+        const user = req.user;
+        const allProducts = await db.product.findMany({ where: {
+                vendor: {
+                    userId: user.id
+                }
+            } });
         if (!allProducts) {
             return res.status(404).json({
                 message: "No products found!",
@@ -139,6 +143,44 @@ export const getProductById = async (req, res) => {
     }
     catch (error) {
         console.log("Error inside of get product by id: ", error.message);
+        return res.status(500).json({
+            message: "Internal Server Error",
+            success: false
+        });
+    }
+};
+export const showProductsToAddedCustomer = async (req, res) => {
+    try {
+        const user = req.user;
+        if (!user) {
+            return res.status(404).json({
+                message: "Please login!!",
+                success: false
+            });
+        }
+        const vendorId = req.params.vendorId;
+        const vendorProducts = await db.product.findMany({
+            where: {
+                vendorId
+            },
+            include: {
+                vendor: true
+            }
+        });
+        if (!vendorProducts) {
+            return res.status(404).json({
+                message: "You are not a customer of the vendor!",
+                success: false
+            });
+        }
+        return res.status(200).json({
+            message: "Vendor products fetched successfully!",
+            success: true,
+            vendorProducts: vendorProducts
+        });
+    }
+    catch (error) {
+        console.log("Error while fetching all the vendor products to added customers: ", error.message);
         return res.status(500).json({
             message: "Internal Server Error",
             success: false
