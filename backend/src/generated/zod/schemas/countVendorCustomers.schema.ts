@@ -1,0 +1,10 @@
+import type { Prisma } from '../../prisma/client';
+import * as z from 'zod';
+import { VendorCustomersOrderByWithRelationInputObjectSchema as VendorCustomersOrderByWithRelationInputObjectSchema } from './objects/VendorCustomersOrderByWithRelationInput.schema';
+import { VendorCustomersWhereInputObjectSchema as VendorCustomersWhereInputObjectSchema } from './objects/VendorCustomersWhereInput.schema';
+import { VendorCustomersWhereUniqueInputObjectSchema as VendorCustomersWhereUniqueInputObjectSchema } from './objects/VendorCustomersWhereUniqueInput.schema';
+import { VendorCustomersCountAggregateInputObjectSchema as VendorCustomersCountAggregateInputObjectSchema } from './objects/VendorCustomersCountAggregateInput.schema';
+
+export const VendorCustomersCountSchema: z.ZodType<Prisma.VendorCustomersCountArgs> = z.object({ orderBy: z.union([VendorCustomersOrderByWithRelationInputObjectSchema, VendorCustomersOrderByWithRelationInputObjectSchema.array()]).optional(), where: VendorCustomersWhereInputObjectSchema.optional(), cursor: VendorCustomersWhereUniqueInputObjectSchema.optional(), take: z.number().optional(), skip: z.number().optional(), select: z.union([ z.literal(true), VendorCustomersCountAggregateInputObjectSchema ]).optional() }).strict() as unknown as z.ZodType<Prisma.VendorCustomersCountArgs>;
+
+export const VendorCustomersCountZodSchema = z.object({ orderBy: z.union([VendorCustomersOrderByWithRelationInputObjectSchema, VendorCustomersOrderByWithRelationInputObjectSchema.array()]).optional(), where: VendorCustomersWhereInputObjectSchema.optional(), cursor: VendorCustomersWhereUniqueInputObjectSchema.optional(), take: z.number().optional(), skip: z.number().optional(), select: z.union([ z.literal(true), VendorCustomersCountAggregateInputObjectSchema ]).optional() }).strict();

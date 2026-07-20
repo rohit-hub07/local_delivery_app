@@ -1,15 +1,17 @@
 import { Request, Response } from "express"
-import { ProductSchema } from "../generated/zod/index.js"
+import { ProductInputSchema } from "../generated/zod/schemas/index.js";
 import { db } from "../libs/db.js";
-import { success } from "zod";
 
 export const addProduct = async (req: Request, res: Response) => {
   try {
-    const productDetails = ProductSchema.omit({
+    const productDetails = ProductInputSchema.omit({
       createdAt: true,
       updatedAt: true,
       id: true,
       vendorId: true,
+      request: true,
+      subscription: true,
+      vendor: true
     })
 
     const validateBody = productDetails.safeParse(req.body);

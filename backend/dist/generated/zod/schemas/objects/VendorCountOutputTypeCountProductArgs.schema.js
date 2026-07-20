@@ -1,0 +1,7 @@
+import * as z from 'zod';
+import { ProductWhereInputObjectSchema as ProductWhereInputObjectSchema } from './ProductWhereInput.schema';
+const makeSchema = () => z.object({
+    where: z.lazy(() => ProductWhereInputObjectSchema).optional()
+}).strict();
+export const VendorCountOutputTypeCountProductArgsObjectSchema = makeSchema();
+export const VendorCountOutputTypeCountProductArgsObjectZodSchema = makeSchema();

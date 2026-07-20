@@ -1,18 +1,20 @@
 import { Request, Response } from "express"
-import { VendorSchema } from "../generated/zod/index.js"
+// import { VendorSchema } from "../generated/zod/index.js"
+import { VendorInputSchema } from "../generated/zod/schemas/index.js";
 import { db } from "../libs/db.js";
-import { includes } from "zod";
 
 
 
 export const createVendorProfile = async(req: Request, res: Response) =>{
   try {
-    const vendor = VendorSchema.omit({
+    const vendor = VendorInputSchema.omit({
       id: true,
       userId: true,
       createdAt: true,
       updatedAt: true,
-
+      product: true,
+      user: true,
+      vendorcustomers: true
     })
 
     const validateBody = vendor.safeParse(req.body);

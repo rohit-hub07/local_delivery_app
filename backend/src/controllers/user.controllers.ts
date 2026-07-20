@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
-import { UserSchema } from "../generated/zod/index.js";
-import bcrypt from "bcryptjs"
+// import { UserSchema } from "../generated/zod/index.js";
+import { UserInputSchema } from "../generated/zod/schemas/index.js";
 import { db } from "../libs/db.js";
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
@@ -13,13 +13,16 @@ dotenv.config()
 export const signupController = async (req: Request, res: Response) => {
   try {
 
-    const signup = UserSchema.omit({
+    const signup = UserInputSchema.omit({
       id: true,
       createdAt: true,
-      updatedAt: true
+      updatedAt: true,
+      vendor: true,
+      vendorcustomers: true 
     })
 
     const validateBody = signup.safeParse(req.body)
+    console.log(validateBody.error?.issues);
 
     if (!validateBody.success) {
       return res.status(400).json({
@@ -28,7 +31,7 @@ export const signupController = async (req: Request, res: Response) => {
         fieldErrors: validateBody.error.flatten().fieldErrors,
       });
     }
-
+    
 
     const { name, phone, role, address } = validateBody.data;
 
@@ -99,16 +102,19 @@ export const signupController = async (req: Request, res: Response) => {
 export const loginController = async (req: Request, res: Response) => {
   try {
     // console.log("Backend is hit by frontend")
-    const login = UserSchema.omit({
+    const login = UserInputSchema.omit({
       id: true,
       name: true,
       role: true,
       address: true,
       createdAt: true,
       updatedAt: true,
-    })
+      vendor: true,
+      vendorcustomers: true,
+    })  
 
     const validateBody = login.safeParse(req.body)
+    console.log("validatebody: ",validateBody)
     if (!validateBody.success) {
       return res.status(400).json({
         success: false,

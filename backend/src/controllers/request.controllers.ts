@@ -1,21 +1,28 @@
 import { Request, Response } from "express"
-import { RequestsSchema } from "../generated/zod/index.js"
+import { RequestsInputSchema } from "../generated/zod/schemas/index.js";
 import { db } from "../libs/db.js";
 
 export const customerRequest = async (req: Request, res: Response) => {
   try {
     // const productId = req.params.id as string;
-    const requestDetails = RequestsSchema.omit({
+    const requestDetails = RequestsInputSchema.omit({
       id: true,
       createdAt: true,
       updatedAt: true,
       vendorCustomerId: true,
       status: true,
-      // productId: true,
       respondedAt: true,
+      vendorCustomers: true,
+      product: true
     })
 
-    const validateBody = requestDetails.safeParse(req.body);
+    const body = {
+      ...req.body,
+      start_date: new Date(req.body.start_date),
+      end_date: new Date(req.body.end_date),
+    };
+
+    const validateBody = requestDetails.safeParse(body);
     if (!validateBody.success) {
       return res.status(400).json({
         success: false,
@@ -175,9 +182,8 @@ export const vendorResponse = async (req: Request, res: Response) => {
 
     console.log("request after update: ", request.vendorCustomers.user.id)
 
-    const requestData = RequestsSchema.omit({
-      id: true,
-      createdAt: true,
+    const requestData = RequestsInputSchema.omit({
+      id: true, createdAt: true,
       updatedAt: true,
       vendorCustomerId: true,
       productId: true,
@@ -186,7 +192,8 @@ export const vendorResponse = async (req: Request, res: Response) => {
       start_date: true,
       type: true,
       end_date: true,
-
+      product: true,
+      vendorCustomers: true,
     })
     const validateBody = requestData.safeParse(req.body)
     if (!validateBody.success) {

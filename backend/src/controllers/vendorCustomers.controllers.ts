@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
-import { VendorCustomersSchema } from "../generated/zod/index.js"
+// import { VendorCustomersSchema } from "../generated/zod/index.js"
+import { VendorCustomersInputSchema } from "../generated/zod/schemas/index.js";
 import { db } from "../libs/db.js";
 
 
@@ -7,12 +8,16 @@ import { db } from "../libs/db.js";
 // add customers 
 export const addCustomers = async (req: Request, res: Response) => {
   try {
-    const customer = VendorCustomersSchema.omit({
+    const customer = VendorCustomersInputSchema.omit({
       id: true,
       createdAt: true,
       updatedAt: true,
       vendorId: true,
-      customerId: true
+      customerId: true,
+      request: true,
+      subscription: true,
+      user: true,
+      vendor: true,
     })
 
     const validateBody = customer.safeParse(req.body);

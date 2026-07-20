@@ -1,0 +1,16 @@
+import * as z from 'zod';
+import { StringFilterObjectSchema as StringFilterObjectSchema } from './StringFilter.schema';
+import { DateTimeFilterObjectSchema as DateTimeFilterObjectSchema } from './DateTimeFilter.schema';
+const productscalarwhereinputSchema = z.object({
+    AND: z.union([z.lazy(() => ProductScalarWhereInputObjectSchema), z.lazy(() => ProductScalarWhereInputObjectSchema).array()]).optional(),
+    OR: z.lazy(() => ProductScalarWhereInputObjectSchema).array().optional(),
+    NOT: z.union([z.lazy(() => ProductScalarWhereInputObjectSchema), z.lazy(() => ProductScalarWhereInputObjectSchema).array()]).optional(),
+    id: z.union([z.lazy(() => StringFilterObjectSchema), z.string()]).optional(),
+    vendorId: z.union([z.lazy(() => StringFilterObjectSchema), z.string()]).optional(),
+    productName: z.union([z.lazy(() => StringFilterObjectSchema), z.string()]).optional(),
+    description: z.union([z.lazy(() => StringFilterObjectSchema), z.string()]).optional(),
+    createdAt: z.union([z.lazy(() => DateTimeFilterObjectSchema), z.coerce.date()]).optional(),
+    updatedAt: z.union([z.lazy(() => DateTimeFilterObjectSchema), z.coerce.date()]).optional()
+}).strict();
+export const ProductScalarWhereInputObjectSchema = productscalarwhereinputSchema;
+export const ProductScalarWhereInputObjectZodSchema = productscalarwhereinputSchema;

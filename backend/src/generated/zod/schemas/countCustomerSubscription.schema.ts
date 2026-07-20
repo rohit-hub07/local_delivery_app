@@ -1,0 +1,10 @@
+import type { Prisma } from '../../prisma/client';
+import * as z from 'zod';
+import { CustomerSubscriptionOrderByWithRelationInputObjectSchema as CustomerSubscriptionOrderByWithRelationInputObjectSchema } from './objects/CustomerSubscriptionOrderByWithRelationInput.schema';
+import { CustomerSubscriptionWhereInputObjectSchema as CustomerSubscriptionWhereInputObjectSchema } from './objects/CustomerSubscriptionWhereInput.schema';
+import { CustomerSubscriptionWhereUniqueInputObjectSchema as CustomerSubscriptionWhereUniqueInputObjectSchema } from './objects/CustomerSubscriptionWhereUniqueInput.schema';
+import { CustomerSubscriptionCountAggregateInputObjectSchema as CustomerSubscriptionCountAggregateInputObjectSchema } from './objects/CustomerSubscriptionCountAggregateInput.schema';
+
+export const CustomerSubscriptionCountSchema: z.ZodType<Prisma.CustomerSubscriptionCountArgs> = z.object({ orderBy: z.union([CustomerSubscriptionOrderByWithRelationInputObjectSchema, CustomerSubscriptionOrderByWithRelationInputObjectSchema.array()]).optional(), where: CustomerSubscriptionWhereInputObjectSchema.optional(), cursor: CustomerSubscriptionWhereUniqueInputObjectSchema.optional(), take: z.number().optional(), skip: z.number().optional(), select: z.union([ z.literal(true), CustomerSubscriptionCountAggregateInputObjectSchema ]).optional() }).strict() as unknown as z.ZodType<Prisma.CustomerSubscriptionCountArgs>;
+
+export const CustomerSubscriptionCountZodSchema = z.object({ orderBy: z.union([CustomerSubscriptionOrderByWithRelationInputObjectSchema, CustomerSubscriptionOrderByWithRelationInputObjectSchema.array()]).optional(), where: CustomerSubscriptionWhereInputObjectSchema.optional(), cursor: CustomerSubscriptionWhereUniqueInputObjectSchema.optional(), take: z.number().optional(), skip: z.number().optional(), select: z.union([ z.literal(true), CustomerSubscriptionCountAggregateInputObjectSchema ]).optional() }).strict();
