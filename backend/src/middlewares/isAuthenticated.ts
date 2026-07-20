@@ -32,7 +32,7 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
   }
   const decode = jwt.verify(token, process.env.JWT_SECRET as string) as CustomJwt
 
-  // console.log(`decode value: ${decode.id}`);
+  console.log(`decode value: ${decode.id}`);
   // return decode.id;
 
   const user = await db.user.findUnique({

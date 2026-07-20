@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ES2022",                          /* Set the JavaScript language version for output */
-    "module": "NodeNext",                        /* Specify what module code is generated */
-    "moduleResolution": "NodeNext",              /* Determine how modules get resolved */
-    "rootDir": "./src",                          /* Specify the root folder of input files */
-    "outDir": "./dist",                          /* Specify an output folder for all emitted files */
-    "strict": true,                              /* Enable all strict type-checking options */
-    "esModuleInterop": true,                     /* Emit additional JavaScript to ease importing CommonJS modules */
-    "skipLibCheck": true,                        /* Skip type checking of declaration files */
-    "forceConsistentCasingInFileNames": true,     /* Ensure that casing is correct in imports */
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*"],                       /* Track all source files */
-  "exclude": ["node_modules", "dist"]            /* Skip compilation for external and build folders */
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

@@ -10,7 +10,8 @@ generator client {
 
 generator zod {
   provider = "zod-prisma-types"
-  output   = "../src/generated/zod" // Saves Zod schemas separate from Prisma types
+  output   = "../src/generated/zod"
+  useMultipleFiles = true
 }
 
 datasource db {
