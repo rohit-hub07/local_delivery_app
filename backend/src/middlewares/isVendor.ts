@@ -13,7 +13,7 @@ export const isVendor = async (req: Request, res: Response, next: NextFunction) 
 
   const vendor = await db.vendor.findUnique({
     where: {
-      userId: user.id,
+      userId: user?.id,
     },
   })
 

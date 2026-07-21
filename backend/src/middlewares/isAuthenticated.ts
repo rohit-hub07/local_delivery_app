@@ -55,6 +55,6 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
   }
   // console.log("user inside of isAuthenticated: ", user)
 
-  req.user = user
+  req.user = user as typeof req.user
   return next()
 }

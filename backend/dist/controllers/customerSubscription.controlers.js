@@ -149,7 +149,7 @@ export const unsubscribeProduct = async (req, res) => {
 };
 export const customerSubscribedProduct = async (req, res) => {
     try {
-        const userid = req.user.id;
+        const userid = req?.user?.id;
         if (!userid) {
             return res.status(404).json({
                 message: "Please login first!",

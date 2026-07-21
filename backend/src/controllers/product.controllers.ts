@@ -106,6 +106,12 @@ export const removeProduct = async (req: Request, res: Response) => {
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const user = req.user
+    if(!user){
+      return res.status(404).json({
+        message: "Please login first!",
+        success: false
+      })
+    }
     const allProducts = await db.product.findMany({where: {
       vendor:{
         userId: user.id

@@ -174,7 +174,7 @@ export const unsubscribeProduct = async (req: Request, res: Response) => {
 
 export const customerSubscribedProduct = async (req: Request, res: Response) => {
   try {
-    const userid = req.user.id;
+    const userid = req?.user?.id;
     if (!userid) {
       return res.status(404).json({
         message: "Please login first!",

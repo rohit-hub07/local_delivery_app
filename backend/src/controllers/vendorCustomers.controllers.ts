@@ -41,7 +41,7 @@ export const addCustomers = async (req: Request, res: Response) => {
       })
     }
 
-    const vendorId = req.vendor.id
+    const vendorId = req?.vendor?.id
     if (!vendorId) {
       return res.status(401).json({
         message: "Vendor doesn't exist!",
@@ -104,7 +104,7 @@ export const removeCustomer = async (req: Request, res: Response) => {
     }
 
 
-    const vendorId = req.vendor.id;
+    const vendorId = req?.vendor?.id;
     if (!vendorId) {
       return res.status(401).json({
         message: "Vendor doesn't exist!",

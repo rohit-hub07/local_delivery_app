@@ -61,14 +61,14 @@ export const createVendorProfile = async (req, res) => {
 export const vendorProfile = async (req, res) => {
     try {
         const user = req.user;
-        if (user.role == "CUSTOMER") {
+        if (user?.role == "CUSTOMER") {
             return res.status(403).json({
                 message: "You are not allowed to perform this action!",
                 success: false
             });
         }
         const vendorProfile = await db.vendor.findUnique({ where: {
-                userId: user.id,
+                userId: user?.id,
             },
             include: {
                 user: true
@@ -101,7 +101,7 @@ export const getALlVendorProfile = async (req, res) => {
             where: {
                 vendorcustomers: {
                     some: {
-                        customerId: user.id
+                        customerId: user?.id
                     }
                 }
             }

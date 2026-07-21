@@ -103,7 +103,7 @@ export const customerRequest = async (req: Request, res: Response) => {
 
 export const getCustomerRequests = async (req: Request, res: Response) => {
   try {
-    const vendorId = req.vendor.id;
+    const vendorId = req?.vendor?.id;
     if (!vendorId) {
       return res.status(401).json({
         message: "Vendor doesn't exist!",

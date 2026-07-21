@@ -74,7 +74,7 @@ export const vendorProfile = async(req: Request, res: Response) =>{
     // check if vendor profile exists or not
     // console.log("Request is hitting vendorProfile")
     const user = req.user
-    if(user.role == "CUSTOMER"){
+    if(user?.role == "CUSTOMER"){
       return res.status(403).json({
         message: "You are not allowed to perform this action!",
         success: false
@@ -82,7 +82,7 @@ export const vendorProfile = async(req: Request, res: Response) =>{
     }
     // const id = req.params.id as string
     const vendorProfile = await db.vendor.findUnique({where: {
-      userId: user.id,
+      userId: user?.id,
     },
     include: {
       user: true
@@ -117,7 +117,7 @@ export const getALlVendorProfile = async (req: Request, res: Response) => {
       where: {
         vendorcustomers: {
           some: {
-            customerId: user.id
+            customerId: user?.id
           }
         }
       }
