@@ -7,8 +7,7 @@ import { isVendor } from "../middlewares/isVendor.js";
 import { isRoleCustomer } from "../middlewares/isRoleCustomer.js";
 const vendorRouter = express.Router();
 vendorRouter.post("/create/vendor-profile", isAuthenticated, isRoleVendor, createVendorProfile);
-// fetch vendor profile
 vendorRouter.get("/vendor-profile", isAuthenticated, isCreatedVendorProfile, isRoleVendor, isVendor, vendorProfile);
-// fetch all the vendor profile to the added customer by the vendor
 vendorRouter.get("/customer/vendor-profile", isAuthenticated, isRoleCustomer, getALlVendorProfile);
 export default vendorRouter;
+//# sourceMappingURL=vendor.routes.js.map

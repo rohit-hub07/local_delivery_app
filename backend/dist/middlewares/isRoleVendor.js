@@ -14,3 +14,4 @@ export const isRoleVendor = async (req, res, next) => {
     }
     next();
 };
+//# sourceMappingURL=isRoleVendor.js.map

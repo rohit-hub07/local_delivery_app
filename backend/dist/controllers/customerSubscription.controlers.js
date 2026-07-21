@@ -1,7 +1,6 @@
 import { db } from "../libs/db.js";
 export const subscribeProduct = async (req, res) => {
     try {
-        // get the product id from params
         const id = req.params.id;
         if (!id) {
             return res.status(400).json({ message: "Product ID is required", success: false });
@@ -10,7 +9,6 @@ export const subscribeProduct = async (req, res) => {
         if (!product) {
             return res.status(404).json({ message: "Product not found", success: false });
         }
-        // get the vendor id from product
         const vendorId = product?.vendorId;
         if (!vendorId) {
             return res.status(404).json({
@@ -22,7 +20,6 @@ export const subscribeProduct = async (req, res) => {
         if (!user || !user.phone) {
             return res.status(401).json({ message: "Unauthorized. Valid user session required.", success: false });
         }
-        // find the vendor_customerid using vendor is and loggedin User phone number
         const vendor_customer = await db.vendorCustomers.findUnique({
             where: {
                 vendorId_customerId: {
@@ -38,7 +35,6 @@ export const subscribeProduct = async (req, res) => {
             });
         }
         const vendor_customerId = vendor_customer.id;
-        // check for existing subscription
         const existingSubscription = await db.customerSubscription.findUnique({
             where: {
                 vendorCustomerId_productId: {
@@ -75,7 +71,6 @@ export const subscribeProduct = async (req, res) => {
 };
 export const unsubscribeProduct = async (req, res) => {
     try {
-        // get product id from params
         const productId = req.params.id;
         if (!productId) {
             return res.status(404).json({
@@ -83,7 +78,6 @@ export const unsubscribeProduct = async (req, res) => {
                 success: false,
             });
         }
-        // find the product using the id 
         const product = await db.product.findUnique({
             where: { id: productId }
         });
@@ -93,7 +87,6 @@ export const unsubscribeProduct = async (req, res) => {
                 success: false,
             });
         }
-        // get vendor id from product
         const vendorId = product.vendorId;
         if (!vendorId) {
             return res.status(404).json({
@@ -105,7 +98,6 @@ export const unsubscribeProduct = async (req, res) => {
         if (!user || !user.phone) {
             return res.status(401).json({ message: "Unauthorized. Valid user session required.", success: false });
         }
-        //check if the vendor customer exists
         const vendor_customer = await db.vendorCustomers.findUnique({
             where: {
                 vendorId_customerId: {
@@ -134,7 +126,6 @@ export const unsubscribeProduct = async (req, res) => {
                 success: false
             });
         }
-        // delete the customer subscription of that product
         await db.customerSubscription.delete({
             where: {
                 vendorCustomerId_productId: {
@@ -245,3 +236,4 @@ export const vendorSubscibedProducts = async (req, res) => {
         });
     }
 };
+//# sourceMappingURL=customerSubscription.controlers.js.map

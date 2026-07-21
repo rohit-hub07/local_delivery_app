@@ -23,7 +23,6 @@ app.use((req, res, next) => {
     req.io = io;
     next();
 });
-// hard coded apis for develeopment will change this once the app is ready
 const allowedOrigins = [
     'http://192.168.29.151:8081',
     'http://127.0.0.1:8081',
@@ -58,3 +57,4 @@ app.use("/request", requestRouter);
 server.listen(PORT, () => {
     console.log(`App is listening to port: ${PORT}`);
 });
+//# sourceMappingURL=index.js.map

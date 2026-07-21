@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../generated/prisma/client.js";
+import { PrismaClient } from "../generated/prisma/client/index.js";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -9,7 +9,7 @@ if (!connectionString) {
 }
 
 const globalForPrisma = globalThis as typeof globalThis & {
-  prisma?: InstanceType<typeof PrismaClient>;
+  prisma?: PrismaClient;
 };
 
 const adapter = new PrismaPg({ connectionString });

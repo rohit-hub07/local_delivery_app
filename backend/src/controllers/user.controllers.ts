@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
 // import { UserSchema } from "../generated/zod/index.js";
-import { UserInputSchema } from "../generated/zod/schemas/index.js";
+import { UserSchema } from "../generated/zod/index.js";
 import { db } from "../libs/db.js";
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
@@ -13,12 +13,10 @@ dotenv.config()
 export const signupController = async (req: Request, res: Response) => {
   try {
 
-    const signup = UserInputSchema.omit({
+    const signup = UserSchema.omit({
       id: true,
       createdAt: true,
       updatedAt: true,
-      vendor: true,
-      vendorcustomers: true 
     })
 
     const validateBody = signup.safeParse(req.body)
@@ -102,15 +100,13 @@ export const signupController = async (req: Request, res: Response) => {
 export const loginController = async (req: Request, res: Response) => {
   try {
     // console.log("Backend is hit by frontend")
-    const login = UserInputSchema.omit({
+    const login = UserSchema.omit({
       id: true,
       name: true,
       role: true,
       address: true,
       createdAt: true,
       updatedAt: true,
-      vendor: true,
-      vendorcustomers: true,
     })  
 
     const validateBody = login.safeParse(req.body)

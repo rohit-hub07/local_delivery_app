@@ -8,9 +8,10 @@ export const signupController = async (req, res) => {
         const signup = UserSchema.omit({
             id: true,
             createdAt: true,
-            updatedAt: true
+            updatedAt: true,
         });
         const validateBody = signup.safeParse(req.body);
+        console.log(validateBody.error?.issues);
         if (!validateBody.success) {
             return res.status(400).json({
                 success: false,
@@ -19,20 +20,15 @@ export const signupController = async (req, res) => {
             });
         }
         const { name, phone, role, address } = validateBody.data;
-        // console.log("Before check the users:")
-        // check for existing user
         const existingUser = await db.user.findUnique({
             where: { phone },
         });
-        // console.log("After checking the user")
         if (existingUser) {
             return res.status(404).json({
                 message: "User already exists!",
                 success: false
             });
         }
-        // hash the password
-        // const hashedPass = await bcrypt.hash(password,10);
         const newUser = await db.user.create({
             data: {
                 name,
@@ -75,7 +71,6 @@ export const signupController = async (req, res) => {
 };
 export const loginController = async (req, res) => {
     try {
-        // console.log("Backend is hit by frontend")
         const login = UserSchema.omit({
             id: true,
             name: true,
@@ -85,6 +80,7 @@ export const loginController = async (req, res) => {
             updatedAt: true,
         });
         const validateBody = login.safeParse(req.body);
+        console.log("validatebody: ", validateBody);
         if (!validateBody.success) {
             return res.status(400).json({
                 success: false,
@@ -106,7 +102,6 @@ export const loginController = async (req, res) => {
             secure: process.env.NODE_ENV === 'production',
             sameSite: "strict",
             expires: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
-            // maxAge: 
         });
         return res.status(200).json({
             message: "Login successful",
@@ -150,10 +145,7 @@ export const logoutController = async (req, res) => {
 };
 export const currentUserController = async (req, res) => {
     try {
-        // const userid = await isAuthenticated(req, res);
-        // const user = await db.user.findUnique({where: {id: userid}})
         const user = req.user;
-        // console.log("user inside of curr controller: ", user)
         if (!user) {
             return res.status(404).json({
                 message: "Unauthorize",
@@ -174,3 +166,4 @@ export const currentUserController = async (req, res) => {
         });
     }
 };
+//# sourceMappingURL=user.controllers.js.map

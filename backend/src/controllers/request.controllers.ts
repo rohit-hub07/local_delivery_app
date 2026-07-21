@@ -1,19 +1,17 @@
 import { Request, Response } from "express"
-import { RequestsInputSchema } from "../generated/zod/schemas/index.js";
+import { RequestsSchema } from "../generated/zod/index.js";
 import { db } from "../libs/db.js";
 
 export const customerRequest = async (req: Request, res: Response) => {
   try {
     // const productId = req.params.id as string;
-    const requestDetails = RequestsInputSchema.omit({
+    const requestDetails = RequestsSchema.omit({
       id: true,
       createdAt: true,
       updatedAt: true,
       vendorCustomerId: true,
       status: true,
       respondedAt: true,
-      vendorCustomers: true,
-      product: true
     })
 
     const body = {
@@ -182,7 +180,7 @@ export const vendorResponse = async (req: Request, res: Response) => {
 
     console.log("request after update: ", request.vendorCustomers.user.id)
 
-    const requestData = RequestsInputSchema.omit({
+    const requestData = RequestsSchema.omit({
       id: true, createdAt: true,
       updatedAt: true,
       vendorCustomerId: true,
@@ -192,8 +190,6 @@ export const vendorResponse = async (req: Request, res: Response) => {
       start_date: true,
       type: true,
       end_date: true,
-      product: true,
-      vendorCustomers: true,
     })
     const validateBody = requestData.safeParse(req.body)
     if (!validateBody.success) {

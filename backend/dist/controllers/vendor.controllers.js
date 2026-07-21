@@ -44,7 +44,6 @@ export const createVendorProfile = async (req, res) => {
                 success: false
             });
         }
-        // req.vendor = newVendorProfile;
         return res.status(201).json({
             message: "Vendor profile created",
             success: true,
@@ -61,8 +60,6 @@ export const createVendorProfile = async (req, res) => {
 };
 export const vendorProfile = async (req, res) => {
     try {
-        // check if vendor profile exists or not
-        // console.log("Request is hitting vendorProfile")
         const user = req.user;
         if (user.role == "CUSTOMER") {
             return res.status(403).json({
@@ -70,7 +67,6 @@ export const vendorProfile = async (req, res) => {
                 success: false
             });
         }
-        // const id = req.params.id as string
         const vendorProfile = await db.vendor.findUnique({ where: {
                 userId: user.id,
             },
@@ -84,7 +80,6 @@ export const vendorProfile = async (req, res) => {
                 success: false,
             });
         }
-        // render the profile
         return res.status(200).json({
             message: "Vendor profile fetched successfully!",
             success: true,
@@ -99,7 +94,6 @@ export const vendorProfile = async (req, res) => {
         });
     }
 };
-// show all the vendor profile to the added customers
 export const getALlVendorProfile = async (req, res) => {
     try {
         const user = req.user;
@@ -132,3 +126,4 @@ export const getALlVendorProfile = async (req, res) => {
         });
     }
 };
+//# sourceMappingURL=vendor.controllers.js.map

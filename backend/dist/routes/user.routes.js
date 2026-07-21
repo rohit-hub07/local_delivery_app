@@ -7,3 +7,4 @@ userRouter.post("/login", loginController);
 userRouter.post("/logout", isAuthenticated, logoutController);
 userRouter.get("/me", isAuthenticated, currentUserController);
 export default userRouter;
+//# sourceMappingURL=user.routes.js.map

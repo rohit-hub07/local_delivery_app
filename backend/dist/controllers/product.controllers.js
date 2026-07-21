@@ -17,7 +17,6 @@ export const addProduct = async (req, res) => {
             });
         }
         const { description, productName } = validateBody.data;
-        // const newProduct = 
         const vendor = req.vendor;
         if (!vendor) {
             return res.status(401).json({
@@ -68,7 +67,6 @@ export const removeProduct = async (req, res) => {
                 success: false,
             });
         }
-        // check if the vendor is owner of the product
         const vendor = req.vendor;
         if (!vendor) {
             return res.status(401).json({
@@ -96,7 +94,6 @@ export const removeProduct = async (req, res) => {
         });
     }
 };
-// all products of specific vendor
 export const getAllProducts = async (req, res) => {
     try {
         const user = req.user;
@@ -187,3 +184,4 @@ export const showProductsToAddedCustomer = async (req, res) => {
         });
     }
 };
+//# sourceMappingURL=product.controllers.js.map

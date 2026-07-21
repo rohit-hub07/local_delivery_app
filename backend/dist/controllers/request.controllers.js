@@ -2,17 +2,20 @@ import { RequestsSchema } from "../generated/zod/index.js";
 import { db } from "../libs/db.js";
 export const customerRequest = async (req, res) => {
     try {
-        // const productId = req.params.id as string;
         const requestDetails = RequestsSchema.omit({
             id: true,
             createdAt: true,
             updatedAt: true,
             vendorCustomerId: true,
             status: true,
-            // productId: true,
             respondedAt: true,
         });
-        const validateBody = requestDetails.safeParse(req.body);
+        const body = {
+            ...req.body,
+            start_date: new Date(req.body.start_date),
+            end_date: new Date(req.body.end_date),
+        };
+        const validateBody = requestDetails.safeParse(body);
         if (!validateBody.success) {
             return res.status(400).json({
                 success: false,
@@ -32,7 +35,6 @@ export const customerRequest = async (req, res) => {
                 success: false
             });
         }
-        // find vendor customer id
         const vendorCustomer = await db.vendorCustomers.findUnique({
             where: {
                 vendorId_customerId: {
@@ -159,8 +161,7 @@ export const vendorResponse = async (req, res) => {
         }
         console.log("request after update: ", request.vendorCustomers.user.id);
         const requestData = RequestsSchema.omit({
-            id: true,
-            createdAt: true,
+            id: true, createdAt: true,
             updatedAt: true,
             vendorCustomerId: true,
             productId: true,
@@ -192,9 +193,6 @@ export const vendorResponse = async (req, res) => {
                 success: false
             });
         }
-        // find user to pass it in socket
-        // const user = await db.requests
-        // update the request
         const userId = request.vendorCustomers.user.id;
         if (userId) {
             req.io.to(userId).emit("vendor_update_response", updatedRequest);
@@ -249,3 +247,4 @@ export const customerRequestStatus = async (req, res) => {
         });
     }
 };
+//# sourceMappingURL=request.controllers.js.map

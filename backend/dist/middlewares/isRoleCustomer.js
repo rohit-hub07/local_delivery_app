@@ -8,3 +8,4 @@ export const isRoleCustomer = async (req, res, next) => {
     }
     next();
 };
+//# sourceMappingURL=isRoleCustomer.js.map

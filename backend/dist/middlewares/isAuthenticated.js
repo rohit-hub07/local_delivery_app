@@ -2,29 +2,13 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { db } from "../libs/db.js";
 dotenv.config();
-// type AuthUser = {
-//   id: string
-//   name: string
-//   role: string
-//   phone: string
-//   address: string
-// }
-// declare global {
-//   namespace Express {
-//     interface Request {
-//       user?: AuthUser
-//     }
-//   }
-// }
 export const isAuthenticated = async (req, res, next) => {
     const token = req.cookies?.token;
-    // console.log(" token: ", token)
     if (!token) {
         return res.status(401).json({ message: "No token" });
     }
     const decode = jwt.verify(token, process.env.JWT_SECRET);
     console.log(`decode value: ${decode.id}`);
-    // return decode.id;
     const user = await db.user.findUnique({
         where: {
             id: decode.id
@@ -42,7 +26,7 @@ export const isAuthenticated = async (req, res, next) => {
             message: "User not found",
         });
     }
-    // console.log("user inside of isAuthenticated: ", user)
     req.user = user;
     return next();
 };
+//# sourceMappingURL=isAuthenticated.js.map

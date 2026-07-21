@@ -1,6 +1,5 @@
 import { VendorCustomersSchema } from "../generated/zod/index.js";
 import { db } from "../libs/db.js";
-// add customers 
 export const addCustomers = async (req, res) => {
     try {
         const customer = VendorCustomersSchema.omit({
@@ -8,7 +7,7 @@ export const addCustomers = async (req, res) => {
             createdAt: true,
             updatedAt: true,
             vendorId: true,
-            customerId: true
+            customerId: true,
         });
         const validateBody = customer.safeParse(req.body);
         if (!validateBody.success) {
@@ -39,7 +38,6 @@ export const addCustomers = async (req, res) => {
                 success: false
             });
         }
-        // check if the user is already a customer of the vendor or not
         const isCustomer = await db.vendorCustomers.findUnique({
             where: {
                 vendorId_customerId: {
@@ -54,7 +52,6 @@ export const addCustomers = async (req, res) => {
                 success: false
             });
         }
-        // add customer
         const newCustomer = await db.vendorCustomers.create({
             data: {
                 vendorId,
@@ -157,3 +154,4 @@ export const getAllVendorCustomer = async (req, res) => {
         });
     }
 };
+//# sourceMappingURL=vendorCustomers.controllers.js.map

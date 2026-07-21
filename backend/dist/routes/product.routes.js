@@ -8,10 +8,8 @@ import { isRoleCustomer } from "../middlewares/isRoleCustomer.js";
 const productRouter = express.Router();
 productRouter.post("/add-product", isAuthenticated, isCreatedVendorProfile, isVendor, addProduct);
 productRouter.delete("/delete-product/:id", isAuthenticated, isCreatedVendorProfile, isVendor, removeProduct);
-// show all product of vendor to the vendor
 productRouter.get("/all-products", isAuthenticated, isRoleVendor, isVendor, getAllProducts);
-// get product by id
 productRouter.get("/vendor/product/:id", isAuthenticated, getProductById);
-// show all the vendor products to vendor customer using vendor id
 productRouter.get("/vendor-products/:vendorId", isAuthenticated, isRoleCustomer, showProductsToAddedCustomer);
 export default productRouter;
+//# sourceMappingURL=product.routes.js.map
