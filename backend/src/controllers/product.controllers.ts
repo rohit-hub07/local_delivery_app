@@ -28,8 +28,6 @@ export const addProduct = async (req: Request, res: Response) => {
         success: false
       })
     }
-    console.log("req.vendor: ", req.vendor)
-    console.log("vendoorId: ", vendor)
     const newProduct = await db.product.create({
       data: {
         vendorId: vendor.id, description, productName

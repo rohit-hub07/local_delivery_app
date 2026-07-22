@@ -20,7 +20,7 @@ export const signupController = async (req: Request, res: Response) => {
     })
 
     const validateBody = signup.safeParse(req.body)
-    console.log(validateBody.error?.issues);
+    // console.log(validateBody.error?.issues);
 
     if (!validateBody.success) {
       return res.status(400).json({
@@ -135,7 +135,6 @@ export const loginController = async (req: Request, res: Response) => {
       secure: process.env.NODE_ENV === 'production',
       sameSite: "strict",
       expires: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
-      // maxAge: 
     })
 
     return res.status(200).json({
@@ -181,11 +180,7 @@ export const logoutController = async (req: Request, res: Response) => {
 
 export const currentUserController = async (req: Request, res: Response) => {
   try {
-    // const userid = await isAuthenticated(req, res);
-
-    // const user = await db.user.findUnique({where: {id: userid}})
     const user = req.user;
-    // console.log("user inside of curr controller: ", user)
     if (!user) {
       return res.status(404).json({
         message: "Unauthorize",

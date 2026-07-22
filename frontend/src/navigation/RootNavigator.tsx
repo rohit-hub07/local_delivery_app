@@ -31,8 +31,6 @@ export default function RootNavigator() {
 
       if (user.role !== "VENDOR") {
         resetVendorProfile();
-        console.log("----------------------")
-        console.log("userId: ",user.id)
         useCustomerHomeContext.getState().initCustomerSocket(user.id)
         setIsLoading(false);
         return;
