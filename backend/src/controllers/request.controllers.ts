@@ -26,7 +26,11 @@ export const customerRequest = async (req: Request, res: Response) => {
 
     const { productId, message, type, start_date, end_date, requestedQuantity } = validateBody.data
 
-    const product = await db.product.findUnique({ where: { id: productId } })
+    const product = await db.product.findUnique({ where: { id: productId }, include:{
+      subscription: true
+    } })
+
+    console.log("Product in request call: ", product)
 
     if (!product) {
       return res.status(404).json({ message: "Product doesn't exist!", success: false })
@@ -69,6 +73,7 @@ export const customerRequest = async (req: Request, res: Response) => {
       data: {
         vendorCustomerId: vendorCustomer.id,
         productId: product.id,
+        subscriptionId: product.subscription[0].id,
         message,
         start_date,
         end_date,
@@ -131,6 +136,11 @@ export const getCustomerRequests = async (req: Request, res: Response) => {
         vendorCustomers: {
           select: {
             user: true,
+          },
+        },
+        product: {
+          select: {
+            productName: true,
           },
         },
       },
@@ -200,6 +210,13 @@ export const vendorResponse = async (req: Request, res: Response) => {
         status,
         respondedAt: new Date(),
       },
+      include: {
+        product: {
+          select: {
+            productName: true,
+          },
+        },
+      },
     })
 
     if (!updatedRequest) {
@@ -242,6 +259,13 @@ export const customerRequestStatus = async (req: Request, res: Response) => {
       where: {
         vendorCustomers: {
           customerId: user.id,
+        },
+      },
+      include: {
+        product: {
+          select: {
+            productName: true,
+          },
         },
       },
     })

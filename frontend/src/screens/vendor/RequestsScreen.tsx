@@ -125,6 +125,13 @@ const RequestsScreen = () => {
           </TouchableOpacity>
         </View>
 
+        {item.productName && (
+          <View style={styles.productRow}>
+            <Text style={styles.productLabel}>Product:</Text>
+            <Text style={styles.productName} numberOfLines={1} ellipsizeMode="tail">{item.productName}</Text>
+          </View>
+        )}
+
         <View style={styles.requestDetails}>
           <Text style={styles.typeBadge}>{item.type}</Text>
           {(item.type === 'INCREASE' || item.type === 'DECREASE') && item.requestedQuantity && (
@@ -399,6 +406,28 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F1F5F9',
     paddingBottom: 14,
     marginBottom: 14,
+  },
+  productRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+  },
+  productLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    marginRight: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  productName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+    flex: 1,
   },
   avatarCircle: {
     width: 44,

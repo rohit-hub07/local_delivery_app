@@ -122,6 +122,7 @@ export class SubscriptionService {
 
     const vendorCustomerId = subscription.vendorCustomerId;
 
+
     const acceptedRequests = await db.requests.findMany({
       where: {
         vendorCustomerId,
@@ -152,7 +153,6 @@ export class SubscriptionService {
     }
 
     const upcomingRequests = acceptedRequests.filter((req) => {
-      const start = new Date(req.start_date);
       const end = new Date(req.end_date);
       return end >= today;
     }).length;
@@ -353,3 +353,5 @@ export class SubscriptionService {
     return baseQuantity;
   }
 }
+
+// export class 

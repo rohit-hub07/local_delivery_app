@@ -354,3 +354,14 @@ export const vendorSubscibedProducts = async (req: Request, res: Response) => {
     })
   }
 }
+
+export const isValidRequest = async(req: Request, res: Response) =>{
+  try {
+    // check the subscription id with the request subscription id 
+
+    // if the request subscription id is not found then no need to take that request as accepted request because customer has already removed that product
+
+  } catch (error) {
+    
+  }
+}

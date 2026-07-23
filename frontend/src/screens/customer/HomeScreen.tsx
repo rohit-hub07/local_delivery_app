@@ -42,6 +42,7 @@ export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedProductName, setSelectedProductName] = useState<string>("");
+  const [selectedProductUnit, setSelectedProductUnit] = useState<string>("");
 
   // Unsubscribe specific loading state (tracks which card is mid-flight)
   const [unsubscribingId, setUnsubscribingId] = useState<string | null>(null);
@@ -123,9 +124,10 @@ export default function HomeScreen() {
       });
   };
 
-  const handleOpenForm = (productId: string, productName: string) => {
+  const handleOpenForm = (productId: string, productName: string, unit: string) => {
     setSelectedProductId(productId);
     setSelectedProductName(productName);
+    setSelectedProductUnit(unit);
     setModalVisible(true);
   };
 
@@ -133,6 +135,7 @@ export default function HomeScreen() {
     setModalVisible(false);
     setSelectedProductId(null);
     setSelectedProductName("");
+    setSelectedProductUnit("");
     setMessage("");
     setRequestType("");
     setRequestTypeKey("");
@@ -344,7 +347,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionButton, styles.requestButton]}
-                  onPress={() => handleOpenForm(item.id, item.productName)}
+                  onPress={() => handleOpenForm(item.id, item.productName, item.unit)}
                   disabled={isUnsubscribing}
                   activeOpacity={0.8}
                 >
@@ -389,16 +392,16 @@ export default function HomeScreen() {
                })}
              </View>
 
-             {(requestTypeKey === "INCREASE" || requestTypeKey === "DECREASE") && (
-               <TextInput
-                 style={styles.input}
-                 placeholder="Requested quantity"
-                 placeholderTextColor="#9CA3AF"
-                 value={requestedQuantity}
-                 onChangeText={setRequestedQuantity}
-                 keyboardType="numeric"
-               />
-             )}
+              {(requestTypeKey === "INCREASE" || requestTypeKey === "DECREASE") && (
+                <TextInput
+                  style={styles.input}
+                  placeholder={`Requested quantity (${selectedProductUnit || 'unit'})`}
+                  placeholderTextColor="#9CA3AF"
+                  value={requestedQuantity}
+                  onChangeText={setRequestedQuantity}
+                  keyboardType="numeric"
+                />
+              )}
 
              <Text style={styles.label}>2. Choose your dates</Text>
              <View style={styles.dateRow}>

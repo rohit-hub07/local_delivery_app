@@ -95,6 +95,10 @@ export default function RequestsScreen() {
     return (
       <View style={styles.card}>
         <View style={styles.requestHeader}>
+          <View style={styles.productRow}>
+            <Text style={styles.productLabel}>Product:</Text>
+            <Text style={styles.productName} numberOfLines={1} ellipsizeMode="tail">{item.productName || "N/A"}</Text>
+          </View>
           <Text style={styles.typeBadge}>{item.type}</Text>
           {renderStatusPill(item.status)}
         </View>
@@ -338,6 +342,31 @@ const styles = StyleSheet.create({
     borderBottomColor: "#F1F5F9",
     paddingBottom: 12,
     marginBottom: 12,
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  productRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+  productLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#64748B",
+    marginRight: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+  productName: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#0F172A",
+    flex: 1,
   },
   requestBody: {
     marginTop: 2,

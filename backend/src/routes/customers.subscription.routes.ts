@@ -19,7 +19,10 @@ customerSubscriptionRouter.delete("/product/unsubscribe-product/:id", isAuthenti
 customerSubscriptionRouter.get("/get/subscribed-product", isAuthenticated, isRoleCustomer, customerSubscribedProduct)
 customerSubscriptionRouter.get("/get/customer-subcribed-product", isAuthenticated, isCreatedVendorProfile, isVendor, vendorSubscibedProducts)
 
+// get the subscription states of the customer
 customerSubscriptionRouter.get("/my-subscriptions", isAuthenticated, isRoleCustomer, getMySubscriptions)
+
+// show the customer the detailed calender of the product delivered or skiped
 customerSubscriptionRouter.get("/calendar/:id", isAuthenticated, isRoleCustomer, getSubscriptionCalendar)
 
 export default customerSubscriptionRouter
