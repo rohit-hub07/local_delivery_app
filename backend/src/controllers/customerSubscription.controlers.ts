@@ -1,91 +1,114 @@
 import { Request, Response } from "express"
+import { z } from "zod"
 import { db } from "../libs/db.js"
-import { success } from "zod"
+import { SubscriptionService, type CalendarDay, type SubscriptionStats } from "../services/subscription.service.js"
+
+const SubscriptionSchema = z.object({
+  productId: z.string(),
+  dailyQuantity: z.coerce.number().positive("Daily quantity must be a positive number"),
+  startDate: z.coerce.date(),
+})
 
 export const subscribeProduct = async (req: Request, res: Response) => {
   try {
-    // get the product id from params
-    const id = req.params.id as string
-    if (!id) {
-      return res.status(400).json({ message: "Product ID is required", success: false });
+    const productId = req.params.id as string
+    if (!productId) {
+      return res.status(400).json({ message: "Product ID is required", success: false })
     }
-    const product = await db.product.findUnique({ where: { id } })
+
+    const product = await db.product.findUnique({ where: { id: productId } })
     if (!product) {
-      return res.status(404).json({ message: "Product not found", success: false });
+      return res.status(404).json({ message: "Product not found", success: false })
     }
-    // get the vendor id from product
-    const vendorId = product?.vendorId;
 
-    if (!vendorId) {
-      return res.status(404).json({
-        message: "Vendor id doesn't exist!",
-        success: false
-      })
-    }
     const user = req.user
-    if (!user || !user.phone) {
-      return res.status(401).json({ message: "Unauthorized. Valid user session required.", success: false });
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized. Valid user session required.", success: false })
     }
 
-    // find the vendor_customerid using vendor is and loggedin User phone number
-
-    const vendor_customer = await db.vendorCustomers.findUnique({
+    const vendorCustomer = await db.vendorCustomers.findUnique({
       where: {
         vendorId_customerId: {
-          vendorId: vendorId,
-          customerId: user.id
-        }
-      }
+          vendorId: product.vendorId,
+          customerId: user.id,
+        },
+      },
     })
 
-    if (!vendor_customer) {
+    if (!vendorCustomer) {
       return res.status(404).json({
-        message: "Vendor customer doesn't exist!",
-        success: false
+        message: "Vendor customer relationship not found",
+        success: false,
       })
     }
-    const vendor_customerId = vendor_customer.id;
 
-    // check for existing subscription
     const existingSubscription = await db.customerSubscription.findUnique({
       where: {
         vendorCustomerId_productId: {
-          vendorCustomerId: vendor_customerId,
-          productId: id
-        }
-      }
-    });
+          vendorCustomerId: vendorCustomer.id,
+          productId,
+        },
+      },
+    })
 
     if (existingSubscription) {
       return res.status(400).json({
         message: "You are already subscribed to this product.",
-        success: false
-      });
+        success: false,
+      })
     }
+
+    const validateBody = SubscriptionSchema.safeParse({
+      productId: req.body.productId || productId,
+      dailyQuantity: req.body.dailyQuantity,
+      startDate: req.body.startDate,
+    })
+
+    if (!validateBody.success) {
+      return res.status(400).json({
+        message: "Validation failed",
+        success: false,
+        fieldErrors: validateBody.error.flatten().fieldErrors,
+      })
+    }
+
+    const { dailyQuantity, startDate } = validateBody.data
 
     const newSubscription = await db.customerSubscription.create({
       data: {
-        vendorCustomerId: vendor_customerId,
-        productId: id
-      }
+        vendorCustomerId: vendorCustomer.id,
+        productId,
+        dailyQuantity: dailyQuantity.toString(),
+        startDate,
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            productName: true,
+            description: true,
+            unit: true,
+          },
+        },
+      },
     })
+
     return res.status(201).json({
       message: "Subscribed to the product successfully!",
       success: true,
-      newSubscription: newSubscription
+      subscription: newSubscription,
     })
   } catch (error: any) {
     console.log("Error while subscribing to the product: ", error.message)
     return res.status(500).json({
       message: "Internal Server Error",
-      success: false
+      success: false,
     })
   }
 }
 
 export const unsubscribeProduct = async (req: Request, res: Response) => {
   try {
-    // get product id from params
     const productId = req.params.id as string
     if (!productId) {
       return res.status(404).json({
@@ -93,10 +116,8 @@ export const unsubscribeProduct = async (req: Request, res: Response) => {
         success: false,
       })
     }
-    // find the product using the id 
-    const product = await db.product.findUnique({
-      where: { id: productId }
-    })
+
+    const product = await db.product.findUnique({ where: { id: productId } })
     if (!product) {
       return res.status(404).json({
         message: "Product doesn't exist!",
@@ -104,120 +125,192 @@ export const unsubscribeProduct = async (req: Request, res: Response) => {
       })
     }
 
-    // get vendor id from product
-    const vendorId = product.vendorId
+    const user = req.user
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized. Valid user session required.", success: false })
+    }
 
-    if (!vendorId) {
+    const vendorCustomer = await db.vendorCustomers.findUnique({
+      where: {
+        vendorId_customerId: {
+          vendorId: product.vendorId,
+          customerId: user.id,
+        },
+      },
+    })
+
+    if (!vendorCustomer) {
       return res.status(404).json({
-        message: "VendorId doesn't exist!",
+        message: "Vendor Customer doesn't exist",
         success: false,
       })
     }
 
-    const user = req.user
-    if (!user || !user.phone) {
-      return res.status(401).json({ message: "Unauthorized. Valid user session required.", success: false });
-    }
-    //check if the vendor customer exists
-    const vendor_customer = await db.vendorCustomers.findUnique({
-      where: {
-        vendorId_customerId: {
-          vendorId: vendorId,
-          customerId: user.id
-        }
-      }
-    })
-    if (!vendor_customer) {
-      return res.status(404).json({
-        message: "Vendor Customer doesn't exist",
-        success: false
-      })
-    }
-
-    const subscribedCustomerProduct = await db.customerSubscription.findUnique({
+    const subscription = await db.customerSubscription.findUnique({
       where: {
         vendorCustomerId_productId: {
-          vendorCustomerId: vendor_customer.id,
-          productId: productId
-        }
-      }
+          vendorCustomerId: vendorCustomer.id,
+          productId,
+        },
+      },
     })
 
-    if (!subscribedCustomerProduct) {
+    if (!subscription) {
       return res.status(404).json({
-        message: "No subscribed products available!",
-        success: false
+        message: "No subscription found for this product!",
+        success: false,
       })
     }
-    // delete the customer subscription of that product
+
     await db.customerSubscription.delete({
       where: {
         vendorCustomerId_productId: {
-          vendorCustomerId: vendor_customer.id,
-          productId: productId
-        }
-      }
-    })
-    return res.status(200).json({
-      message: "product removed from subscription!",
-      success: true,
+          vendorCustomerId: vendorCustomer.id,
+          productId,
+        },
+      },
     })
 
+    return res.status(200).json({
+      message: "Product removed from subscription!",
+      success: true,
+    })
   } catch (error: any) {
     console.log("Error while removing subscribed product: ", error.message)
     return res.status(500).json({
       message: "Internal Server Error",
-      success: false
+      success: false,
+    })
+  }
+}
+
+export const getMySubscriptions = async (req: Request, res: Response) => {
+  try {
+    const user = req.user
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized. Valid user session required.", success: false })
+    }
+
+    const subscriptions = await SubscriptionService.getCustomerSubscriptions(user.id)
+    const stats: SubscriptionStats[] = []
+
+    for (const subscription of subscriptions) {
+      const subscriptionStats = await SubscriptionService.getSubscriptionStats(subscription.id)
+      if (subscriptionStats) {
+        stats.push(subscriptionStats)
+      }
+    }
+
+    return res.status(200).json({
+      message: "Subscriptions fetched successfully!",
+      success: true,
+      subscriptions: stats,
+    })
+  } catch (error: any) {
+    console.log("Error while fetching subscriptions: ", error.message)
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    })
+  }
+}
+
+export const getSubscriptionCalendar = async (req: Request, res: Response) => {
+  try {
+    const user = req.user
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized. Valid user session required.", success: false })
+    }
+
+    const subscriptionId = req.params.id as string
+    if (!subscriptionId) {
+      return res.status(400).json({ message: "Subscription ID is required", success: false })
+    }
+
+    const month = req.query.month ? parseInt(req.query.month as string) : new Date().getMonth() + 1
+    const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear()
+
+    if (month < 1 || month > 12) {
+      return res.status(400).json({ message: "Invalid month. Must be between 1 and 12", success: false })
+    }
+
+    const subscription = await db.customerSubscription.findUnique({
+      where: { id: subscriptionId },
+      include: {
+        vendorCustomers: {
+          select: {
+            customerId: true,
+          },
+        },
+      },
+    })
+
+    if (!subscription) {
+      return res.status(404).json({ message: "Subscription not found", success: false })
+    }
+
+    if (subscription.vendorCustomers.customerId !== user.id) {
+      return res.status(403).json({ message: "You are not authorized to view this subscription", success: false })
+    }
+
+    const calendar: CalendarDay[] = await SubscriptionService.getMonthlyCalendar(subscriptionId, year, month)
+
+    return res.status(200).json({
+      message: "Calendar fetched successfully!",
+      success: true,
+      calendar,
+      month,
+      year,
+    })
+  } catch (error: any) {
+    console.log("Error while fetching calendar: ", error.message)
+    if (error.message === "Subscription not found") {
+      return res.status(404).json({ message: "Subscription not found", success: false })
+    }
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
     })
   }
 }
 
 export const customerSubscribedProduct = async (req: Request, res: Response) => {
   try {
-    const userid = req?.user?.id;
-    if (!userid) {
+    const userId = req?.user?.id
+    if (!userId) {
       return res.status(404).json({
         message: "Please login first!",
-        success: false
+        success: false,
       })
     }
-    
 
-    const subscribedCustomerProduct = await db.product.findMany({
+    const subscribedProducts = await db.product.findMany({
       where: {
         subscription: {
           some: {
             vendorCustomers: {
               user: {
-                id: userid
-              }
-            }
-          }
-        }
+                id: userId,
+              },
+            },
+          },
+        },
       },
       include: {
-        vendor: true
-      }
+        vendor: true,
+      },
     })
-
-    if (!subscribedCustomerProduct) {
-      return res.status(404).json({
-        message: "No subscribed products available!",
-        success: false
-      })
-    }
 
     return res.status(200).json({
       message: "Products fetched successfully!",
       success: true,
-      subscribeProduct: subscribedCustomerProduct
+      subscribeProduct: subscribedProducts,
     })
-
   } catch (error: any) {
-    console.log("Error while removing subscribed product: ", error.message)
+    console.log("Error while fetching subscribed products: ", error.message)
     return res.status(500).json({
       message: "Internal Server Error",
-      success: false
+      success: false,
     })
   }
 }
@@ -225,43 +318,39 @@ export const customerSubscribedProduct = async (req: Request, res: Response) => 
 export const vendorSubscibedProducts = async (req: Request, res: Response) => {
   try {
     const vendor = req.vendor
-    if(!vendor){
+    if (!vendor) {
       return res.status(401).json({
         message: "Vendor doesn't exist!",
-        success: false
+        success: false,
       })
     }
+
     const subscribedProducts = await db.customerSubscription.findMany({
       where: {
         vendorCustomers: {
-          vendorId: vendor.id
-        }
+          vendorId: vendor.id,
+        },
       },
-      include:{
+      include: {
         product: true,
         vendorCustomers: {
-          include:{
-            user: true
-          }
-        }
-      }
+          include: {
+            user: true,
+          },
+        },
+      },
     })
-    if (!subscribedProducts) {
-      return res.status(404).json({
-        message: "Customers haven't subscribed to any products yet!",
-        success: false
-      })
-    }
+
     return res.status(200).json({
       message: "Customer subcribed products fetched successfully!",
       success: true,
-      subscribedProducts: subscribedProducts
+      subscribedProducts,
     })
   } catch (error: any) {
     console.log("Error while fetching customer subscribed products: ", error.message)
     return res.status(500).json({
       message: "Internal Server Error",
-      success: false
+      success: false,
     })
   }
 }

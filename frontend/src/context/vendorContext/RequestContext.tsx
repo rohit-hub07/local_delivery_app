@@ -21,6 +21,7 @@ export interface CustomerRequest {
   message: string;
   start_date: string;
   end_date: string;
+  requestedQuantity?: string | null;
   status: "PENDING" | "ACCEPTED" | "REJECTED";
   respondedAt: string | null;
   createdAt: string;

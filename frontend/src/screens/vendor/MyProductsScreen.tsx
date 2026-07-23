@@ -93,6 +93,7 @@ export const MyProductsScreen = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [productName, setProductName] = useState('')
   const [description, setDescription] = useState('')
+  const [unit, setUnit] = useState('PIECE')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -145,9 +146,10 @@ export const MyProductsScreen = () => {
     setIsSubmitting(true)
 
     try {
-      await addProduct({ productName, description })
+      await addProduct({ productName, description, unit })
       setProductName('')
       setDescription('')
+      setUnit('PIECE')
       setIsModalOpen(false)
     } catch (error: any) {
       setErrorMessage(error.message || 'Something went wrong.')
@@ -291,19 +293,38 @@ export const MyProductsScreen = () => {
                   editable={!isSubmitting}
                 />
 
-                <Text style={styles.inputLabel}>Description</Text>
-                <TextInput
-                  style={[styles.inputField, styles.inputMultiline]}
-                  placeholder="Briefly describe the product"
-                  placeholderTextColor={COLORS.textTertiary}
-                  value={description}
-                  onChangeText={setDescription}
-                  multiline
-                  textAlignVertical="top"
-                  editable={!isSubmitting}
-                />
+                 <Text style={styles.inputLabel}>Description</Text>
+                 <TextInput
+                   style={[styles.inputField, styles.inputMultiline]}
+                   placeholder="Briefly describe the product"
+                   placeholderTextColor={COLORS.textTertiary}
+                   value={description}
+                   onChangeText={setDescription}
+                   multiline
+                   textAlignVertical="top"
+                   editable={!isSubmitting}
+                 />
 
-                <View style={styles.buttonRow}>
+                 <Text style={styles.inputLabel}>Unit</Text>
+                 <View style={styles.unitRow}>
+                   {['PIECE', 'PACKET', 'BOTTLE', 'LITRE', 'ML', 'KG', 'GRAM', 'DOZEN'].map((u) => {
+                     const selected = unit === u
+                     return (
+                       <TouchableOpacity
+                         key={u}
+                         style={[styles.unitChip, selected && styles.unitChipSelected]}
+                         onPress={() => setUnit(u)}
+                         activeOpacity={0.8}
+                       >
+                         <Text style={[styles.unitChipText, selected && styles.unitChipTextSelected]}>
+                           {u}
+                         </Text>
+                       </TouchableOpacity>
+                     )
+                   })}
+                 </View>
+
+                 <View style={styles.buttonRow}>
                   <TouchableOpacity
                     style={[styles.actionBtn, styles.cancelBtn]}
                     onPress={() => setIsModalOpen(false)}
@@ -560,6 +581,33 @@ const styles = StyleSheet.create({
   inputMultiline: {
     height: 90,
     paddingTop: 12,
+  },
+  unitRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  unitChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.surfaceAlt,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  unitChipSelected: {
+    backgroundColor: COLORS.primarySurface,
+    borderColor: COLORS.primary,
+  },
+  unitChipText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  unitChipTextSelected: {
+    color: COLORS.primaryText,
+    fontWeight: '700',
   },
   buttonRow: {
     flexDirection: 'row',

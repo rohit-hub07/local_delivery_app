@@ -8,7 +8,8 @@ import {
   StyleSheet,
   Modal,
   Alert,
-  RefreshControl
+  RefreshControl,
+  TextInput
 } from 'react-native';
 import { useCustomerVendorStore } from '../../context/customerContext/CustomerVendorContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,6 +29,8 @@ const ProductScreen = ({ vendorId, onBack }: ProductScreenProps) => {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [subscribing, setSubscribing] = useState<boolean>(false);
   const [subscribedIds, setSubscribedIds] = useState<Set<string>>(new Set());
+  const [dailyQuantity, setDailyQuantity] = useState('1');
+  const [startDate, setStartDate] = useState('');
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -64,7 +67,7 @@ const ProductScreen = ({ vendorId, onBack }: ProductScreenProps) => {
 
     setSubscribing(true);
     try {
-      await subscribeProduct(selectedProductId);
+      await subscribeProduct(selectedProductId, dailyQuantity, startDate)
       setSubscribedIds((prev) => new Set(prev).add(selectedProductId));
       Alert.alert('Success', 'You have successfully subscribed to this product!');
     } catch (error: any) {
@@ -163,6 +166,29 @@ const ProductScreen = ({ vendorId, onBack }: ProductScreenProps) => {
               Are you sure you want to subscribe to{' '}
               <Text style={styles.modalMessageBold}>{activeProduct?.productName}</Text>?
             </Text>
+
+            <View style={styles.formField}>
+              <Text style={styles.formLabel}>Daily Quantity</Text>
+              <TextInput
+                style={styles.formInput}
+                value={dailyQuantity}
+                onChangeText={setDailyQuantity}
+                keyboardType="numeric"
+                placeholder="e.g. 1"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+
+            <View style={styles.formField}>
+              <Text style={styles.formLabel}>Start Date (YYYY-MM-DD)</Text>
+              <TextInput
+                style={styles.formInput}
+                value={startDate}
+                onChangeText={setStartDate}
+                placeholder="e.g. 2026-07-24"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
 
             <View style={styles.modalButtonContainer}>
               <TouchableOpacity
@@ -303,6 +329,18 @@ const styles = StyleSheet.create({
   },
   cancelBtnText: { color: '#374151', fontWeight: '700', fontSize: 14 },
   confirmBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
+
+  formField: { width: '100%', marginBottom: 14 },
+  formLabel: { fontSize: 14, fontWeight: '700', color: '#374151', marginBottom: 6 },
+  formInput: {
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 15,
+    color: '#111827',
+    backgroundColor: '#F9FAFB'
+  }
 });
 
 export default ProductScreen;

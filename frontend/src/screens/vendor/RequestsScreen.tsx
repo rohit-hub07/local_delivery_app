@@ -127,6 +127,11 @@ const RequestsScreen = () => {
 
         <View style={styles.requestDetails}>
           <Text style={styles.typeBadge}>{item.type}</Text>
+          {(item.type === 'INCREASE' || item.type === 'DECREASE') && item.requestedQuantity && (
+            <View style={styles.quantityBadge}>
+              <Text style={styles.quantityBadgeText}>Requested Qty: {item.requestedQuantity}</Text>
+            </View>
+          )}
           <View style={styles.messageBox}>
             <Text style={styles.messageText}>{item.message}</Text>
           </View>
@@ -451,6 +456,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     marginBottom: 10,
+  },
+  quantityBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 10,
+    marginLeft: 8,
+  },
+  quantityBadgeText: {
+    color: '#92400E',
+    fontSize: 12,
+    fontWeight: '800',
   },
   messageBox: {
     backgroundColor: '#F8FAFC',

@@ -30,7 +30,8 @@ interface RequestType {
   end_date: string,
   message: string,
   type: string,
-  productId: string
+  productId: string,
+  requestedQuantity?: string
 }
 
 
@@ -111,7 +112,8 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
         end_date: credential.end_date,
         message: credential.message,
         type: credential.type,
-        productId: credential.productId
+        productId: credential.productId,
+        requestedQuantity: credential.requestedQuantity
       })
       await get().getAllRequestCustomer()
     } catch (error: any) {

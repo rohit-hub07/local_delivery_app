@@ -11,11 +11,10 @@ generator client {
 generator zod {
   provider         = "zod-prisma-types"
   output           = "../src/generated/zod"
-  prismaClientPath = "@prisma/client" 
+  prismaClientPath = "@prisma/client"
   useMultipleFiles = false
   createInputTypes = true
   createModelTypes = true
-  
 }
 
 datasource db {
@@ -31,6 +30,24 @@ enum Status {
   PENDING
   ACCEPTED
   REJECTED
+}
+
+enum ProductUnit {
+  PIECE
+  PACKET
+  BOTTLE
+  LITRE
+  ML
+  KG
+  GRAM
+  DOZEN
+}
+
+enum RequestType {
+  NOTE
+  SKIP
+  INCREASE
+  DECREASE
 }
 
 model User {
@@ -72,6 +89,7 @@ model Product {
   productName String
   /// @zod.string.min(2, {message: "Product description must be of at leat 2 characters"})
   description String
+  unit             ProductUnit
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -100,11 +118,13 @@ model VendorCustomers {
 }
 
 model CustomerSubscription {
-  id               String   @id @default(uuid())
+  id               String      @id @default(uuid())
   vendorCustomerId String
   productId        String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  startDate        DateTime
+  dailyQuantity    Decimal     @db.Decimal(10, 2)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
   vendorCustomers VendorCustomers @relation(fields: [vendorCustomerId], references: [id], onDelete: Cascade)
 
@@ -117,11 +137,12 @@ model Requests {
   id               String    @id @default(uuid())
   vendorCustomerId String
   productId        String
-  type             String    @default("note")
+  type             RequestType  @default(NOTE)
   /// @zod.string.min(2,{message: "Message should be at least 2 of 2 characters"})
   message          String
   start_date       DateTime
   end_date         DateTime
+  requestedQuantity Decimal?  @db.Decimal(10, 2)
   status           Status    @default(PENDING)
   respondedAt      DateTime?
   createdAt        DateTime  @default(now())
