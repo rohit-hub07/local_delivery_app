@@ -9,10 +9,12 @@ import {
   Modal,
   Alert,
   RefreshControl,
-  TextInput
+  TextInput,
+  Platform
 } from 'react-native';
-import { useCustomerVendorStore } from '../../context/customerContext/CustomerVendorContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import DateTimePicker, { DateTimePickerChangeEvent } from '@react-native-community/datetimepicker';
+import { useCustomerVendorStore } from '../../context/customerContext/CustomerVendorContext';
 
 interface ProductScreenProps {
   vendorId: string;
@@ -31,6 +33,8 @@ const ProductScreen = ({ vendorId, onBack }: ProductScreenProps) => {
   const [subscribedIds, setSubscribedIds] = useState<Set<string>>(new Set());
   const [dailyQuantity, setDailyQuantity] = useState('1');
   const [startDate, setStartDate] = useState('');
+  const [startDateObj, setStartDateObj] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -57,8 +61,50 @@ const ProductScreen = ({ vendorId, onBack }: ProductScreenProps) => {
     return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   };
 
+  const formatDateString = (date: Date | null): string => {
+    if (!date) return 'Choose start date';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatDateForApi = (date: Date | null): string => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const openDatePicker = () => {
+    setShowDatePicker(true);
+  };
+
+  const onDateChange = (_event: DateTimePickerChangeEvent, selectedDate: Date) => {
+    if (Platform.OS !== 'ios') {
+      setShowDatePicker(false);
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const chosenDate = new Date(selectedDate);
+    chosenDate.setHours(0, 0, 0, 0);
+    if (chosenDate < today) {
+      Alert.alert('Invalid Date', 'Please choose today or a future date.');
+      return;
+    }
+    setStartDateObj(chosenDate);
+    setStartDate(formatDateForApi(chosenDate));
+    if (Platform.OS !== 'ios') {
+      setShowDatePicker(false);
+    }
+  };
+
   const initiateSubscriptionFlow = (productId: string) => {
     setSelectedProductId(productId);
+    setStartDate('');
+    setStartDateObj(null);
+    setShowDatePicker(false);
     setIsConfirmOpen(true);
   };
 
@@ -81,6 +127,9 @@ const ProductScreen = ({ vendorId, onBack }: ProductScreenProps) => {
   const cancelSubscriptionFlow = () => {
     setIsConfirmOpen(false);
     setSelectedProductId(null);
+    setStartDate('');
+    setStartDateObj(null);
+    setShowDatePicker(false);
   };
 
   const activeProduct = vendorProducts.find((p) => p.id === selectedProductId);
@@ -180,15 +229,24 @@ const ProductScreen = ({ vendorId, onBack }: ProductScreenProps) => {
             </View>
 
             <View style={styles.formField}>
-              <Text style={styles.formLabel}>Start Date (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.formInput}
-                value={startDate}
-                onChangeText={setStartDate}
-                placeholder="e.g. 2026-07-24"
-                placeholderTextColor="#9CA3AF"
-              />
+              <Text style={styles.formLabel}>Start Date</Text>
+              <TouchableOpacity style={styles.datePickerButton} onPress={openDatePicker} activeOpacity={0.8}>
+                <Text style={styles.datePickerIcon}>📅</Text>
+                <Text style={startDate ? styles.dateText : styles.placeholderText}>
+                  {formatDateString(startDateObj)}
+                </Text>
+              </TouchableOpacity>
             </View>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={startDateObj || new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                minimumDate={new Date()}
+                onValueChange={onDateChange}
+              />
+            )}
 
             <View style={styles.modalButtonContainer}>
               <TouchableOpacity
@@ -340,7 +398,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#111827',
     backgroundColor: '#F9FAFB'
-  }
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: '#F9FAFB'
+  },
+  datePickerIcon: { fontSize: 16 },
+  dateText: { fontSize: 15, color: '#111827', fontWeight: '700' },
+  placeholderText: { fontSize: 14, color: '#9CA3AF', fontWeight: '600' }
 });
 
 export default ProductScreen;

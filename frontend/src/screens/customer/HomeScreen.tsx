@@ -11,7 +11,8 @@ import {
   Alert,
   Platform,
   Dimensions,
-  Linking
+  Linking,
+  ScrollView
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker, { DateTimePickerChangeEvent } from "@react-native-community/datetimepicker";
@@ -369,87 +370,94 @@ export default function HomeScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Send a Request</Text>
-            <Text style={styles.modalSubtitle}>For: {selectedProductName}</Text>
+            <ScrollView
+              style={styles.modalScroll}
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={styles.modalHandle} />
+              <Text style={styles.modalTitle}>Send a Request</Text>
+              <Text style={styles.modalSubtitle}>For: {selectedProductName}</Text>
 
-             <Text style={styles.label}>1. What do you need?</Text>
-             <View style={styles.chipWrap}>
-               {REQUEST_TYPES.map((opt) => {
-                 const isSelected = requestTypeKey === opt.key;
-                 return (
-                   <TouchableOpacity
-                     key={opt.key}
-                     style={[styles.chip, isSelected && styles.chipSelected]}
-                     onPress={() => handleSelectRequestType(opt.key, opt.label)}
-                     activeOpacity={0.8}
-                   >
-                     <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                       {opt.label}
+               <Text style={styles.label}>1. What do you need?</Text>
+               <View style={styles.chipWrap}>
+                 {REQUEST_TYPES.map((opt) => {
+                   const isSelected = requestTypeKey === opt.key;
+                   return (
+                     <TouchableOpacity
+                       key={opt.key}
+                       style={[styles.chip, isSelected && styles.chipSelected]}
+                       onPress={() => handleSelectRequestType(opt.key, opt.label)}
+                       activeOpacity={0.8}
+                     >
+                       <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                         {opt.label}
+                       </Text>
+                     </TouchableOpacity>
+                   );
+                 })}
+               </View>
+
+               {(requestTypeKey === "INCREASE" || requestTypeKey === "DECREASE") && (
+                 <TextInput
+                   style={styles.input}
+                   placeholder={`Requested quantity (${selectedProductUnit || 'unit'})`}
+                   placeholderTextColor="#9CA3AF"
+                   value={requestedQuantity}
+                   onChangeText={setRequestedQuantity}
+                   keyboardType="numeric"
+                 />
+               )}
+
+               <Text style={styles.label}>2. Choose your dates</Text>
+               <View style={styles.dateRow}>
+                 <View style={styles.dateColumn}>
+                   <Text style={styles.dateColumnLabel}>Start Date</Text>
+                   <TouchableOpacity style={styles.datePickerButton} onPress={() => openDatePicker("start")} activeOpacity={0.8}>
+                     <Text style={styles.datePickerIcon}>📅</Text>
+                     <Text style={startDateObj ? styles.dateText : styles.placeholderText}>
+                       {formatDateString(startDateObj)}
                      </Text>
                    </TouchableOpacity>
-                 );
-               })}
-             </View>
+                 </View>
+                 <View style={styles.dateColumn}>
+                   <Text style={styles.dateColumnLabel}>End Date</Text>
+                   <TouchableOpacity style={styles.datePickerButton} onPress={() => openDatePicker("end")} activeOpacity={0.8}>
+                     <Text style={styles.datePickerIcon}>📅</Text>
+                     <Text style={endDateObj ? styles.dateText : styles.placeholderText}>
+                       {formatDateString(endDateObj)}
+                     </Text>
+                   </TouchableOpacity>
+                 </View>
+               </View>
 
-              {(requestTypeKey === "INCREASE" || requestTypeKey === "DECREASE") && (
-                <TextInput
-                  style={styles.input}
-                  placeholder={`Requested quantity (${selectedProductUnit || 'unit'})`}
-                  placeholderTextColor="#9CA3AF"
-                  value={requestedQuantity}
-                  onChangeText={setRequestedQuantity}
-                  keyboardType="numeric"
+              {/* Native Date Picker Engine Injection */}
+              {showPicker && (
+                <DateTimePicker
+                  value={
+                    pickerMode === "start"
+                      ? (startDateObj || new Date())
+                      : (endDateObj || startDateObj || new Date())
+                  }
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  minimumDate={pickerMode === "end" && startDateObj ? startDateObj : new Date()}
+                  onValueChange={onDateChange}
                 />
               )}
 
-             <Text style={styles.label}>2. Choose your dates</Text>
-             <View style={styles.dateRow}>
-               <View style={styles.dateColumn}>
-                 <Text style={styles.dateColumnLabel}>Start Date</Text>
-                 <TouchableOpacity style={styles.datePickerButton} onPress={() => openDatePicker("start")} activeOpacity={0.8}>
-                   <Text style={styles.datePickerIcon}>📅</Text>
-                   <Text style={startDateObj ? styles.dateText : styles.placeholderText}>
-                     {formatDateString(startDateObj)}
-                   </Text>
-                 </TouchableOpacity>
-               </View>
-               <View style={styles.dateColumn}>
-                 <Text style={styles.dateColumnLabel}>End Date</Text>
-                 <TouchableOpacity style={styles.datePickerButton} onPress={() => openDatePicker("end")} activeOpacity={0.8}>
-                   <Text style={styles.datePickerIcon}>📅</Text>
-                   <Text style={endDateObj ? styles.dateText : styles.placeholderText}>
-                     {formatDateString(endDateObj)}
-                   </Text>
-                 </TouchableOpacity>
-               </View>
-             </View>
-
-            {/* Native Date Picker Engine Injection */}
-            {showPicker && (
-              <DateTimePicker
-                value={
-                  pickerMode === "start"
-                    ? (startDateObj || new Date())
-                    : (endDateObj || startDateObj || new Date())
-                }
-                mode="date"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
-                minimumDate={pickerMode === "end" && startDateObj ? startDateObj : new Date()}
-                onValueChange={onDateChange}
+              <Text style={styles.label}>3. Add a note (Explain your request breifly)</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Write any extra details here"
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={4}
+                value={message}
+                onChangeText={setMessage}
               />
-            )}
-
-            <Text style={styles.label}>3. Add a note (Explain your request breifly)</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Write any extra details here"
-              placeholderTextColor="#9CA3AF"
-              multiline
-              numberOfLines={4}
-              value={message}
-              onChangeText={setMessage}
-            />
+            </ScrollView>
 
             <View style={styles.modalActionRow}>
               <TouchableOpacity
@@ -569,12 +577,20 @@ const styles = StyleSheet.create({
 
   modalOverlay: { flex: 1, backgroundColor: "rgba(15,23,42,0.6)", justifyContent: "flex-end" },
   modalContainer: {
+    flex: 1,
+    maxHeight: "88%",
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 28 * scale,
     borderTopRightRadius: 28 * scale,
-    padding: 24 * scale,
-    paddingBottom: 34 * scale,
-    maxHeight: "88%"
+    flexDirection: 'column'
+  },
+  modalScroll: {
+    flex: 1,
+    paddingHorizontal: 24 * scale,
+    paddingTop: 24 * scale
+  },
+  modalScrollContent: {
+    paddingBottom: 8 * scale
   },
   modalHandle: {
     width: 44 * scale, height: 5 * scale, borderRadius: 3 * scale, backgroundColor: "#E2E8F0",
@@ -613,7 +629,7 @@ const styles = StyleSheet.create({
   dateText: { fontSize: 15 * scale, color: "#0F172A", fontWeight: "700" },
   placeholderText: { fontSize: 14 * scale, color: "#94A3B8", fontWeight: "600" },
 
-  modalActionRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 * scale, gap: 12 * scale },
+  modalActionRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 * scale, gap: 12 * scale, paddingHorizontal: 24 * scale, paddingBottom: 34 * scale },
   modalButton: { flex: 1, paddingVertical: 16 * scale, borderRadius: 14 * scale, alignItems: "center", minHeight: 52 * scale },
   cancelButton: { backgroundColor: "#F1F5F9" },
   cancelButtonText: { color: "#334155", fontWeight: "800", fontSize: 15 * scale },
