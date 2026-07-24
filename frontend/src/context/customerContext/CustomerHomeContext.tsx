@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import { axiosInstance } from "../../api/axios"
 import { io, Socket } from "socket.io-client"
+import { useCustomerSubscriptionStore } from "./CustomerSubscriptionContext"
 
 interface VendorState {
   id: string
@@ -15,6 +16,7 @@ interface SubscribeProductState {
   vendorId: string
   productName: string
   description: string
+  unit: string
   vendor: VendorState
 }
 
@@ -30,7 +32,8 @@ interface RequestType {
   end_date: string,
   message: string,
   type: string,
-  productId: string
+  productId: string,
+  requestedQuantity?: string
 }
 
 
@@ -39,6 +42,7 @@ interface Request {
   id: string
   vendorCustomerId: string
   productId: string
+  productName?: string
   type: string
   message: string
   start_date: string
@@ -85,11 +89,13 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
     socket.on("connect_error", (err) => console.log("Socket error: ", err.message))
 
     socket.on("vendor_update_response",(updatedRequest: Request ) =>{
+      const flattened = { ...updatedRequest, productName: (updatedRequest as any).product?.productName || updatedRequest.productName }
       set((state) =>({
         requestDetails: state.requestDetails.map((request) =>
-          request.id == updatedRequest.id ? updatedRequest: request
+          request.id == flattened.id ? flattened: request
         )
       }))
+      useCustomerSubscriptionStore.getState().fetchMySubscriptions().catch(() => {})
     })
     set({ socket });
   },
@@ -111,7 +117,8 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
         end_date: credential.end_date,
         message: credential.message,
         type: credential.type,
-        productId: credential.productId
+        productId: credential.productId,
+        requestedQuantity: credential.requestedQuantity
       })
       await get().getAllRequestCustomer()
     } catch (error: any) {
@@ -123,7 +130,11 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
     try {
       const res = await axiosInstance.get<RequestApiResponse>("/request/request-status")
       if (res.data.success) {
-        set({ requestDetails: res.data.requestStatus })
+        const mapped = res.data.requestStatus.map((req: any) => ({
+          ...req,
+          productName: req.product?.productName || req.productName,
+        }))
+        set({ requestDetails: mapped })
       }
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";
@@ -135,6 +146,7 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
       const res = await axiosInstance.delete(`/subscription/product/unsubscribe-product/${id}`)
       if (res.data.success) {
         await get().getCustomerSubscribedProducts()
+        await useCustomerSubscriptionStore.getState().fetchMySubscriptions()
       }
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";

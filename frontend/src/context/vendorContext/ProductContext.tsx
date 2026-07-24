@@ -3,7 +3,8 @@ import { axiosInstance } from "../../api/axios"
 
 type AddProductType = {
   productName: string,
-  description: string
+  description: string,
+  unit: string
 }
 
 interface ProductState {
@@ -35,7 +36,8 @@ export const useProductStore = create<ProductState>()((set, get) => ({
     try {
       const res = await axiosInstance.post("/product/add-product", {
         productName: credentials.productName,
-        description: credentials.description
+        description: credentials.description,
+        unit: credentials.unit
       })
       if (res.data.success) {
         await get().getAllProducts()

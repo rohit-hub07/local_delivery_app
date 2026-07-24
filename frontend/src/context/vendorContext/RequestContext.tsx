@@ -17,10 +17,12 @@ export interface CustomerRequest {
   id: string;
   vendorCustomerId: string;
   productId: string;
+  productName?: string;
   type: string;
   message: string;
   start_date: string;
   end_date: string;
+  requestedQuantity?: string | null;
   status: "PENDING" | "ACCEPTED" | "REJECTED";
   respondedAt: string | null;
   createdAt: string;
@@ -84,7 +86,11 @@ export const useRequestStore = create<RequestState>()((set, get) => ({
     try {
       const res = await axiosInstance.get<ApiResponse>("request/all-requests");
       if (res.data.success) {
-        set({ customerRequests: res.data.requests })
+        const mapped = res.data.requests.map((req: any) => ({
+          ...req,
+          productName: req.product?.productName || req.productName,
+        }))
+        set({ customerRequests: mapped })
       }
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";

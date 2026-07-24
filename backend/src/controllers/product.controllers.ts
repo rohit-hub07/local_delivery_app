@@ -19,7 +19,7 @@ export const addProduct = async (req: Request, res: Response) => {
         fieldErrors: validateBody.error.flatten().fieldErrors,
       });
     }
-    const { description, productName } = validateBody.data
+    const { description, productName, unit } = validateBody.data
     // const newProduct = 
     const vendor = req.vendor;
     if(!vendor){
@@ -30,7 +30,10 @@ export const addProduct = async (req: Request, res: Response) => {
     }
     const newProduct = await db.product.create({
       data: {
-        vendorId: vendor.id, description, productName
+        vendorId: vendor.id,
+        description,
+        productName,
+        unit
       }
     })
 

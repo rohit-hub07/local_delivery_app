@@ -1,8 +1,44 @@
 import { create } from "zustand"
 import { axiosInstance } from "../../api/axios"
 
+export interface VendorSubscribedProduct {
+  id: string
+  vendorCustomerId: string
+  productId: string
+  dailyQuantity: string
+  startDate: string
+  createdAt: string
+  updatedAt: string
+  product: {
+    id: string
+    vendorId: string
+    productName: string
+    description: string
+    unit: string
+    createdAt: string
+    updatedAt: string
+  }
+  vendorCustomers: {
+    id: string
+    vendorId: string
+    customerId: string
+    customerPhone: string
+    createdAt: string
+    updatedAt: string
+    user: {
+      id: string
+      name: string
+      phone: string
+      address: string
+      role: string
+      createdAt: string
+      updatedAt: string
+    }
+  }
+}
+
 interface CustomerSubscriptionState {
-  subscribedProducts: any[];
+  subscribedProducts: VendorSubscribedProduct[];
   subscribedCustomers: () => Promise<void>;
   error: any
 }

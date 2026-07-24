@@ -10,19 +10,23 @@ import {
   StyleSheet,
   Alert,
   Platform,
-  Linking
+  Dimensions,
+  Linking,
+  ScrollView
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker, { DateTimePickerChangeEvent } from "@react-native-community/datetimepicker";
 import { useCustomerHomeContext } from "../../context/customerContext/CustomerHomeContext";
 
-// Simple, plain-language options so people can tap instead of type.
-// "Other" reveals a free-text box for anything not covered above.
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const BASE_WIDTH = 375;
+const scale = SCREEN_WIDTH / BASE_WIDTH;
+
 const REQUEST_TYPES = [
-  { key: "general", label: "General Request" },
-  { key: "schedule", label: "Change Delivery Day" },
-  { key: "complaint", label: "Complaint / Problem" },
-  { key: "other", label: "Something Else" }
+  { key: "NOTE", label: "General Note" },
+  { key: "SKIP", label: "Skip Delivery" },
+  { key: "INCREASE", label: "Increase Quantity" },
+  { key: "DECREASE", label: "Decrease Quantity" },
 ];
 
 export default function HomeScreen() {
@@ -39,6 +43,7 @@ export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedProductName, setSelectedProductName] = useState<string>("");
+  const [selectedProductUnit, setSelectedProductUnit] = useState<string>("");
 
   // Unsubscribe specific loading state (tracks which card is mid-flight)
   const [unsubscribingId, setUnsubscribingId] = useState<string | null>(null);
@@ -47,6 +52,7 @@ export default function HomeScreen() {
   const [message, setMessage] = useState<string>("");
   const [requestType, setRequestType] = useState<string>("");
   const [requestTypeKey, setRequestTypeKey] = useState<string>("");
+  const [requestedQuantity, setRequestedQuantity] = useState<string>("");
 
   // Date Picker Specific States
   const [startDateObj, setStartDateObj] = useState<Date | null>(null);
@@ -119,9 +125,10 @@ export default function HomeScreen() {
       });
   };
 
-  const handleOpenForm = (productId: string, productName: string) => {
+  const handleOpenForm = (productId: string, productName: string, unit: string) => {
     setSelectedProductId(productId);
     setSelectedProductName(productName);
+    setSelectedProductUnit(unit);
     setModalVisible(true);
   };
 
@@ -129,9 +136,11 @@ export default function HomeScreen() {
     setModalVisible(false);
     setSelectedProductId(null);
     setSelectedProductName("");
+    setSelectedProductUnit("");
     setMessage("");
     setRequestType("");
     setRequestTypeKey("");
+    setRequestedQuantity("");
     setStartDateObj(null);
     setEndDateObj(null);
   };
@@ -179,13 +188,12 @@ export default function HomeScreen() {
     }
   };
 
-  // Pick a preset request type (or reveal free text for "Something Else")
+  // Pick a preset request type
   const handleSelectRequestType = (key: string, label: string) => {
     setRequestTypeKey(key);
-    if (key === "other") {
-      setRequestType("");
-    } else {
-      setRequestType(label);
+    setRequestType(label);
+    if (key !== "INCREASE" && key !== "DECREASE") {
+      setRequestedQuantity("");
     }
   };
 
@@ -193,10 +201,6 @@ export default function HomeScreen() {
   const handleRequestSubmit = async () => {
     if (!requestTypeKey) {
       Alert.alert("Missing Info", "Please choose what kind of request this is.");
-      return;
-    }
-    if (requestTypeKey === "other" && !requestType.trim()) {
-      Alert.alert("Missing Info", "Please tell us what you need.");
       return;
     }
     if (!startDateObj || !endDateObj) {
@@ -207,15 +211,20 @@ export default function HomeScreen() {
       Alert.alert("Missing Info", "Please select a product first.");
       return;
     }
+    if ((requestTypeKey === "INCREASE" || requestTypeKey === "DECREASE") && !requestedQuantity.trim()) {
+      Alert.alert("Missing Info", "Please enter a requested quantity for this request type.");
+      return;
+    }
 
     setSubmitting(true);
     try {
       await customerRequest({
         productId: selectedProductId,
-        message,
-        type: requestType,
+        message: message || requestType,
+        type: requestTypeKey,
         start_date: formatDateForApi(startDateObj),
-        end_date: formatDateForApi(endDateObj)
+        end_date: formatDateForApi(endDateObj),
+        requestedQuantity: requestedQuantity || undefined
       });
 
       Alert.alert("Request Sent", "Your request has been sent. The vendor will get back to you soon.");
@@ -339,7 +348,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionButton, styles.requestButton]}
-                  onPress={() => handleOpenForm(item.id, item.productName)}
+                  onPress={() => handleOpenForm(item.id, item.productName, item.unit)}
                   disabled={isUnsubscribing}
                   activeOpacity={0.8}
                 >
@@ -361,86 +370,94 @@ export default function HomeScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Send a Request</Text>
-            <Text style={styles.modalSubtitle}>For: {selectedProductName}</Text>
+            <ScrollView
+              style={styles.modalScroll}
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={styles.modalHandle} />
+              <Text style={styles.modalTitle}>Send a Request</Text>
+              <Text style={styles.modalSubtitle}>For: {selectedProductName}</Text>
 
-            <Text style={styles.label}>1. What do you need?</Text>
-            <View style={styles.chipWrap}>
-              {REQUEST_TYPES.map((opt) => {
-                const isSelected = requestTypeKey === opt.key;
-                return (
-                  <TouchableOpacity
-                    key={opt.key}
-                    style={[styles.chip, isSelected && styles.chipSelected]}
-                    onPress={() => handleSelectRequestType(opt.key, opt.label)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+               <Text style={styles.label}>1. What do you need?</Text>
+               <View style={styles.chipWrap}>
+                 {REQUEST_TYPES.map((opt) => {
+                   const isSelected = requestTypeKey === opt.key;
+                   return (
+                     <TouchableOpacity
+                       key={opt.key}
+                       style={[styles.chip, isSelected && styles.chipSelected]}
+                       onPress={() => handleSelectRequestType(opt.key, opt.label)}
+                       activeOpacity={0.8}
+                     >
+                       <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                         {opt.label}
+                       </Text>
+                     </TouchableOpacity>
+                   );
+                 })}
+               </View>
 
-            {requestTypeKey === "other" && (
+               {(requestTypeKey === "INCREASE" || requestTypeKey === "DECREASE") && (
+                 <TextInput
+                   style={styles.input}
+                   placeholder={`Requested quantity (${selectedProductUnit || 'unit'})`}
+                   placeholderTextColor="#9CA3AF"
+                   value={requestedQuantity}
+                   onChangeText={setRequestedQuantity}
+                   keyboardType="numeric"
+                 />
+               )}
+
+               <Text style={styles.label}>2. Choose your dates</Text>
+               <View style={styles.dateRow}>
+                 <View style={styles.dateColumn}>
+                   <Text style={styles.dateColumnLabel}>Start Date</Text>
+                   <TouchableOpacity style={styles.datePickerButton} onPress={() => openDatePicker("start")} activeOpacity={0.8}>
+                     <Text style={styles.datePickerIcon}>📅</Text>
+                     <Text style={startDateObj ? styles.dateText : styles.placeholderText}>
+                       {formatDateString(startDateObj)}
+                     </Text>
+                   </TouchableOpacity>
+                 </View>
+                 <View style={styles.dateColumn}>
+                   <Text style={styles.dateColumnLabel}>End Date</Text>
+                   <TouchableOpacity style={styles.datePickerButton} onPress={() => openDatePicker("end")} activeOpacity={0.8}>
+                     <Text style={styles.datePickerIcon}>📅</Text>
+                     <Text style={endDateObj ? styles.dateText : styles.placeholderText}>
+                       {formatDateString(endDateObj)}
+                     </Text>
+                   </TouchableOpacity>
+                 </View>
+               </View>
+
+              {/* Native Date Picker Engine Injection */}
+              {showPicker && (
+                <DateTimePicker
+                  value={
+                    pickerMode === "start"
+                      ? (startDateObj || new Date())
+                      : (endDateObj || startDateObj || new Date())
+                  }
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  minimumDate={pickerMode === "end" && startDateObj ? startDateObj : new Date()}
+                  onValueChange={onDateChange}
+                />
+              )}
+
+              <Text style={styles.label}>3. Add a note (Explain your request breifly)</Text>
               <TextInput
-                style={styles.input}
-                placeholder="Type what you need here"
+                style={[styles.input, styles.textArea]}
+                placeholder="Write any extra details here"
                 placeholderTextColor="#9CA3AF"
-                value={requestType}
-                onChangeText={setRequestType}
+                multiline
+                numberOfLines={4}
+                value={message}
+                onChangeText={setMessage}
               />
-            )}
-
-            <Text style={styles.label}>2. Choose your dates</Text>
-            <View style={styles.dateRow}>
-              <View style={styles.dateColumn}>
-                <Text style={styles.dateColumnLabel}>Start Date</Text>
-                <TouchableOpacity style={styles.datePickerButton} onPress={() => openDatePicker("start")} activeOpacity={0.8}>
-                  <Text style={styles.datePickerIcon}>📅</Text>
-                  <Text style={startDateObj ? styles.dateText : styles.placeholderText}>
-                    {formatDateString(startDateObj)}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.dateColumn}>
-                <Text style={styles.dateColumnLabel}>End Date</Text>
-                <TouchableOpacity style={styles.datePickerButton} onPress={() => openDatePicker("end")} activeOpacity={0.8}>
-                  <Text style={styles.datePickerIcon}>📅</Text>
-                  <Text style={endDateObj ? styles.dateText : styles.placeholderText}>
-                    {formatDateString(endDateObj)}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Native Date Picker Engine Injection */}
-            {showPicker && (
-              <DateTimePicker
-                value={
-                  pickerMode === "start"
-                    ? (startDateObj || new Date())
-                    : (endDateObj || startDateObj || new Date())
-                }
-                mode="date"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
-                minimumDate={pickerMode === "end" && startDateObj ? startDateObj : new Date()}
-                onValueChange={onDateChange}
-              />
-            )}
-
-            <Text style={styles.label}>3. Add a note (Explain your request breifly)</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Write any extra details here"
-              placeholderTextColor="#9CA3AF"
-              multiline
-              numberOfLines={4}
-              value={message}
-              onChangeText={setMessage}
-            />
+            </ScrollView>
 
             <View style={styles.modalActionRow}>
               <TouchableOpacity
@@ -474,145 +491,155 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F4F6FB" },
   centerContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F4F6FB" },
-  loadingText: { marginTop: 12, color: "#4B5563", fontSize: 16, fontWeight: "600" },
+  loadingText: { marginTop: 12 * scale, color: "#4B5563", fontSize: 16 * scale, fontWeight: "600" },
 
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 18 },
-  headerTitle: { fontSize: 30, fontWeight: "800", color: "#0F172A", letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 16, color: "#475569", marginTop: 4, fontWeight: "600" },
+  header: { paddingHorizontal: 20 * scale, paddingTop: 12 * scale, paddingBottom: 18 * scale },
+  headerTitle: { fontSize: 30 * scale, fontWeight: "800", color: "#0F172A", letterSpacing: -0.5 * scale },
+  headerSubtitle: { fontSize: 16 * scale, color: "#475569", marginTop: 4 * scale, fontWeight: "600" },
 
-  listContent: { paddingHorizontal: 20, paddingBottom: 24, flexGrow: 1 },
+  listContent: { paddingHorizontal: 20 * scale, paddingBottom: 24 * scale, flexGrow: 1 },
 
-  emptyContainer: { alignItems: "center", justifyContent: "center", marginTop: 80, paddingHorizontal: 32 },
+  emptyContainer: { alignItems: "center", justifyContent: "center", marginTop: 80 * scale, paddingHorizontal: 32 * scale },
   emptyIconCircle: {
-    width: 84, height: 84, borderRadius: 42, backgroundColor: "#E7ECFB",
-    alignItems: "center", justifyContent: "center", marginBottom: 18
+    width: 84 * scale, height: 84 * scale, borderRadius: 42 * scale, backgroundColor: "#E7ECFB",
+    alignItems: "center", justifyContent: "center", marginBottom: 18 * scale
   },
-  emptyIconText: { fontSize: 36 },
-  emptyTitle: { fontSize: 20, fontWeight: "800", color: "#0F172A", marginBottom: 6 },
-  emptyText: { textAlign: "center", color: "#475569", fontSize: 16, lineHeight: 22 },
+  emptyIconText: { fontSize: 36 * scale },
+  emptyTitle: { fontSize: 20 * scale, fontWeight: "800", color: "#0F172A", marginBottom: 6 * scale },
+  emptyText: { textAlign: "center", color: "#475569", fontSize: 16 * scale, lineHeight: 22 * scale },
 
   productCard: {
     backgroundColor: "#FFFFFF",
-    padding: 20,
-    borderRadius: 20,
-    marginBottom: 18,
+    padding: 20 * scale,
+    borderRadius: 20 * scale,
+    marginBottom: 18 * scale,
     shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 4 * scale },
     shadowOpacity: 0.07,
-    shadowRadius: 14,
+    shadowRadius: 14 * scale,
     elevation: 3,
     borderWidth: 1,
     borderColor: "#EEF1F8"
   },
   cardTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  productName: { fontSize: 20, fontWeight: "800", color: "#0F172A", flexShrink: 1, marginRight: 8 },
+  productName: { fontSize: 20 * scale, fontWeight: "800", color: "#0F172A", flexShrink: 1, marginRight: 8 * scale },
 
   activeBadge: {
     flexDirection: "row", alignItems: "center", backgroundColor: "#DCFCE7",
-    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20
+    paddingHorizontal: 10 * scale, paddingVertical: 6 * scale, borderRadius: 20 * scale
   },
-  activeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#16A34A", marginRight: 6 },
-  activeBadgeText: { fontSize: 13, fontWeight: "800", color: "#15803D" },
+  activeDot: { width: 7 * scale, height: 7 * scale, borderRadius: 4 * scale, backgroundColor: "#16A34A", marginRight: 6 * scale },
+  activeBadgeText: { fontSize: 13 * scale, fontWeight: "800", color: "#15803D" },
 
-  productDesc: { fontSize: 15, color: "#475569", marginTop: 8, lineHeight: 21 },
+  productDesc: { fontSize: 15 * scale, color: "#475569", marginTop: 8 * scale, lineHeight: 21 * scale },
 
-  vendorDivider: { height: 1, backgroundColor: "#EEF1F8", marginVertical: 16 },
+  vendorDivider: { height: 1 * scale, backgroundColor: "#EEF1F8", marginVertical: 16 * scale },
 
   vendorRow: { flexDirection: "row", alignItems: "center" },
   avatarCircle: {
-    width: 48, height: 48, borderRadius: 24, backgroundColor: "#2563EB",
-    alignItems: "center", justifyContent: "center", marginRight: 14
+    width: 48 * scale, height: 48 * scale, borderRadius: 24 * scale, backgroundColor: "#2563EB",
+    alignItems: "center", justifyContent: "center", marginRight: 14 * scale
   },
-  avatarText: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 },
+  avatarText: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 * scale },
   vendorInfo: { flex: 1 },
-  vendorLabel: { fontSize: 12, color: "#94A3B8", fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.3 },
-  vendorName: { fontSize: 16, fontWeight: "700", color: "#0F172A", marginTop: 1 },
-  vendorDetail: { fontSize: 14, color: "#64748B", marginTop: 2 },
+  vendorLabel: { fontSize: 12 * scale, color: "#94A3B8", fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.3 * scale },
+  vendorName: { fontSize: 16 * scale, fontWeight: "700", color: "#0F172A", marginTop: 1 * scale },
+  vendorDetail: { fontSize: 14 * scale, color: "#64748B", marginTop: 2 * scale },
 
   callButton: {
-    width: 60, height: 52, borderRadius: 14,
+    width: 60 * scale, height: 52 * scale, borderRadius: 14 * scale,
     backgroundColor: "#DCFCE7",
-    borderWidth: 1.5, borderColor: "#BBF7D0",
+    borderWidth: 1.5 * scale, borderColor: "#BBF7D0",
     alignItems: "center", justifyContent: "center",
-    marginLeft: 8
+    marginLeft: 8 * scale
   },
-  callButtonIcon: { fontSize: 18 },
-  callButtonText: { fontSize: 11, fontWeight: "800", color: "#15803D", marginTop: 1 },
+  callButtonIcon: { fontSize: 18 * scale },
+  callButtonText: { fontSize: 11 * scale, fontWeight: "800", color: "#15803D", marginTop: 1 * scale },
 
-  actionRow: { flexDirection: "row", marginTop: 18, gap: 12 },
+  actionRow: { flexDirection: "row", marginTop: 18 * scale, gap: 12 * scale },
   actionButton: {
-    flex: 1, flexDirection: "row", paddingVertical: 15, borderRadius: 14,
-    alignItems: "center", justifyContent: "center", gap: 6
+    flex: 1, flexDirection: "row", paddingVertical: 15 * scale, borderRadius: 14 * scale,
+    alignItems: "center", justifyContent: "center", gap: 6 * scale
   },
-  unsubscribeButton: { backgroundColor: "#FEF2F2", borderWidth: 1.5, borderColor: "#FECACA" },
-  unsubscribeButtonIcon: { color: "#DC2626", fontWeight: "800", fontSize: 14 },
-  unsubscribeButtonText: { color: "#DC2626", fontWeight: "800", fontSize: 15 },
+  unsubscribeButton: { backgroundColor: "#FEF2F2", borderWidth: 1.5 * scale, borderColor: "#FECACA" },
+  unsubscribeButtonIcon: { color: "#DC2626", fontWeight: "800", fontSize: 14 * scale },
+  unsubscribeButtonText: { color: "#DC2626", fontWeight: "800", fontSize: 15 * scale },
   requestButton: {
     backgroundColor: "#2563EB",
     shadowColor: "#2563EB",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 4 * scale },
     shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowRadius: 8 * scale,
     elevation: 3
   },
-  requestButtonIcon: { fontSize: 15 },
-  requestButtonText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 },
+  requestButtonIcon: { fontSize: 15 * scale },
+  requestButtonText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 * scale },
 
   modalOverlay: { flex: 1, backgroundColor: "rgba(15,23,42,0.6)", justifyContent: "flex-end" },
   modalContainer: {
+    flex: 1,
+    maxHeight: "88%",
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: 24,
-    paddingBottom: 34,
-    maxHeight: "88%"
+    borderTopLeftRadius: 28 * scale,
+    borderTopRightRadius: 28 * scale,
+    flexDirection: 'column'
+  },
+  modalScroll: {
+    flex: 1,
+    paddingHorizontal: 24 * scale,
+    paddingTop: 24 * scale
+  },
+  modalScrollContent: {
+    paddingBottom: 8 * scale
   },
   modalHandle: {
-    width: 44, height: 5, borderRadius: 3, backgroundColor: "#E2E8F0",
-    alignSelf: "center", marginBottom: 18
+    width: 44 * scale, height: 5 * scale, borderRadius: 3 * scale, backgroundColor: "#E2E8F0",
+    alignSelf: "center", marginBottom: 18 * scale
   },
-  modalTitle: { fontSize: 22, fontWeight: "800", color: "#0F172A", textAlign: "center" },
-  modalSubtitle: { fontSize: 15, color: "#2563EB", fontWeight: "700", textAlign: "center", marginTop: 4, marginBottom: 22 },
+  modalTitle: { fontSize: 22 * scale, fontWeight: "800", color: "#0F172A", textAlign: "center" },
+  modalSubtitle: { fontSize: 15 * scale, color: "#2563EB", fontWeight: "700", textAlign: "center", marginTop: 4 * scale, marginBottom: 22 * scale },
 
-  label: { fontSize: 16, fontWeight: "800", color: "#1E293B", marginBottom: 10 },
+  label: { fontSize: 16 * scale, fontWeight: "800", color: "#1E293B", marginBottom: 10 * scale },
   input: {
-    borderWidth: 1.5, borderColor: "#E2E8F0", borderRadius: 14, padding: 14,
-    marginBottom: 16, fontSize: 16, backgroundColor: "#F8FAFC", color: "#0F172A"
+    borderWidth: 1.5 * scale, borderColor: "#E2E8F0", borderRadius: 14 * scale, padding: 14 * scale,
+    marginBottom: 16 * scale, fontSize: 16 * scale, backgroundColor: "#F8FAFC", color: "#0F172A"
   },
-  textArea: { height: 100, textAlignVertical: "top" },
+  textArea: { height: 100 * scale, textAlignVertical: "top" },
 
-  chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 18 },
+  chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 10 * scale, marginBottom: 18 * scale },
   chip: {
-    paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12,
-    backgroundColor: "#F1F5F9", borderWidth: 1.5, borderColor: "#E2E8F0"
+    paddingVertical: 12 * scale, paddingHorizontal: 16 * scale, borderRadius: 12 * scale,
+    backgroundColor: "#F1F5F9", borderWidth: 1.5 * scale, borderColor: "#E2E8F0",
+    minHeight: 44 * scale, alignItems: "center", justifyContent: "center"
   },
   chipSelected: { backgroundColor: "#DBEAFE", borderColor: "#2563EB" },
-  chipText: { fontSize: 15, fontWeight: "700", color: "#475569" },
+  chipText: { fontSize: 15 * scale, fontWeight: "700", color: "#475569" },
   chipTextSelected: { color: "#1D4ED8" },
 
-  dateRow: { flexDirection: "row", gap: 12 },
-  dateColumn: { flex: 1 },
-  dateColumnLabel: { fontSize: 13, fontWeight: "700", color: "#64748B", marginBottom: 6 },
+  dateRow: { flexDirection: SCREEN_WIDTH < 340 ? "column" : "row", gap: 12 * scale },
+  dateColumn: { flex: SCREEN_WIDTH < 340 ? 0 : 1 },
+  dateColumnLabel: { fontSize: 13 * scale, fontWeight: "700", color: "#64748B", marginBottom: 6 * scale },
   datePickerButton: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    borderWidth: 1.5, borderColor: "#E2E8F0", borderRadius: 14, padding: 14,
-    marginBottom: 16, backgroundColor: "#F8FAFC"
+    flexDirection: "row", alignItems: "center", gap: 8 * scale,
+    borderWidth: 1.5 * scale, borderColor: "#E2E8F0", borderRadius: 14 * scale, padding: 14 * scale,
+    marginBottom: 16 * scale, backgroundColor: "#F8FAFC",
+    minHeight: 52 * scale
   },
-  datePickerIcon: { fontSize: 16 },
-  dateText: { fontSize: 15, color: "#0F172A", fontWeight: "700" },
-  placeholderText: { fontSize: 14, color: "#94A3B8", fontWeight: "600" },
+  datePickerIcon: { fontSize: 16 * scale },
+  dateText: { fontSize: 15 * scale, color: "#0F172A", fontWeight: "700" },
+  placeholderText: { fontSize: 14 * scale, color: "#94A3B8", fontWeight: "600" },
 
-  modalActionRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 10, gap: 12 },
-  modalButton: { flex: 1, paddingVertical: 16, borderRadius: 14, alignItems: "center" },
+  modalActionRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 * scale, gap: 12 * scale, paddingHorizontal: 24 * scale, paddingBottom: 34 * scale },
+  modalButton: { flex: 1, paddingVertical: 16 * scale, borderRadius: 14 * scale, alignItems: "center", minHeight: 52 * scale },
   cancelButton: { backgroundColor: "#F1F5F9" },
-  cancelButtonText: { color: "#334155", fontWeight: "800", fontSize: 15 },
+  cancelButtonText: { color: "#334155", fontWeight: "800", fontSize: 15 * scale },
   submitButton: {
     backgroundColor: "#2563EB",
     shadowColor: "#2563EB",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 4 * scale },
     shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowRadius: 8 * scale,
     elevation: 3
   },
-  submitButtonText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 }
+  submitButtonText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 * scale }
 });

@@ -125,8 +125,20 @@ const RequestsScreen = () => {
           </TouchableOpacity>
         </View>
 
+        {item.productName && (
+          <View style={styles.productRow}>
+            <Text style={styles.productLabel}>Product:</Text>
+            <Text style={styles.productName} numberOfLines={1} ellipsizeMode="tail">{item.productName}</Text>
+          </View>
+        )}
+
         <View style={styles.requestDetails}>
           <Text style={styles.typeBadge}>{item.type}</Text>
+          {(item.type === 'INCREASE' || item.type === 'DECREASE') && item.requestedQuantity && (
+            <View style={styles.quantityBadge}>
+              <Text style={styles.quantityBadgeText}>Requested Qty: {item.requestedQuantity}</Text>
+            </View>
+          )}
           <View style={styles.messageBox}>
             <Text style={styles.messageText}>{item.message}</Text>
           </View>
@@ -395,6 +407,28 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     marginBottom: 14,
   },
+  productRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+  },
+  productLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    marginRight: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  productName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+    flex: 1,
+  },
   avatarCircle: {
     width: 44,
     height: 44,
@@ -451,6 +485,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     marginBottom: 10,
+  },
+  quantityBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 10,
+    marginLeft: 8,
+  },
+  quantityBadgeText: {
+    color: '#92400E',
+    fontSize: 12,
+    fontWeight: '800',
   },
   messageBox: {
     backgroundColor: '#F8FAFC',

@@ -8,10 +8,13 @@ import {
   StyleSheet,
   Modal,
   Alert,
-  RefreshControl
+  RefreshControl,
+  TextInput,
+  Platform
 } from 'react-native';
-import { useCustomerVendorStore } from '../../context/customerContext/CustomerVendorContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import DateTimePicker, { DateTimePickerChangeEvent } from '@react-native-community/datetimepicker';
+import { useCustomerVendorStore } from '../../context/customerContext/CustomerVendorContext';
 
 interface ProductScreenProps {
   vendorId: string;
@@ -28,6 +31,10 @@ const ProductScreen = ({ vendorId, onBack }: ProductScreenProps) => {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [subscribing, setSubscribing] = useState<boolean>(false);
   const [subscribedIds, setSubscribedIds] = useState<Set<string>>(new Set());
+  const [dailyQuantity, setDailyQuantity] = useState('1');
+  const [startDate, setStartDate] = useState('');
+  const [startDateObj, setStartDateObj] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -54,8 +61,50 @@ const ProductScreen = ({ vendorId, onBack }: ProductScreenProps) => {
     return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   };
 
+  const formatDateString = (date: Date | null): string => {
+    if (!date) return 'Choose start date';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatDateForApi = (date: Date | null): string => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const openDatePicker = () => {
+    setShowDatePicker(true);
+  };
+
+  const onDateChange = (_event: DateTimePickerChangeEvent, selectedDate: Date) => {
+    if (Platform.OS !== 'ios') {
+      setShowDatePicker(false);
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const chosenDate = new Date(selectedDate);
+    chosenDate.setHours(0, 0, 0, 0);
+    if (chosenDate < today) {
+      Alert.alert('Invalid Date', 'Please choose today or a future date.');
+      return;
+    }
+    setStartDateObj(chosenDate);
+    setStartDate(formatDateForApi(chosenDate));
+    if (Platform.OS !== 'ios') {
+      setShowDatePicker(false);
+    }
+  };
+
   const initiateSubscriptionFlow = (productId: string) => {
     setSelectedProductId(productId);
+    setStartDate('');
+    setStartDateObj(null);
+    setShowDatePicker(false);
     setIsConfirmOpen(true);
   };
 
@@ -64,7 +113,7 @@ const ProductScreen = ({ vendorId, onBack }: ProductScreenProps) => {
 
     setSubscribing(true);
     try {
-      await subscribeProduct(selectedProductId);
+      await subscribeProduct(selectedProductId, dailyQuantity, startDate)
       setSubscribedIds((prev) => new Set(prev).add(selectedProductId));
       Alert.alert('Success', 'You have successfully subscribed to this product!');
     } catch (error: any) {
@@ -78,6 +127,9 @@ const ProductScreen = ({ vendorId, onBack }: ProductScreenProps) => {
   const cancelSubscriptionFlow = () => {
     setIsConfirmOpen(false);
     setSelectedProductId(null);
+    setStartDate('');
+    setStartDateObj(null);
+    setShowDatePicker(false);
   };
 
   const activeProduct = vendorProducts.find((p) => p.id === selectedProductId);
@@ -163,6 +215,38 @@ const ProductScreen = ({ vendorId, onBack }: ProductScreenProps) => {
               Are you sure you want to subscribe to{' '}
               <Text style={styles.modalMessageBold}>{activeProduct?.productName}</Text>?
             </Text>
+
+            <View style={styles.formField}>
+              <Text style={styles.formLabel}>Daily Quantity</Text>
+              <TextInput
+                style={styles.formInput}
+                value={dailyQuantity}
+                onChangeText={setDailyQuantity}
+                keyboardType="numeric"
+                placeholder="e.g. 1"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+
+            <View style={styles.formField}>
+              <Text style={styles.formLabel}>Start Date</Text>
+              <TouchableOpacity style={styles.datePickerButton} onPress={openDatePicker} activeOpacity={0.8}>
+                <Text style={styles.datePickerIcon}>📅</Text>
+                <Text style={startDate ? styles.dateText : styles.placeholderText}>
+                  {formatDateString(startDateObj)}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={startDateObj || new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                minimumDate={new Date()}
+                onValueChange={onDateChange}
+              />
+            )}
 
             <View style={styles.modalButtonContainer}>
               <TouchableOpacity
@@ -303,6 +387,31 @@ const styles = StyleSheet.create({
   },
   cancelBtnText: { color: '#374151', fontWeight: '700', fontSize: 14 },
   confirmBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
+
+  formField: { width: '100%', marginBottom: 14 },
+  formLabel: { fontSize: 14, fontWeight: '700', color: '#374151', marginBottom: 6 },
+  formInput: {
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 15,
+    color: '#111827',
+    backgroundColor: '#F9FAFB'
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: '#F9FAFB'
+  },
+  datePickerIcon: { fontSize: 16 },
+  dateText: { fontSize: 15, color: '#111827', fontWeight: '700' },
+  placeholderText: { fontSize: 14, color: '#9CA3AF', fontWeight: '600' }
 });
 
 export default ProductScreen;
