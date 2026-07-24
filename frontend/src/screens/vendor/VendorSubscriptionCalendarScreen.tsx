@@ -11,28 +11,31 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
-import { useCustomerSubscriptionStore, type CalendarDayType } from '../../context/customerContext/CustomerSubscriptionContext';
+import { useCustomerSubscriptionStore, type CalendarDayType } from '../../context/vendorContext/CustomerSubscriptionContex';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type CalendarRouteParams = {
-  SubscriptionCalendar: {
+  VendorSubscriptionCalendar: {
     subscriptionId: string
   }
 }
 
 const WEEK_DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 
-export default function SubscriptionCalendarScreen() {
-  const route = useRoute<RouteProp<CalendarRouteParams, 'SubscriptionCalendar'>>()
+export default function VendorSubscriptionCalendarScreen() {
+  const route = useRoute<RouteProp<CalendarRouteParams, 'VendorSubscriptionCalendar'>>()
   const navigation = useNavigation<NativeStackNavigationProp<any>>()
   const subscriptionId = route.params?.subscriptionId || ''
-  const { calendar, calendarLoading, currentCalendarMonth, currentCalendarYear, fetchCalendar } = useCustomerSubscriptionStore()
+  const { calendar, calendarLoading, currentCalendarMonth, currentCalendarYear, fetchVendorCalendar } = useCustomerSubscriptionStore()
   const [month, setMonth] = useState(currentCalendarMonth)
   const [year, setYear] = useState(currentCalendarYear)
+  const [totalDelivered, setTotalDelivered] = useState<string | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
 
   useEffect(() => {
     if (subscriptionId) {
       loadCalendar(month, year)
+      loadStats()
     }
   }, [subscriptionId])
 
@@ -40,15 +43,31 @@ export default function SubscriptionCalendarScreen() {
     React.useCallback(() => {
       if (subscriptionId) {
         loadCalendar(month, year)
+        loadStats()
       }
     }, [subscriptionId, month, year])
   )
 
   const loadCalendar = async (targetMonth: number, targetYear: number) => {
     try {
-      await fetchCalendar(subscriptionId, targetMonth, targetYear)
+      await fetchVendorCalendar(subscriptionId, targetMonth, targetYear)
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to load calendar')
+    }
+  }
+
+  const loadStats = async () => {
+    if (!subscriptionId) return
+    try {
+      setStatsLoading(true)
+      const stats = await useCustomerSubscriptionStore.getState().fetchVendorSubscriptionStats(subscriptionId)
+      if (stats) {
+        setTotalDelivered(stats.totalDeliveredQuantity)
+      }
+    } catch (error: any) {
+      console.log('Failed to load stats:', error.message)
+    } finally {
+      setStatsLoading(false)
     }
   }
 
@@ -170,6 +189,12 @@ export default function SubscriptionCalendarScreen() {
             <Text style={styles.monthButtonText}>›</Text>
           </TouchableOpacity>
         </View>
+        {!statsLoading && totalDelivered !== null && (
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Total Delivered Quantity</Text>
+            <Text style={styles.totalValue}>{totalDelivered}</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.calendarContainer}>
@@ -252,6 +277,20 @@ const styles = StyleSheet.create({
   },
   monthButtonText: { fontSize: 22, fontWeight: '800', color: '#2563EB' },
   monthLabel: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
+  totalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    backgroundColor: '#DBEAFE',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#BFDBFE'
+  },
+  totalLabel: { fontSize: 13, fontWeight: '700', color: '#1E40AF' },
+  totalValue: { fontSize: 16, fontWeight: '800', color: '#1E3A8A' },
 
   calendarContainer: {
     flex: 1,

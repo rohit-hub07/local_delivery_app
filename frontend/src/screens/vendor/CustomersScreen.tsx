@@ -14,6 +14,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useVendorCustomerStore } from "../../context/vendorContext/vendorCustomerContext";
 import { useCustomerSubscriptionStore } from "../../context/vendorContext/CustomerSubscriptionContex";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 const AVATAR_COLORS = [
   { bg: "#E1F5EE", text: "#085041" },
@@ -33,6 +35,7 @@ const getAvatarColor = (id: string) => {
 const CustomerScreen = () => {
   const { addCustomer, deleteCustomers, allCustomers } =
     useVendorCustomerStore();
+  const navigation = useNavigation<NativeStackNavigationProp<any>>()
 
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,24 +70,6 @@ const CustomerScreen = () => {
       setAddCustomerError("Please enter a phone number.");
       return;
     }
-
-    // 1. Remove spaces, hyphens, brackets, and periods
-    // let normalizedNumber = phone.trim().replace(/[\s\-().]/g, "");
-
-    // 2. Automatically strip "+91" or "91" if present at the start
-    // if (normalizedNumber.startsWith("+91")) {
-    //   normalizedNumber = normalizedNumber.slice(3);
-    // } else if (normalizedNumber.startsWith("91") && normalizedNumber.length > 10) {
-    //   normalizedNumber = normalizedNumber.slice(2);
-    // }
-
-    // 3. Validate that it is exactly a 10-digit Indian phone number
-    // const phoneRegex = /^[6-9]\d{9}$/;
-
-    // if (!phoneRegex.test(normalizedNumber)) {
-    //   Alert.alert("Invalid Phone Number", "Please enter a valid 10-digit number.");
-    //   return;
-    // }
 
     try {
       setAddCustomerError("");
@@ -180,7 +165,14 @@ const CustomerScreen = () => {
         renderItem={({ item }) => {
           const avatar = getAvatarColor(item.user.id);
           return (
-            <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.card}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('CustomerSubscriptions', {
+                customerId: item.user.id,
+                customerName: item.user.name,
+              })}
+            >
               <View
                 style={[styles.avatar, { backgroundColor: avatar.bg }]}
               >
@@ -206,22 +198,35 @@ const CustomerScreen = () => {
                 )}
               </View>
 
-              <TouchableOpacity
-                style={styles.callButton}
-                onPress={() => handleCall(item.user.phone)}
-                accessibilityLabel={`Call ${item.user.name}`}
-              >
-                <Feather name="phone" size={18} color="#185FA5" />
-              </TouchableOpacity>
+              <View style={styles.actionsRow}>
+                <TouchableOpacity
+                  style={styles.callButton}
+                  onPress={() => handleCall(item.user.phone)}
+                  accessibilityLabel={`Call ${item.user.name}`}
+                >
+                  <Feather name="phone" size={18} color="#185FA5" />
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => handleDelete(item.user.id)}
-                accessibilityLabel={`Delete ${item.user.name}`}
-              >
-                <Feather name="trash-2" size={18} color="#A32D2D" />
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(item.user.id)}
+                  accessibilityLabel={`Delete ${item.user.name}`}
+                >
+                  <Feather name="trash-2" size={18} color="#A32D2D" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.viewButton}
+                  onPress={() => navigation.navigate('CustomerSubscriptions', {
+                    customerId: item.user.id,
+                    customerName: item.user.name,
+                  })}
+                  accessibilityLabel={`View ${item.user.name} subscriptions`}
+                >
+                  <Feather name="eye" size={18} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
           );
         }}
       />
@@ -351,8 +356,6 @@ const styles = StyleSheet.create({
     borderColor: "#EDEBE3",
     padding: 14,
     marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
   },
 
   avatar: {
@@ -361,7 +364,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    marginBottom: 12,
   },
 
   avatarText: {
@@ -370,8 +373,7 @@ const styles = StyleSheet.create({
   },
 
   cardBody: {
-    flex: 1,
-    marginRight: 8,
+    marginBottom: 12,
   },
 
   name: {
@@ -399,6 +401,13 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
 
+  actionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 10,
+  },
+
   callButton: {
     width: 42,
     height: 42,
@@ -406,7 +415,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#E6F1FB",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 8,
   },
 
   deleteButton: {
@@ -414,6 +422,15 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 21,
     backgroundColor: "#FCEBEB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  viewButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#2563EB",
     alignItems: "center",
     justifyContent: "center",
   },

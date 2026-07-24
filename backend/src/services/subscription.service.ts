@@ -170,6 +170,76 @@ export class SubscriptionService {
     };
   }
 
+  static async getVendorSubscriptionStats(subscriptionId: string): Promise<{ totalDeliveredQuantity: string; receivedDays: number; skippedDays: number } | null> {
+    const subscription = await db.customerSubscription.findUnique({
+      where: { id: subscriptionId },
+      include: {
+        vendorCustomers: {
+          select: {
+            vendorId: true,
+          },
+        },
+      },
+    });
+
+    if (!subscription) {
+      return null;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const startDate = new Date(subscription.startDate);
+    startDate.setHours(0, 0, 0, 0);
+
+    if (today < startDate) {
+      return {
+        totalDeliveredQuantity: "0",
+        receivedDays: 0,
+        skippedDays: 0,
+      };
+    }
+
+    const acceptedRequests = await db.requests.findMany({
+      where: {
+        vendorCustomerId: subscription.vendorCustomerId,
+        productId: subscription.productId,
+        status: "ACCEPTED",
+      },
+    });
+
+    let totalDeliveredQuantity = 0;
+    let receivedDays = 0;
+    let skippedDays = 0;
+
+    const currentDate = new Date(today);
+    for (let d = new Date(startDate); d <= currentDate; d.setDate(d.getDate() + 1)) {
+      const dayStart = new Date(d);
+      dayStart.setHours(0, 0, 0, 0);
+
+      const effectiveQuantity = this.getEffectiveQuantityForDate(
+        dayStart,
+        subscription.dailyQuantity.toString(),
+        acceptedRequests
+      );
+
+      const qty = parseInt(effectiveQuantity, 10) || 0;
+      totalDeliveredQuantity += qty;
+
+      if (qty === 0) {
+        skippedDays++;
+      } else {
+        receivedDays++;
+      }
+    }
+
+    return {
+      totalDeliveredQuantity: totalDeliveredQuantity.toString(),
+      receivedDays,
+      skippedDays,
+    };
+  }
+
   static async getMonthlyCalendar(
     subscriptionId: string,
     year: number,
@@ -250,7 +320,7 @@ export class SubscriptionService {
       let requestType: string | null = null;
       let requestId: string | null = null;
 
-      if (!isBeforeStart && !isUpcoming) {
+      if (!isBeforeStart) {
         const applicableRequests = acceptedRequests
           .filter((req) => {
             const reqStart = new Date(req.start_date);
@@ -279,7 +349,7 @@ export class SubscriptionService {
           } else if (effectiveRequest.type === "NOTE") {
             isDelivered = true;
           }
-        } else {
+        } else if (!isUpcoming) {
           isDelivered = true;
         }
       }

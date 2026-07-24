@@ -355,6 +355,167 @@ export const vendorSubscibedProducts = async (req: Request, res: Response) => {
   }
 }
 
+export const getVendorCustomerSubscriptions = async (req: Request, res: Response) => {
+  try {
+    const vendor = req.vendor
+    if (!vendor) {
+      return res.status(401).json({
+        message: "Vendor doesn't exist!",
+        success: false,
+      })
+    }
+
+    const customerId = req.params.customerId as string
+    if (!customerId) {
+      return res.status(400).json({
+        message: "Customer ID is required",
+        success: false,
+      })
+    }
+
+    const subscribedProducts = await db.customerSubscription.findMany({
+      where: {
+        vendorCustomers: {
+          vendorId: vendor.id,
+          customerId,
+        },
+      },
+      include: {
+        product: true,
+        vendorCustomers: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    })
+
+    return res.status(200).json({
+      message: "Customer subscriptions fetched successfully!",
+      success: true,
+      subscribedProducts,
+    })
+  } catch (error: any) {
+    console.log("Error while fetching customer subscriptions: ", error.message)
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    })
+  }
+}
+
+export const getVendorSubscriptionCalendar = async (req: Request, res: Response) => {
+  try {
+    const vendor = req.vendor
+    if (!vendor) {
+      return res.status(401).json({ message: "Vendor doesn't exist!", success: false })
+    }
+
+    const subscriptionId = req.params.id as string
+    if (!subscriptionId) {
+      return res.status(400).json({ message: "Subscription ID is required", success: false })
+    }
+
+    const month = req.query.month ? parseInt(req.query.month as string) : new Date().getMonth() + 1
+    const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear()
+
+    if (month < 1 || month > 12) {
+      return res.status(400).json({ message: "Invalid month. Must be between 1 and 12", success: false })
+    }
+
+    const subscription = await db.customerSubscription.findUnique({
+      where: { id: subscriptionId },
+      include: {
+        vendorCustomers: {
+          select: {
+            vendorId: true,
+          },
+        },
+      },
+    })
+
+    if (!subscription) {
+      return res.status(404).json({ message: "Subscription not found", success: false })
+    }
+
+    if (subscription.vendorCustomers.vendorId !== vendor.id) {
+      return res.status(403).json({ message: "You are not authorized to view this subscription", success: false })
+    }
+
+    const calendar: CalendarDay[] = await SubscriptionService.getMonthlyCalendar(subscriptionId, year, month)
+
+    return res.status(200).json({
+      message: "Calendar fetched successfully!",
+      success: true,
+      calendar,
+      month,
+      year,
+    })
+  } catch (error: any) {
+    console.log("Error while fetching vendor calendar: ", error.message)
+    if (error.message === "Subscription not found") {
+      return res.status(404).json({ message: "Subscription not found", success: false })
+    }
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    })
+  }
+}
+
+export const getVendorSubscriptionStats = async (req: Request, res: Response) => {
+  try {
+    const vendor = req.vendor
+    if (!vendor) {
+      return res.status(401).json({ message: "Vendor doesn't exist!", success: false })
+    }
+
+    const subscriptionId = req.params.id as string
+    if (!subscriptionId) {
+      return res.status(400).json({ message: "Subscription ID is required", success: false })
+    }
+
+    const subscription = await db.customerSubscription.findUnique({
+      where: { id: subscriptionId },
+      include: {
+        vendorCustomers: {
+          select: {
+            vendorId: true,
+          },
+        },
+        product: {
+          select: {
+            productName: true,
+            unit: true,
+          },
+        },
+      },
+    })
+
+    if (!subscription) {
+      return res.status(404).json({ message: "Subscription not found", success: false })
+    }
+
+    if (subscription.vendorCustomers.vendorId !== vendor.id) {
+      return res.status(403).json({ message: "You are not authorized to view this subscription", success: false })
+    }
+
+    const stats = await SubscriptionService.getVendorSubscriptionStats(subscriptionId)
+
+    return res.status(200).json({
+      message: "Subscription stats fetched successfully!",
+      success: true,
+      stats,
+    })
+  } catch (error: any) {
+    console.log("Error while fetching vendor subscription stats: ", error.message)
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    })
+  }
+}
+
 export const isValidRequest = async(req: Request, res: Response) =>{
   try {
     // check the subscription id with the request subscription id 

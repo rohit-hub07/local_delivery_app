@@ -6,6 +6,9 @@ import {
   subscribeProduct,
   unsubscribeProduct,
   vendorSubscibedProducts,
+  getVendorSubscriptionCalendar,
+  getVendorCustomerSubscriptions,
+  getVendorSubscriptionStats,
 } from "../controllers/customerSubscription.controlers.js"
 import { isAuthenticated } from "../middlewares/isAuthenticated.js"
 import { isCreatedVendorProfile } from "../middlewares/isCreatedVendorProfile.js"
@@ -18,11 +21,14 @@ customerSubscriptionRouter.post("/product/add/:id", isAuthenticated, isRoleCusto
 customerSubscriptionRouter.delete("/product/unsubscribe-product/:id", isAuthenticated, isRoleCustomer, unsubscribeProduct)
 customerSubscriptionRouter.get("/get/subscribed-product", isAuthenticated, isRoleCustomer, customerSubscribedProduct)
 customerSubscriptionRouter.get("/get/customer-subcribed-product", isAuthenticated, isCreatedVendorProfile, isVendor, vendorSubscibedProducts)
+customerSubscriptionRouter.get("/get/vendor/customer-subscriptions/:customerId", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorCustomerSubscriptions)
 
 // get the subscription states of the customer
 customerSubscriptionRouter.get("/my-subscriptions", isAuthenticated, isRoleCustomer, getMySubscriptions)
 
 // show the customer the detailed calender of the product delivered or skiped
 customerSubscriptionRouter.get("/calendar/:id", isAuthenticated, isRoleCustomer, getSubscriptionCalendar)
+customerSubscriptionRouter.get("/vendor/calendar/:id", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorSubscriptionCalendar)
+customerSubscriptionRouter.get("/vendor/stats/:id", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorSubscriptionStats)
 
 export default customerSubscriptionRouter

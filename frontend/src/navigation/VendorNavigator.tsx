@@ -1,14 +1,28 @@
 import React from 'react'; 
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"; 
-import { Platform, Text } from 'react-native'; // 💡 Added Text import
+import { Platform, Text } from 'react-native'; 
 import { Home, Users, BellRing, User, ShoppingBag } from 'lucide-react-native'; 
 import HomeScreen from "../screens/vendor/HomeScreen"; 
 import CustomerScreen from "../screens/vendor/CustomersScreen"; 
 import ProfileScreen from "../screens/vendor/ProfileScreen"; 
 import RequestsScreen from "../screens/vendor/RequestsScreen"; 
 import {MyProductsScreen} from '../screens/vendor/MyProductsScreen'; 
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import VendorSubscriptionCalendarScreen from '../screens/vendor/VendorSubscriptionCalendarScreen';
+import CustomerSubscriptionsScreen from '../screens/vendor/CustomerSubscriptionsScreen';
 
 const Tab = createBottomTabNavigator(); 
+const Stack = createNativeStackNavigator()
+
+function CustomersStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="CustomersList" component={CustomerScreen} />
+      <Stack.Screen name="CustomerSubscriptions" component={CustomerSubscriptionsScreen} />
+      <Stack.Screen name="VendorSubscriptionCalendar" component={VendorSubscriptionCalendarScreen} />
+    </Stack.Navigator>
+  )
+} 
 
 export default function VendorTabNavigator() { 
   return ( 
@@ -51,7 +65,7 @@ export default function VendorTabNavigator() {
       })} 
     > 
       <Tab.Screen name="Home" component={HomeScreen} /> 
-      <Tab.Screen name="Customers" component={CustomerScreen} /> 
+      <Tab.Screen name="Customers" component={CustomersStack} /> 
       <Tab.Screen name="My Products" component={MyProductsScreen} /> 
       <Tab.Screen name="Requests" component={RequestsScreen} /> 
       <Tab.Screen name="Profile" component={ProfileScreen} /> 
