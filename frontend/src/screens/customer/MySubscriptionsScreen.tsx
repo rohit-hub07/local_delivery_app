@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCustomerSubscriptionStore, type SubscriptionStatsType } from '../../context/customerContext/CustomerSubscriptionContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function MySubscriptionsScreen() {
@@ -21,6 +21,12 @@ export default function MySubscriptionsScreen() {
   useEffect(() => {
     loadSubscriptions()
   }, [])
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadSubscriptions()
+    }, [])
+  )
 
   const loadSubscriptions = async () => {
     try {

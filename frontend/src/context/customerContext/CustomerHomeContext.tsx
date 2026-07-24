@@ -96,6 +96,10 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
         )
       }))
       useCustomerSubscriptionStore.getState().fetchMySubscriptions().catch(() => {})
+      const subscriptionId = (updatedRequest as any).subscriptionId
+      if (subscriptionId) {
+        useCustomerSubscriptionStore.getState().fetchCalendar(subscriptionId).catch(() => {})
+      }
     })
     set({ socket });
   },

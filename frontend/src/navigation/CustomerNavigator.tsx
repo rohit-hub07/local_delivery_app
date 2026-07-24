@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Platform } from 'react-native';
 import { Home, ShoppingBag, BellRing, User, ClipboardList } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from "../screens/customer/HomeScreen";
 import RequestsScreen from "../screens/customer/RequestsScreen";
@@ -24,6 +25,8 @@ function SubscriptionsStack() {
 }
 
 export default function CustomerTabNavigator() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -34,9 +37,9 @@ export default function CustomerTabNavigator() {
           backgroundColor: '#ffffff',
           borderTopWidth: 1,
           borderTopColor: '#e5e7eb',
-          height: Platform.OS === 'ios' ? 92 : 72,
+          height: Platform.OS === 'ios' ? 92 : 72 + insets.bottom,
           paddingTop: 12,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 10 + insets.bottom,
         },
         tabBarIconStyle: {
           marginTop: Platform.OS === 'ios' ? -6 : -4,

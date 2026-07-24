@@ -15,7 +15,7 @@ import {
   ScrollView
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import DateTimePicker, { DateTimePickerChangeEvent } from "@react-native-community/datetimepicker";
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useCustomerHomeContext } from "../../context/customerContext/CustomerHomeContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -152,11 +152,13 @@ export default function HomeScreen() {
   };
 
   // Process selected dates safely
-  const onDateChange = (_event: DateTimePickerChangeEvent, selectedDate: Date) => {
-    // Hide picker for Android on selection immediately
-    if (Platform.OS !== "ios") {
+  const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (event.type === "dismissed" || !selectedDate) {
       setShowPicker(false);
+      return;
     }
+
+    setShowPicker(false);
 
     // Modern baseline comparison (removes precise microsecond deltas)
     const today = new Date();
@@ -432,32 +434,33 @@ export default function HomeScreen() {
                  </View>
                </View>
 
-              {/* Native Date Picker Engine Injection */}
-              {showPicker && (
-                <DateTimePicker
-                  value={
-                    pickerMode === "start"
-                      ? (startDateObj || new Date())
-                      : (endDateObj || startDateObj || new Date())
-                  }
-                  mode="date"
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  minimumDate={pickerMode === "end" && startDateObj ? startDateObj : new Date()}
-                  onValueChange={onDateChange}
-                />
-              )}
+               <Text style={styles.label}>3. Add a note (Explain your request breifly)</Text>
+               <TextInput
+                 style={[styles.input, styles.textArea]}
+                 placeholder="Write any extra details here"
+                 placeholderTextColor="#9CA3AF"
+                 multiline
+                 numberOfLines={4}
+                 value={message}
+                 onChangeText={setMessage}
+               />
+             </ScrollView>
 
-              <Text style={styles.label}>3. Add a note (Explain your request breifly)</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Write any extra details here"
-                placeholderTextColor="#9CA3AF"
-                multiline
-                numberOfLines={4}
-                value={message}
-                onChangeText={setMessage}
-              />
-            </ScrollView>
+             {showPicker && (
+               <View style={styles.datePickerContainer}>
+                 <DateTimePicker
+                   value={
+                     pickerMode === "start"
+                       ? (startDateObj || new Date())
+                       : (endDateObj || startDateObj || new Date())
+                   }
+                   mode="date"
+                   display={Platform.OS === "ios" ? "spinner" : "default"}
+                   minimumDate={pickerMode === "end" && startDateObj ? startDateObj : new Date()}
+                   onChange={onDateChange}
+                 />
+               </View>
+             )}
 
             <View style={styles.modalActionRow}>
               <TouchableOpacity
@@ -628,6 +631,12 @@ const styles = StyleSheet.create({
   datePickerIcon: { fontSize: 16 * scale },
   dateText: { fontSize: 15 * scale, color: "#0F172A", fontWeight: "700" },
   placeholderText: { fontSize: 14 * scale, color: "#94A3B8", fontWeight: "600" },
+  datePickerContainer: {
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 10 * scale,
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0"
+  },
 
   modalActionRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 * scale, gap: 12 * scale, paddingHorizontal: 24 * scale, paddingBottom: 34 * scale },
   modalButton: { flex: 1, paddingVertical: 16 * scale, borderRadius: 14 * scale, alignItems: "center", minHeight: 52 * scale },
