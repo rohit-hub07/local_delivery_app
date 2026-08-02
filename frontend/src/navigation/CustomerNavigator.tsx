@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Platform } from 'react-native';
 import { Home, ShoppingBag, BellRing, User, ClipboardList } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 import HomeScreen from "../screens/customer/HomeScreen";
 import RequestsScreen from "../screens/customer/RequestsScreen";
@@ -12,6 +13,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MySubscriptionsScreen from '../screens/customer/MySubscriptionsScreen';
 import SubscriptionCalendarScreen from '../screens/customer/SubscriptionCalendarScreen';
 import ProductScreen from '../screens/customer/ProductScreen';
+import { useCustomerHomeContext } from '../context/customerContext/CustomerHomeContext';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator()
@@ -34,8 +36,18 @@ function VendorsStack() {
   )
 }
 
+function RequestsTabWrapper() {
+  useFocusEffect(
+    useCallback(() => {
+      useCustomerHomeContext.getState().clearPendingNotifications();
+    }, [])
+  );
+  return <RequestsScreen />;
+}
+
 export default function CustomerTabNavigator() {
   const insets = useSafeAreaInsets();
+  const pendingNotificationCount = useCustomerHomeContext((state) => state.pendingNotificationCount);
 
   return (
     <Tab.Navigator
@@ -83,7 +95,13 @@ export default function CustomerTabNavigator() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Vendor" component={VendorsStack} />
-      <Tab.Screen name="Requests" component={RequestsScreen} />
+      <Tab.Screen 
+        name="Requests" 
+        component={RequestsTabWrapper} 
+        options={{
+          tabBarBadge: pendingNotificationCount > 0 ? pendingNotificationCount : undefined,
+        }}
+      />
       <Tab.Screen name="Subscriptions" component={SubscriptionsStack} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>

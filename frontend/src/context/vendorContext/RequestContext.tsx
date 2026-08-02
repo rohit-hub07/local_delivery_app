@@ -49,6 +49,9 @@ interface RequestState {
   customerRequests: CustomerRequest[];
   getCustomerRequests: () => Promise<void>;
   updateRequest: (id: string, status: Status) => Promise<void>;
+  pendingNotificationCount: number;
+  addPendingNotification: () => void;
+  clearPendingNotifications: () => void;
 }
 
 
@@ -60,6 +63,7 @@ interface ApiResponse {
 
 export const useRequestStore = create<RequestState>()((set, get) => ({
   customerRequests: [],
+  pendingNotificationCount: 0,
   getCustomerRequests: async () => {
     try {
       const res = await axiosInstance.get<ApiResponse>("request/all-requests");
@@ -68,7 +72,7 @@ export const useRequestStore = create<RequestState>()((set, get) => ({
           ...req,
           productName: req.product?.productName || req.productName,
         }))
-        set({ customerRequests: mapped })
+        set({ customerRequests: mapped, pendingNotificationCount: 0 })
       }
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";
@@ -92,8 +96,15 @@ export const useRequestStore = create<RequestState>()((set, get) => ({
   },
   getNewRequest: (newRequest: CustomerRequest) =>{
     set((state) => ({
-        customerRequests: [newRequest, ...state.customerRequests]
+        customerRequests: [newRequest, ...state.customerRequests],
+        pendingNotificationCount: state.pendingNotificationCount + 1
       }))
+  },
+  addPendingNotification: () => {
+    set((state) => ({ pendingNotificationCount: state.pendingNotificationCount + 1 }))
+  },
+  clearPendingNotifications: () => {
+    set({ pendingNotificationCount: 0 })
   }
 }))
 
