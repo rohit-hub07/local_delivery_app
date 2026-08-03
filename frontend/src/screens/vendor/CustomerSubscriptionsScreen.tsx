@@ -29,7 +29,7 @@ export default function CustomerSubscriptionsScreen() {
   const { fetchCustomerSubscriptions, fetchVendorSubscriptionStats } = useCustomerSubscriptionStore()
 
   const [subscriptions, setSubscriptions] = useState<VendorSubscribedProduct[]>([])
-  const [statsMap, setStatsMap] = useState<Record<string, { totalDeliveredQuantity: string; receivedDays: number; skippedDays: number }>>({})
+  const [statsMap, setStatsMap] = useState<Record<string, { monthlyDeliveredQuantity: string; receivedDays: number; skippedDays: number }>>({})
   const [loading, setLoading] = useState(false)
   const [statsLoading, setStatsLoading] = useState(false)
 
@@ -67,14 +67,15 @@ export default function CustomerSubscriptionsScreen() {
       const results = await Promise.all(
         subscriptions.map(async (sub) => {
           try {
-            const stats = await fetchVendorSubscriptionStats(sub.id)
+            const now = new Date()
+            const stats = await fetchVendorSubscriptionStats(sub.id, now.getMonth() + 1, now.getFullYear())
             return { id: sub.id, stats }
           } catch {
             return { id: sub.id, stats: null }
           }
         })
       )
-      const map: Record<string, { totalDeliveredQuantity: string; receivedDays: number; skippedDays: number }> = {}
+      const map: Record<string, { monthlyDeliveredQuantity: string; receivedDays: number; skippedDays: number }> = {}
       for (const r of results) {
         if (r.stats) map[r.id] = r.stats
       }
@@ -120,9 +121,9 @@ export default function CustomerSubscriptionsScreen() {
             <Text style={styles.metaValue}>{item.dailyQuantity}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Delivered</Text>
+            <Text style={styles.metaLabel}>Monthly Delivered Quantity</Text>
             <Text style={styles.metaValue}>
-              {stats ? stats.totalDeliveredQuantity : '—'}
+              {stats ? stats.monthlyDeliveredQuantity : '—'}
             </Text>
           </View>
         </View>

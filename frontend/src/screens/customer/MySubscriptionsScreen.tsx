@@ -90,6 +90,7 @@ export default function MySubscriptionsScreen() {
         <View style={styles.statsGrid}>
           <RequestItem label="Received Days" value={item.receivedDays} />
           <RequestItem label="Skipped Days" value={item.skippedDays} />
+          <RequestItem label="Monthly Delivered Qty" value={item.monthlyDeliveredQuantity} />
           <RequestItem label="Current Daily Qty" value={item.currentDailyQuantity} />
           <RequestItem label="Upcoming Requests" value={item.upcomingRequests} />
         </View>

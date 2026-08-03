@@ -11,6 +11,7 @@ export interface SubscriptionStatsType {
   skippedDays: number
   currentDailyQuantity: string
   upcomingRequests: number
+  monthlyDeliveredQuantity: string
 }
 
 export interface CalendarDayType {

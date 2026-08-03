@@ -69,7 +69,7 @@ interface VendorStatsResponse {
   message: string
   success: boolean
   stats: {
-    totalDeliveredQuantity: string
+    monthlyDeliveredQuantity: string
     receivedDays: number
     skippedDays: number
   }
@@ -84,7 +84,7 @@ interface CustomerSubscriptionState {
   currentCalendarYear: number;
   fetchVendorCalendar: (subscriptionId: string, month?: number, year?: number) => Promise<void>;
   fetchCustomerSubscriptions: (customerId: string) => Promise<VendorSubscribedProduct[]>;
-  fetchVendorSubscriptionStats: (subscriptionId: string) => Promise<{ totalDeliveredQuantity: string; receivedDays: number; skippedDays: number } | null>;
+  fetchVendorSubscriptionStats: (subscriptionId: string, month?: number, year?: number) => Promise<{ monthlyDeliveredQuantity: string; receivedDays: number; skippedDays: number } | null>;
   error: any
 }
 
@@ -143,9 +143,14 @@ export const useCustomerSubscriptionStore = create<CustomerSubscriptionState>()(
     }
   },
 
-  fetchVendorSubscriptionStats: async (subscriptionId: string) => {
+  fetchVendorSubscriptionStats: async (subscriptionId: string, month?: number, year?: number) => {
     try {
-      const res = await axiosInstance.get<VendorStatsResponse>(`/subscription/vendor/stats/${subscriptionId}`)
+      const now = new Date()
+      const targetMonth = month ?? now.getMonth() + 1
+      const targetYear = year ?? now.getFullYear()
+      const res = await axiosInstance.get<VendorStatsResponse>(`/subscription/vendor/stats/${subscriptionId}`, {
+        params: { month: targetMonth, year: targetYear }
+      })
       if (res.data.success) {
         return res.data.stats
       }

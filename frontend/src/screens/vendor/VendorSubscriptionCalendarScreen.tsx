@@ -29,7 +29,7 @@ export default function VendorSubscriptionCalendarScreen() {
   const { calendar, calendarLoading, currentCalendarMonth, currentCalendarYear, fetchVendorCalendar } = useCustomerSubscriptionStore()
   const [month, setMonth] = useState(currentCalendarMonth)
   const [year, setYear] = useState(currentCalendarYear)
-  const [totalDelivered, setTotalDelivered] = useState<string | null>(null)
+  const [monthlyDeliveredQuantity, setMonthlyDeliveredQuantity] = useState<string | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
 
   useEffect(() => {
@@ -60,9 +60,9 @@ export default function VendorSubscriptionCalendarScreen() {
     if (!subscriptionId) return
     try {
       setStatsLoading(true)
-      const stats = await useCustomerSubscriptionStore.getState().fetchVendorSubscriptionStats(subscriptionId)
+      const stats = await useCustomerSubscriptionStore.getState().fetchVendorSubscriptionStats(subscriptionId, month, year)
       if (stats) {
-        setTotalDelivered(stats.totalDeliveredQuantity)
+        setMonthlyDeliveredQuantity(stats.monthlyDeliveredQuantity)
       }
     } catch (error: any) {
       console.log('Failed to load stats:', error.message)
@@ -81,6 +81,7 @@ export default function VendorSubscriptionCalendarScreen() {
     setMonth(newMonth)
     setYear(newYear)
     loadCalendar(newMonth, newYear)
+    loadStats()
   }
 
   const goToNextMonth = () => {
@@ -93,6 +94,7 @@ export default function VendorSubscriptionCalendarScreen() {
     setMonth(newMonth)
     setYear(newYear)
     loadCalendar(newMonth, newYear)
+    loadStats()
   }
 
   const monthNames = [
@@ -189,10 +191,10 @@ export default function VendorSubscriptionCalendarScreen() {
             <Text style={styles.monthButtonText}>›</Text>
           </TouchableOpacity>
         </View>
-        {!statsLoading && totalDelivered !== null && (
+        {!statsLoading && monthlyDeliveredQuantity !== null && (
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Delivered Quantity</Text>
-            <Text style={styles.totalValue}>{totalDelivered}</Text>
+            <Text style={styles.totalLabel}>Monthly Delivered Count</Text>
+            <Text style={styles.totalValue}>{monthlyDeliveredQuantity}</Text>
           </View>
         )}
       </View>

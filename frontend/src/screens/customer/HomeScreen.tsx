@@ -77,8 +77,8 @@ export default function HomeScreen() {
 
   // Fetch products on mount
   useEffect(() => {
+    addPendingNotification();
     const fetchProducts = async () => {
-      addPendingNotification();
       setLoading(true);
       try {
         await getCustomerSubscribedProducts();
