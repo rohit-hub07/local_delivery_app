@@ -13,7 +13,8 @@ import {
   Dimensions,
   Linking,
   ScrollView,
-  Image
+  Image,
+  StatusBar
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker, { DateTimePickerChangeEvent } from "@react-native-community/datetimepicker";
@@ -77,8 +78,8 @@ export default function HomeScreen() {
 
   // Fetch products on mount
   useEffect(() => {
+    addPendingNotification();
     const fetchProducts = async () => {
-      addPendingNotification();
       setLoading(true);
       try {
         await getCustomerSubscribedProducts();
@@ -120,6 +121,11 @@ export default function HomeScreen() {
     return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   };
 
+  const isRequestDisabled = (): boolean => {
+    const hour = new Date().getHours();
+    return hour >= 0 && hour < 12;
+  };
+
   // Dial a vendor's phone number using the device's native dialer
   const callVendor = (phone: string) => {
     const digits = (phone || "").replace(/\D/g, "");
@@ -134,6 +140,10 @@ export default function HomeScreen() {
   };
 
   const handleOpenForm = (productId: string, productName: string, unit: string) => {
+    if (isRequestDisabled()) {
+      Alert.alert("Requests Disabled", "Requests are currently disabled. Please try again after 12 PM.");
+      return;
+    }
     setSelectedProductId(productId);
     setSelectedProductName(productName);
     setSelectedProductUnit(unit);
@@ -281,6 +291,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F4F6FB" />
       <View style={styles.headerSection}>
         <View style={styles.headerTopRow}>
           <View style={styles.headerIconCircle}>
@@ -378,7 +389,7 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   style={[styles.actionButton, styles.requestButton]}
                   onPress={() => handleOpenForm(item.id, item.productName, item.unit)}
-                  disabled={isUnsubscribing}
+                  disabled={isUnsubscribing || isRequestDisabled()}
                   activeOpacity={0.8}
                 >
                   <Text style={styles.requestButtonIcon}>✉️</Text>

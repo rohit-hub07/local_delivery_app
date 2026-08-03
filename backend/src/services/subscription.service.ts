@@ -25,6 +25,7 @@ export interface SubscriptionStats {
   skippedDays: number;
   currentDailyQuantity: string;
   upcomingRequests: number;
+  monthlyDeliveredQuantity: string;
 }
 
 export interface CalendarDay {
@@ -84,6 +85,15 @@ export class SubscriptionService {
   }
 
   static async getSubscriptionStats(subscriptionId: string): Promise<SubscriptionStats | null> {
+    const today = new Date();
+    return this.getSubscriptionStatsForMonth(subscriptionId, today.getFullYear(), today.getMonth() + 1);
+  }
+
+  static async getSubscriptionStatsForMonth(
+    subscriptionId: string,
+    year: number,
+    month: number
+  ): Promise<SubscriptionStats | null> {
     const subscription = await db.customerSubscription.findUnique({
       where: { id: subscriptionId },
       include: {
@@ -93,6 +103,12 @@ export class SubscriptionService {
             unit: true,
           },
         },
+        vendorCustomers: {
+          select: {
+            vendorId: true,
+            customerId: true,
+          },
+        },
       },
     });
 
@@ -100,13 +116,20 @@ export class SubscriptionService {
       return null;
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const firstDayOfMonth = new Date(year, month - 1, 1);
+    firstDayOfMonth.setHours(0, 0, 0, 0);
+
+    const lastDayOfMonth = new Date(year, month, 0);
+    lastDayOfMonth.setHours(23, 59, 59, 999);
 
     const startDate = new Date(subscription.startDate);
     startDate.setHours(0, 0, 0, 0);
 
-    if (today < startDate) {
+    if (month < 1 || month > 12) {
+      throw new Error("Invalid month. Must be between 1 and 12");
+    }
+
+    if (lastDayOfMonth < startDate) {
       return {
         subscriptionId: subscription.id,
         productName: subscription.product.productName,
@@ -117,86 +140,7 @@ export class SubscriptionService {
         skippedDays: 0,
         currentDailyQuantity: subscription.dailyQuantity.toString(),
         upcomingRequests: 0,
-      };
-    }
-
-    const vendorCustomerId = subscription.vendorCustomerId;
-
-
-    const acceptedRequests = await db.requests.findMany({
-      where: {
-        vendorCustomerId,
-        productId: subscription.productId,
-        status: "ACCEPTED",
-      },
-    });
-
-    let receivedDays = 0;
-    let skippedDays = 0;
-
-    const currentDate = new Date(today);
-    for (let d = new Date(startDate); d <= currentDate; d.setDate(d.getDate() + 1)) {
-      const dayStart = new Date(d);
-      dayStart.setHours(0, 0, 0, 0);
-
-      const effectiveQuantity = this.getEffectiveQuantityForDate(
-        dayStart,
-        subscription.dailyQuantity.toString(),
-        acceptedRequests
-      );
-
-      if (effectiveQuantity === "0") {
-        skippedDays++;
-      } else {
-        receivedDays++;
-      }
-    }
-
-    const upcomingRequests = acceptedRequests.filter((req) => {
-      const end = new Date(req.end_date);
-      return end >= today;
-    }).length;
-
-    return {
-      subscriptionId: subscription.id,
-      productName: subscription.product.productName,
-      productUnit: subscription.product.unit,
-      dailyQuantity: subscription.dailyQuantity.toString(),
-      startDate: subscription.startDate.toISOString(),
-      receivedDays,
-      skippedDays,
-      currentDailyQuantity: subscription.dailyQuantity.toString(),
-      upcomingRequests,
-    };
-  }
-
-  static async getVendorSubscriptionStats(subscriptionId: string): Promise<{ totalDeliveredQuantity: string; receivedDays: number; skippedDays: number } | null> {
-    const subscription = await db.customerSubscription.findUnique({
-      where: { id: subscriptionId },
-      include: {
-        vendorCustomers: {
-          select: {
-            vendorId: true,
-          },
-        },
-      },
-    });
-
-    if (!subscription) {
-      return null;
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const startDate = new Date(subscription.startDate);
-    startDate.setHours(0, 0, 0, 0);
-
-    if (today < startDate) {
-      return {
-        totalDeliveredQuantity: "0",
-        receivedDays: 0,
-        skippedDays: 0,
+        monthlyDeliveredQuantity: "0",
       };
     }
 
@@ -208,12 +152,17 @@ export class SubscriptionService {
       },
     });
 
-    let totalDeliveredQuantity = 0;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const rangeStart = firstDayOfMonth > startDate ? firstDayOfMonth : startDate;
+    const rangeEnd = lastDayOfMonth < now ? lastDayOfMonth : now;
+
+    let monthlyDeliveredQuantity = 0;
     let receivedDays = 0;
     let skippedDays = 0;
 
-    const currentDate = new Date(today);
-    for (let d = new Date(startDate); d <= currentDate; d.setDate(d.getDate() + 1)) {
+    for (let d = new Date(rangeStart); d <= rangeEnd; d.setDate(d.getDate() + 1)) {
       const dayStart = new Date(d);
       dayStart.setHours(0, 0, 0, 0);
 
@@ -223,8 +172,8 @@ export class SubscriptionService {
         acceptedRequests
       );
 
-      const qty = parseInt(effectiveQuantity, 10) || 0;
-      totalDeliveredQuantity += qty;
+      const qty = parseFloat(effectiveQuantity) || 0;
+      monthlyDeliveredQuantity += qty;
 
       if (qty === 0) {
         skippedDays++;
@@ -234,9 +183,16 @@ export class SubscriptionService {
     }
 
     return {
-      totalDeliveredQuantity: totalDeliveredQuantity.toString(),
+      subscriptionId: subscription.id,
+      productName: subscription.product.productName,
+      productUnit: subscription.product.unit,
+      dailyQuantity: subscription.dailyQuantity.toString(),
+      startDate: subscription.startDate.toISOString(),
       receivedDays,
       skippedDays,
+      currentDailyQuantity: subscription.dailyQuantity.toString(),
+      upcomingRequests: 0,
+      monthlyDeliveredQuantity: monthlyDeliveredQuantity.toString(),
     };
   }
 
@@ -415,9 +371,13 @@ export class SubscriptionService {
     if (effectiveRequest.type === "SKIP") {
       return "0";
     } else if (effectiveRequest.type === "INCREASE" && effectiveRequest.requestedQuantity) {
-      return effectiveRequest.requestedQuantity.toString();
+      const base = parseFloat(baseQuantity) || 0;
+      const increase = parseFloat(effectiveRequest.requestedQuantity.toString()) || 0;
+      return (base + increase).toString();
     } else if (effectiveRequest.type === "DECREASE" && effectiveRequest.requestedQuantity) {
-      return effectiveRequest.requestedQuantity.toString();
+      const base = parseFloat(baseQuantity) || 0;
+      const decrease = parseFloat(effectiveRequest.requestedQuantity.toString()) || 0;
+      return Math.max(0, base - decrease).toString();
     }
 
     return baseQuantity;

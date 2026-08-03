@@ -100,12 +100,12 @@ export const subscribeProduct = async (req: Request, res: Response) => {
     })
 
     const vendorData = await db.vendor.findUnique({
-      where:{
+      where: {
         id: product.vendorId
       }
-    }) 
+    })
 
-    if(!vendorData){
+    if (!vendorData) {
       return res.status(404).json({
         message: "Can't fetch the vendor data to send notification!",
         success: false
@@ -203,14 +203,14 @@ export const unsubscribeProduct = async (req: Request, res: Response) => {
     req.io.to(product.vendorId).emit("customer_unsubcribed_product", productId)
 
     const vendor = await db.vendor.findUnique({
-      where:{
+      where: {
         id: product.vendorId
       }
     })
 
     // fetch the vendor details to get the vendor profile data
     // so that we can send notification to the vendor
-    if(!vendor){
+    if (!vendor) {
       return res.status(404).json({
         message: "Can't fetch the vendor data to send notification!",
         success: false
@@ -247,9 +247,12 @@ export const getMySubscriptions = async (req: Request, res: Response) => {
 
     const subscriptions = await SubscriptionService.getCustomerSubscriptions(user.id)
     const stats: SubscriptionStats[] = []
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth() + 1
 
     for (const subscription of subscriptions) {
-      const subscriptionStats = await SubscriptionService.getSubscriptionStats(subscription.id)
+      const subscriptionStats = await SubscriptionService.getSubscriptionStatsForMonth(subscription.id, currentYear, currentMonth)
       if (subscriptionStats) {
         stats.push(subscriptionStats)
       }
@@ -554,7 +557,14 @@ export const getVendorSubscriptionStats = async (req: Request, res: Response) =>
       return res.status(403).json({ message: "You are not authorized to view this subscription", success: false })
     }
 
-    const stats = await SubscriptionService.getVendorSubscriptionStats(subscriptionId)
+    const month = req.query.month ? parseInt(req.query.month as string) : new Date().getMonth() + 1
+    const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear()
+
+    if (month < 1 || month > 12) {
+      return res.status(400).json({ message: "Invalid month. Must be between 1 and 12", success: false })
+    }
+
+    const stats = await SubscriptionService.getSubscriptionStatsForMonth(subscriptionId, year, month)
 
     return res.status(200).json({
       message: "Subscription stats fetched successfully!",
