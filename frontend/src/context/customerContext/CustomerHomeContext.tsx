@@ -110,7 +110,8 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
           ...req,
           productName: req.product?.productName || req.productName,
         }))
-        set({ requestDetails: mapped, pendingNotificationCount: 0 })
+        const pendingCount = mapped.filter((req: any) => req.status?.toUpperCase() === "PENDING").length
+        set({ requestDetails: mapped, pendingNotificationCount: pendingCount })
       }
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";

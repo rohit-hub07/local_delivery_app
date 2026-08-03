@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker, { DateTimePickerChangeEvent } from "@react-native-community/datetimepicker";
 import { useCustomerHomeContext } from "../../context/customerContext/CustomerHomeContext";
 import { useAuthStore } from "../../context/vendorContext/AuthContext";
+import { useRequestStore } from "../../context/vendorContext/RequestContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const BASE_WIDTH = 375;
@@ -41,6 +42,8 @@ export default function HomeScreen() {
     if (hour < 17) return "Good Afternoon";
     return "Good Evening";
   };
+
+  const {addPendingNotification} = useRequestStore()
 
   const {
     getCustomerSubscribedProducts,
@@ -75,6 +78,7 @@ export default function HomeScreen() {
   // Fetch products on mount
   useEffect(() => {
     const fetchProducts = async () => {
+      addPendingNotification();
       setLoading(true);
       try {
         await getCustomerSubscribedProducts();

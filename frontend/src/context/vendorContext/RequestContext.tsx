@@ -72,7 +72,8 @@ export const useRequestStore = create<RequestState>()((set, get) => ({
           ...req,
           productName: req.product?.productName || req.productName,
         }))
-        set({ customerRequests: mapped, pendingNotificationCount: 0 })
+        const pendingCount = mapped.filter((req: any) => req.status === 'PENDING').length
+        set({ customerRequests: mapped, pendingNotificationCount: pendingCount })
       }
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";
