@@ -65,11 +65,15 @@ interface CustomerHomeState {
   unsubcribeProduct: (id: string) => Promise<void>,
   updateRequestDetails: (updatedRequest :any)=> void
   subcribedProducts: SubscribeProductState[],
-  requestDetails: Request[]
+  requestDetails: Request[],
+  pendingNotificationCount: number,
+  addPendingNotification: () => void,
+  clearPendingNotifications: () => void
 }
 
 export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => ({
   requestDetails: [],
+  pendingNotificationCount: 0,
   subcribedProducts: [],
   getCustomerSubscribedProducts: async () => {
     try {
@@ -106,7 +110,8 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
           ...req,
           productName: req.product?.productName || req.productName,
         }))
-        set({ requestDetails: mapped })
+        const pendingCount = mapped.filter((req: any) => req.status?.toUpperCase() === "PENDING").length
+        set({ requestDetails: mapped, pendingNotificationCount: pendingCount })
       }
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Something went wrong";
@@ -130,12 +135,19 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
       set((state) =>({
         requestDetails: state.requestDetails.map((request) =>
           request.id == flattened.id ? flattened: request
-        )
+        ),
+        pendingNotificationCount: state.pendingNotificationCount + 1
       }))
       useCustomerSubscriptionStore.getState().fetchMySubscriptions().catch(() => {})
       const subscriptionId = (updatedRequest as any).subscriptionId
       if (subscriptionId) {
         useCustomerSubscriptionStore.getState().fetchCalendar(subscriptionId).catch(() => {})
       }
+  },
+  addPendingNotification: () => {
+    set((state) => ({ pendingNotificationCount: state.pendingNotificationCount + 1 }))
+  },
+  clearPendingNotifications: () => {
+    set({ pendingNotificationCount: 0 })
   }
 }))

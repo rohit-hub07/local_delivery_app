@@ -1,16 +1,18 @@
-import React from 'react'; 
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"; 
-import { Platform, Text } from 'react-native'; 
-import { Home, Users, BellRing, User, ShoppingBag } from 'lucide-react-native'; 
+import React, { useCallback } from 'react';
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Platform, Text } from 'react-native';
+import { Home, Users, BellRing, User, ShoppingBag } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import HomeScreen from "../screens/vendor/HomeScreen"; 
-import CustomerScreen from "../screens/vendor/CustomersScreen"; 
-import ProfileScreen from "../screens/vendor/ProfileScreen"; 
-import RequestsScreen from "../screens/vendor/RequestsScreen"; 
-import {MyProductsScreen} from '../screens/vendor/MyProductsScreen'; 
+import { useFocusEffect } from '@react-navigation/native';
+import HomeScreen from "../screens/vendor/HomeScreen";
+import CustomerScreen from "../screens/vendor/CustomersScreen";
+import ProfileScreen from "../screens/vendor/ProfileScreen";
+import RequestsScreen from "../screens/vendor/RequestsScreen";
+import {MyProductsScreen} from '../screens/vendor/MyProductsScreen';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import VendorSubscriptionCalendarScreen from '../screens/vendor/VendorSubscriptionCalendarScreen';
 import CustomerSubscriptionsScreen from '../screens/vendor/CustomerSubscriptionsScreen';
+import { useRequestStore } from '../context/vendorContext/RequestContext';
 
 const Tab = createBottomTabNavigator(); 
 const Stack = createNativeStackNavigator()
@@ -23,10 +25,20 @@ function CustomersStack() {
       <Stack.Screen name="VendorSubscriptionCalendar" component={VendorSubscriptionCalendarScreen} />
     </Stack.Navigator>
   )
-} 
+}
+
+function RequestsTabWrapper() {
+  useFocusEffect(
+    useCallback(() => {
+      useRequestStore.getState().clearPendingNotifications();
+    }, [])
+  );
+  return <RequestsScreen />;
+}
 
 export default function VendorTabNavigator() { 
   const insets = useSafeAreaInsets();
+  const pendingNotificationCount = useRequestStore((state) => state.pendingNotificationCount);
   return ( 
     <Tab.Navigator 
       screenOptions={({ route }) => ({ 
@@ -69,7 +81,13 @@ export default function VendorTabNavigator() {
       <Tab.Screen name="Home" component={HomeScreen} /> 
       <Tab.Screen name="Customers" component={CustomersStack} /> 
       <Tab.Screen name="My Products" component={MyProductsScreen} /> 
-      <Tab.Screen name="Requests" component={RequestsScreen} /> 
+      <Tab.Screen 
+        name="Requests" 
+        component={RequestsTabWrapper} 
+        options={{
+          tabBarBadge: pendingNotificationCount > 0 ? pendingNotificationCount : undefined,
+        }}
+      /> 
       <Tab.Screen name="Profile" component={ProfileScreen} /> 
     </Tab.Navigator> 
   ); 
