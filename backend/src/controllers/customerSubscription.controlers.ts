@@ -580,6 +580,36 @@ export const getVendorSubscriptionStats = async (req: Request, res: Response) =>
   }
 }
 
+export const getVendorDailyDeliveryReport = async (req: Request, res: Response) => {
+  try {
+    const vendor = req.vendor
+    if (!vendor) {
+      return res.status(401).json({ message: "Vendor doesn't exist!", success: false })
+    }
+
+    const dateParam = req.query.date ? String(req.query.date) : new Date().toISOString().split("T")[0]
+    const reportDate = new Date(dateParam)
+
+    if (Number.isNaN(reportDate.getTime())) {
+      return res.status(400).json({ message: "Invalid date", success: false })
+    }
+
+    const report = await SubscriptionService.getVendorDailyDeliveryReport(vendor.id, reportDate)
+
+    return res.status(200).json({
+      message: "Delivery report fetched successfully!",
+      success: true,
+      report,
+    })
+  } catch (error: any) {
+    console.log("Error while fetching vendor daily delivery report: ", error.message)
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    })
+  }
+}
+
 // not important for now
 export const isValidRequest = async (req: Request, res: Response) => {
   try {

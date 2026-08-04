@@ -27,7 +27,7 @@ export const customerRequest = async (req: Request, res: Response) => {
 
     const { productId, message, type, start_date, end_date, requestedQuantity } = validateBody.data
 
-    const currentHour = new Date().getHours();
+    const currentHour = new Date().getHours()
     if (currentHour >= 0 && currentHour < 12) {
       return res.status(403).json({
         message: "Requests are currently disabled. Please try again after 12 PM.",
@@ -35,9 +35,11 @@ export const customerRequest = async (req: Request, res: Response) => {
       })
     }
 
-    const product = await db.product.findUnique({ where: { id: productId }, include:{
-      subscription: true
-    } })
+    const product = await db.product.findUnique({
+      where: { id: productId }, include: {
+        subscription: true
+      }
+    })
 
 
     if (!product) {
@@ -112,19 +114,19 @@ export const customerRequest = async (req: Request, res: Response) => {
     }
 
     const vendor = await db.vendor.findUnique({
-      where:{
+      where: {
         id: product.vendorId
       }
     })
 
-    if(!vendor){
+    if (!vendor) {
       return res.status(404).json({
         message: "Vendor profile is not valid!",
         success: false
       })
     }
 
-    await sendNotification(vendor?.userId,`${user.name} has requested`, `Customer has a request for ${product.productName} product`)
+    await sendNotification(vendor?.userId, `${user.name} has requested`, `Customer has a request for ${product.productName} product`)
 
     return res.status(201).json({
       message: "Request added successfully!",

@@ -8,6 +8,8 @@ import {
   StatusBar,
   RefreshControl,
   Pressable,
+  TouchableOpacity,
+  Alert,
   Linking,
   Platform,
   Dimensions,
@@ -15,6 +17,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import { generateAndDownloadReport } from "../../utils/generateReportPDF";
 import { useCustomerSubscriptionStore } from "../../context/vendorContext/CustomerSubscriptionContex";
 import { useVendorContextStore } from "../../context/vendorContext/VendorContext";
 import { useProductStore } from "../../context/vendorContext/ProductContext";
@@ -81,9 +84,9 @@ export default function HomeScreen() {
 
   const { subscribedProducts, subscribedCustomers, error: storeError } = useCustomerSubscriptionStore();
   const { vendorAccount } = useVendorContextStore();
-  const { allProducts,getAllProducts } = useProductStore();
+  const { allProducts, getAllProducts } = useProductStore();
 
-  const fetchProducts = async() =>{
+  const fetchProducts = async () => {
     await getAllProducts()
   }
 
@@ -112,6 +115,7 @@ export default function HomeScreen() {
 
   const totalSubscriptions = useMemo(() => vendorCustomers.reduce((n, c) => n + c.products.length, 0), [vendorCustomers]);
   const totalProducts = useMemo(() => allProducts.length, [allProducts]);
+  const [reportLoading, setReportLoading] = useState(false);
 
   const activeError = storeError || localError;
 
@@ -143,6 +147,48 @@ export default function HomeScreen() {
     await handleFetch();
     setRefreshing(false);
   }, [vendorAccount?.id]);
+
+  const generateTodayReport = useCallback(async () => {
+    try {
+      setReportLoading(true);
+      // Get today's date in YYYY-MM-DD format from the device (local timezone)
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      const todayDateString = `${year}-${month}-${day}`;
+
+      const res = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/subscription/vendor/daily-delivery-report?date=${todayDateString}`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to generate report");
+      }
+
+      const report = {
+        reportDate: data.report.reportDate,
+        totalDeliveries: data.report.totalDeliveries,
+        totalQuantity: data.report.totalQuantity,
+        deliveries: data.report.deliveries.map((item: any) => ({
+          customerName: item.customerName,
+          customerPhone: item.customerPhone,
+          customerAddress: item.customerAddress,
+          productName: item.productName,
+          baseQuantity: item.baseQuantity,
+          finalQuantity: item.finalQuantity,
+          requestType: item.requestType,
+          requestMessage: item.requestMessage,
+        })),
+      };
+
+      await generateAndDownloadReport(report);
+    } catch (error: any) {
+      Alert.alert("Report Failed", error.message || "Could not generate today's report.");
+    } finally {
+      setReportLoading(false);
+    }
+  }, []);
 
   const renderCustomerCard = ({ item }: { item: CustomerState }) => {
     const av = paletteFor(item.id);
@@ -222,6 +268,19 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      <View style={styles.reportBar}>
+        <TouchableOpacity style={styles.reportButton} onPress={generateTodayReport} activeOpacity={0.85} disabled={reportLoading}>
+          {reportLoading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <MaterialCommunityIcons name="file-document-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.reportButtonText}>Generate Today's Report</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+
       {loading ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="small" color={C.primary} />
@@ -294,47 +353,50 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 28, fontWeight: "800", color: C.ink, letterSpacing: -0.5 },
   counterBadge: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: C.primarySoft, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 99 },
   counterText: { fontSize: 12.5, fontWeight: "700", color: C.primary },
+  reportBar: { paddingHorizontal: 20, paddingBottom: 10 },
+  reportButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.primary, borderRadius: 14, paddingVertical: 12 },
+  reportButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
 
-   statsRow: { flexDirection: "row", gap: 8, marginBottom: 16, flexWrap: "wrap" },
-   statChip: {
-     flex: 1, minWidth: "30%", backgroundColor: C.card, borderRadius: 16, padding: 10, flexDirection: "row", alignItems: "center",
-     ...Platform.select({ ios: { shadowColor: "#0F172A", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 }, android: { elevation: 1 } }),
-   },
-   statIconWrap: { width: 30, height: 30, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-   statValue: { fontSize: 15, fontWeight: "800", color: C.ink, lineHeight: 17 },
-   statLabel: { fontSize: 10.5, color: C.inkSoft, marginTop: 1, fontWeight: "600" },
-   listSectionTitle: { fontSize: 14, fontWeight: "700", color: C.ink, marginBottom: 10, letterSpacing: -0.2 },
+  statsRow: { flexDirection: "row", gap: 8, marginBottom: 16, flexWrap: "wrap" },
+  statChip: {
+    flex: 1, minWidth: "30%", backgroundColor: C.card, borderRadius: 16, padding: 10, flexDirection: "row", alignItems: "center",
+    ...Platform.select({ ios: { shadowColor: "#0F172A", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 }, android: { elevation: 1 } }),
+  },
+  statIconWrap: { width: 30, height: 30, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  statValue: { fontSize: 15, fontWeight: "800", color: C.ink, lineHeight: 17 },
+  statLabel: { fontSize: 10.5, color: C.inkSoft, marginTop: 1, fontWeight: "600" },
+  listSectionTitle: { fontSize: 14, fontWeight: "700", color: C.ink, marginBottom: 10, letterSpacing: -0.2 },
 
-   listContainer: { paddingHorizontal: 16, paddingBottom: 40, paddingTop: 4 },
-   card: {
-     backgroundColor: C.card, borderRadius: 22, padding: 14, marginBottom: 12, overflow: "hidden",
-     ...Platform.select({ ios: { shadowColor: "#0F172A", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 16 }, android: { elevation: 2 } }),
-   },
-   cardTopRow: { flexDirection: "row", alignItems: "center" },
-   cardInfo: { flex: 1, marginLeft: 12, minWidth: 0 },
-   avatar: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-   avatarText: { fontSize: 18, fontWeight: "800" },
-   customerName: { fontSize: 16, fontWeight: "800", color: C.ink, letterSpacing: -0.3, textTransform: "capitalize" },
-   phoneRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
-   customerPhone: { fontSize: 12.5, color: C.inkSoft, fontWeight: "600", letterSpacing: 0.3 },
-   callBtn: {
-     width: 38, height: 38, borderRadius: 19, backgroundColor: C.green, alignItems: "center", justifyContent: "center",
-     ...Platform.select({ ios: { shadowColor: C.green, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }, android: { elevation: 3 } }),
-   },
+  listContainer: { paddingHorizontal: 16, paddingBottom: 40, paddingTop: 4 },
+  card: {
+    backgroundColor: C.card, borderRadius: 22, padding: 14, marginBottom: 12, overflow: "hidden",
+    ...Platform.select({ ios: { shadowColor: "#0F172A", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 16 }, android: { elevation: 2 } }),
+  },
+  cardTopRow: { flexDirection: "row", alignItems: "center" },
+  cardInfo: { flex: 1, marginLeft: 12, minWidth: 0 },
+  avatar: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  avatarText: { fontSize: 18, fontWeight: "800" },
+  customerName: { fontSize: 16, fontWeight: "800", color: C.ink, letterSpacing: -0.3, textTransform: "capitalize" },
+  phoneRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
+  customerPhone: { fontSize: 12.5, color: C.inkSoft, fontWeight: "600", letterSpacing: 0.3 },
+  callBtn: {
+    width: 38, height: 38, borderRadius: 19, backgroundColor: C.green, alignItems: "center", justifyContent: "center",
+    ...Platform.select({ ios: { shadowColor: C.green, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }, android: { elevation: 3 } }),
+  },
 
-   sectionHeader: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 12, marginBottom: 8 },
-   sectionLabel: { fontSize: 10.5, fontWeight: "700", color: C.inkMuted, letterSpacing: 1 },
-   countBubble: { marginLeft: 2, minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: 9, backgroundColor: C.primarySoft, alignItems: "center", justifyContent: "center" },
-   countBubbleText: { color: C.primary, fontSize: 10, fontWeight: "800" },
-   badgesContainer: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-   badge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 99, maxWidth: "100%" },
-   badgeText: { fontSize: 11.5, fontWeight: "700" },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 12, marginBottom: 8 },
+  sectionLabel: { fontSize: 10.5, fontWeight: "700", color: C.inkMuted, letterSpacing: 1 },
+  countBubble: { marginLeft: 2, minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: 9, backgroundColor: C.primarySoft, alignItems: "center", justifyContent: "center" },
+  countBubbleText: { color: C.primary, fontSize: 10, fontWeight: "800" },
+  badgesContainer: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  badge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 99, maxWidth: "100%" },
+  badgeText: { fontSize: 11.5, fontWeight: "700" },
 
-   addressContainer: { marginTop: 10, backgroundColor: C.addressBg, borderRadius: 12, padding: 10, flexDirection: "row", alignItems: "center", gap: 10 },
-   addressIconWrap: { width: 30, height: 30, borderRadius: 10, backgroundColor: C.primarySoft, alignItems: "center", justifyContent: "center" },
-   addressContent: { flex: 1, minWidth: 0 },
-   addressLabel: { fontSize: 10.5, fontWeight: "700", color: C.inkMuted, letterSpacing: 0.5, marginBottom: 1 },
-   addressValue: { fontSize: 13, color: C.ink, fontWeight: "600", lineHeight: 16 },
+  addressContainer: { marginTop: 10, backgroundColor: C.addressBg, borderRadius: 12, padding: 10, flexDirection: "row", alignItems: "center", gap: 10 },
+  addressIconWrap: { width: 30, height: 30, borderRadius: 10, backgroundColor: C.primarySoft, alignItems: "center", justifyContent: "center" },
+  addressContent: { flex: 1, minWidth: 0 },
+  addressLabel: { fontSize: 10.5, fontWeight: "700", color: C.inkMuted, letterSpacing: 0.5, marginBottom: 1 },
+  addressValue: { fontSize: 13, color: C.ink, fontWeight: "600", lineHeight: 16 },
 
   centerContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 40, minHeight: 320 },
   loadingText: { marginTop: 12, color: C.inkSoft, fontSize: 14, fontWeight: "500" },
