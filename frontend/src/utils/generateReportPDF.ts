@@ -22,15 +22,6 @@ interface ReportData {
   deliveries: DeliveryItem[];
 }
 
-function formatDate(isoDate: string): string {
-  const date = new Date(isoDate + 'T00:00:00');
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
 function formatDateTime(date: Date): string {
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
@@ -71,8 +62,8 @@ const MARGIN_RIGHT = 14;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
 const MARGIN_TOP = 18;
 const MARGIN_BOTTOM = 24;
-const TABLE_HEADER_HEIGHT = 18;
-const TABLE_ROW_HEIGHT = 16;
+const TABLE_HEADER_HEIGHT = 22;
+const TABLE_ROW_HEIGHT = 22;
 const TABLE_HEADER_COLOR = [79, 70, 229];
 const TABLE_ALT_ROW_COLOR = [248, 250, 252];
 const TABLE_BORDER_COLOR = [226, 232, 240];
@@ -111,26 +102,6 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
       align: 'center',
     });
     yPosition -= 7;
-
-    page.drawText('Daily Delivery Summary', {
-      x: PAGE_WIDTH / 2,
-      y: yPosition,
-      size: 11,
-      font: font,
-      color: rgb(0.39, 0.45, 0.55),
-      align: 'center',
-    });
-    yPosition -= 6;
-
-    page.drawText(`Report Date: ${formatDate(report.reportDate)}`, {
-      x: PAGE_WIDTH / 2,
-      y: yPosition,
-      size: 9,
-      font: font,
-      color: rgb(0.58, 0.64, 0.72),
-      align: 'center',
-    });
-    yPosition -= 4;
 
     page.drawLine({
       start: { x: MARGIN_LEFT, y: yPosition },
@@ -177,8 +148,8 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
 
     page.drawText(String(report.totalDeliveries), {
       x: MARGIN_LEFT + statWidth / 2,
-      y: yPosition - 11,
-      size: 22,
+      y: yPosition - 12,
+      size: 26,
       font: fontBold,
       color: rgb(0.31, 0.27, 0.89),
       align: 'center',
@@ -186,8 +157,8 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
 
     page.drawText('TOTAL DELIVERIES', {
       x: MARGIN_LEFT + statWidth / 2,
-      y: yPosition - 17,
-      size: 8,
+      y: yPosition - 20,
+      size: 9,
       font: font,
       color: rgb(0.39, 0.45, 0.55),
       align: 'center',
@@ -206,8 +177,8 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
 
     page.drawText(report.totalQuantity, {
       x: MARGIN_LEFT + statWidth + 8 + statWidth / 2,
-      y: yPosition - 11,
-      size: 22,
+      y: yPosition - 12,
+      size: 26,
       font: fontBold,
       color: rgb(0.31, 0.27, 0.89),
       align: 'center',
@@ -215,8 +186,8 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
 
     page.drawText('TOTAL QUANTITY', {
       x: MARGIN_LEFT + statWidth + 8 + statWidth / 2,
-      y: yPosition - 17,
-      size: 8,
+      y: yPosition - 20,
+      size: 9,
       font: font,
       color: rgb(0.39, 0.45, 0.55),
       align: 'center',
@@ -248,8 +219,8 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
       return;
     }
 
-    const colWidths = [38, 22, 42, 30, 12, 22];
-    const headers = ['Customer Name', 'Phone', 'Address', 'Product', 'Qty', 'Request'];
+    const colWidths = [110, 70, 130, 85, 45, 127];
+    const headers = ['Customer', 'Phone', 'Address', 'Product', 'Qty', 'Request'];
     const headerX = MARGIN_LEFT;
 
     page.drawRectangle({
@@ -260,16 +231,32 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
       backgroundColor: rgb(0.31, 0.27, 0.89),
     });
 
-    let headerXPos = headerX + 2;
+    let headerXPos = headerX + 3;
     for (let i = 0; i < headers.length; i++) {
       page.drawText(headers[i], {
         x: headerXPos,
-        y: yPosition - 13,
-        size: 7,
+        y: yPosition - 14,
+        size: 8,
         font: fontBold,
         color: rgb(1, 1, 1),
       });
       headerXPos += colWidths[i];
+    }
+
+    const verticalLines = [MARGIN_LEFT];
+    let vx = MARGIN_LEFT;
+    for (let i = 0; i < colWidths.length; i++) {
+      vx += colWidths[i];
+      verticalLines.push(vx);
+    }
+
+    for (const vl of verticalLines) {
+      page.drawLine({
+        start: { x: vl, y: yPosition - TABLE_HEADER_HEIGHT },
+        end: { x: vl, y: yPosition },
+        color: rgb(0.27, 0.23, 0.81),
+        thickness: 0.5,
+      });
     }
 
     yPosition -= TABLE_HEADER_HEIGHT;
@@ -302,14 +289,28 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
         thickness: 0.1,
       });
 
+      for (const vl of verticalLines) {
+        page.drawLine({
+          start: { x: vl, y: rowY },
+          end: { x: vl, y: rowY + TABLE_ROW_HEIGHT },
+          color: rgb(0.89, 0.91, 0.94),
+          thickness: 0.1,
+        });
+      }
+
       const isModified =
         item.requestType === 'INCREASE' || item.requestType === 'DECREASE';
-      const qtyDisplay = isModified ? `${item.finalQuantity}*` : item.finalQuantity;
+      const qtyDisplay = isModified
+        ? `${item.baseQuantity}->${item.finalQuantity}*`
+        : item.finalQuantity;
 
       let requestLabel = '\u2014';
       if (item.requestType) {
         requestLabel = item.requestType;
       }
+      const requestDetail = item.requestMessage
+        ? `${requestLabel}: ${item.requestMessage}`
+        : requestLabel;
 
       const rowData = [
         item.customerName,
@@ -317,10 +318,10 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
         item.customerAddress,
         item.productName,
         qtyDisplay,
-        requestLabel,
+        requestDetail,
       ];
 
-      let cellX = MARGIN_LEFT + 2;
+      let cellX = MARGIN_LEFT + 3;
       for (let col = 0; col < rowData.length; col++) {
         const textColor =
           col === 4 && isModified
@@ -335,8 +336,8 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
 
         page.drawText(rowData[col], {
           x: cellX,
-          y: rowY + 3,
-          size: 7,
+          y: rowY + 5,
+          size: 9,
           font: font,
           color: textColor,
         });

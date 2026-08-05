@@ -463,7 +463,7 @@ export class SubscriptionService {
     deliveries.sort((a, b) => a.customerName.localeCompare(b.customerName) || a.productName.localeCompare(b.productName));
 
     return {
-      reportDate: date.toISOString().split("T")[0],
+      reportDate: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
       totalDeliveries: deliveries.length,
       totalQuantity: totalQuantity.toString(),
       deliveries,
