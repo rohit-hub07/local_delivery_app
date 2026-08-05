@@ -44,7 +44,7 @@ export default function HomeScreen() {
     return "Good Evening";
   };
 
-  const {addPendingNotification} = useRequestStore()
+  const { addPendingNotification } = useRequestStore()
 
   const {
     getCustomerSubscribedProducts,
@@ -220,6 +220,10 @@ export default function HomeScreen() {
   const handleRequestSubmit = async () => {
     if (!requestTypeKey) {
       Alert.alert("Missing Info", "Please choose what kind of request this is.");
+      return;
+    }
+    if (isRequestDisabled()) {
+      Alert.alert("Requests Disabled", "Requests are currently disabled. Please try again after 12 PM.");
       return;
     }
     if (!startDateObj || !endDateObj) {

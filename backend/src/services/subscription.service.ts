@@ -28,6 +28,25 @@ export interface SubscriptionStats {
   monthlyDeliveredQuantity: string;
 }
 
+export interface DailyDeliveryReportItem {
+  subscriptionId: string;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  productName: string;
+  baseQuantity: string;
+  finalQuantity: string;
+  requestType: string | null;
+  requestMessage: string | null;
+}
+
+export interface DailyDeliveryReport {
+  reportDate: string;
+  totalDeliveries: number;
+  totalQuantity: string;
+  deliveries: DailyDeliveryReportItem[];
+}
+
 export interface CalendarDay {
   date: string;
   dayNumber: number;
@@ -277,18 +296,9 @@ export class SubscriptionService {
       let requestId: string | null = null;
 
       if (!isBeforeStart) {
-        const applicableRequests = acceptedRequests
-          .filter((req) => {
-            const reqStart = new Date(req.start_date);
-            const reqEnd = new Date(req.end_date);
-            reqStart.setHours(0, 0, 0, 0);
-            reqEnd.setHours(23, 59, 59, 999);
-            return dayDate >= reqStart && dayDate <= reqEnd;
-          })
-          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        const effectiveRequest = this.getEffectiveRequestForDate(dayDate, acceptedRequests);
 
-        if (applicableRequests.length > 0) {
-          const effectiveRequest = applicableRequests[0];
+        if (effectiveRequest) {
 
           requestType = effectiveRequest.type;
           requestId = effectiveRequest.id;
@@ -297,10 +307,14 @@ export class SubscriptionService {
             quantity = "0";
             isSkipped = true;
           } else if (effectiveRequest.type === "INCREASE" && effectiveRequest.requestedQuantity) {
-            quantity = effectiveRequest.requestedQuantity.toString();
+            const base = parseFloat(subscription.dailyQuantity.toString()) || 0;
+            const increase = parseFloat(effectiveRequest.requestedQuantity.toString()) || 0;
+            quantity = (base + increase).toString();
             isDelivered = true;
           } else if (effectiveRequest.type === "DECREASE" && effectiveRequest.requestedQuantity) {
-            quantity = effectiveRequest.requestedQuantity.toString();
+            const base = parseFloat(subscription.dailyQuantity.toString()) || 0;
+            const decrease = parseFloat(effectiveRequest.requestedQuantity.toString()) || 0;
+            quantity = Math.max(0, base - decrease).toString();
             isDelivered = true;
           } else if (effectiveRequest.type === "NOTE") {
             isDelivered = true;
@@ -352,21 +366,11 @@ export class SubscriptionService {
     baseQuantity: string,
     acceptedRequests: any[]
   ): string {
-    const applicableRequests = acceptedRequests
-      .filter((req) => {
-        const reqStart = new Date(req.start_date);
-        const reqEnd = new Date(req.end_date);
-        reqStart.setHours(0, 0, 0, 0);
-        reqEnd.setHours(23, 59, 59, 999);
-        return date >= reqStart && date <= reqEnd;
-      })
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    const effectiveRequest = this.getEffectiveRequestForDate(date, acceptedRequests);
 
-    if (applicableRequests.length === 0) {
+    if (!effectiveRequest) {
       return baseQuantity;
     }
-
-    const effectiveRequest = applicableRequests[0];
 
     if (effectiveRequest.type === "SKIP") {
       return "0";
@@ -381,6 +385,103 @@ export class SubscriptionService {
     }
 
     return baseQuantity;
+  }
+
+  static async getVendorDailyDeliveryReport(vendorId: string, reportDate: Date): Promise<DailyDeliveryReport> {
+    const date = new Date(reportDate);
+    date.setHours(0, 0, 0, 0);
+
+    const subscriptions = await db.customerSubscription.findMany({
+      where: {
+        vendorCustomers: {
+          vendorId,
+        },
+      },
+      include: {
+        product: {
+          select: {
+            productName: true,
+          },
+        },
+        vendorCustomers: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                phone: true,
+                address: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const deliveries: DailyDeliveryReportItem[] = [];
+    let totalQuantity = 0;
+
+    for (const subscription of subscriptions) {
+      const acceptedRequests = await db.requests.findMany({
+        where: {
+          vendorCustomerId: subscription.vendorCustomerId,
+          productId: subscription.productId,
+          status: "ACCEPTED",
+        },
+      });
+
+      const finalQuantity = this.getEffectiveQuantityForDate(
+        date,
+        subscription.dailyQuantity.toString(),
+        acceptedRequests
+      );
+
+      const parsedQuantity = parseFloat(finalQuantity) || 0;
+      if (parsedQuantity <= 0) {
+        continue;
+      }
+
+      const effectiveRequest = this.getEffectiveRequestForDate(date, acceptedRequests);
+
+      deliveries.push({
+        subscriptionId: subscription.id,
+        customerName: subscription.vendorCustomers.user.name,
+        customerPhone: subscription.vendorCustomers.user.phone,
+        customerAddress: subscription.vendorCustomers.user.address,
+        productName: subscription.product.productName,
+        baseQuantity: subscription.dailyQuantity.toString(),
+        finalQuantity: parsedQuantity.toString(),
+        requestType: effectiveRequest?.type ?? null,
+        requestMessage: effectiveRequest?.message ?? null,
+      });
+
+      totalQuantity += parsedQuantity;
+    }
+
+    deliveries.sort((a, b) => a.customerName.localeCompare(b.customerName) || a.productName.localeCompare(b.productName));
+
+    return {
+      reportDate: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+      totalDeliveries: deliveries.length,
+      totalQuantity: totalQuantity.toString(),
+      deliveries,
+    };
+  }
+
+  private static getEffectiveRequestForDate(date: Date, acceptedRequests: any[]) {
+    const applicableRequests = acceptedRequests
+      .filter((req) => {
+        const reqStart = new Date(req.start_date);
+        const reqEnd = new Date(req.end_date);
+        reqStart.setHours(0, 0, 0, 0);
+        reqEnd.setHours(23, 59, 59, 999);
+        return date >= reqStart && date <= reqEnd;
+      })
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+    return applicableRequests[0] ?? null;
   }
 }
 

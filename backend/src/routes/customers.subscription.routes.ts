@@ -9,6 +9,7 @@ import {
   getVendorSubscriptionCalendar,
   getVendorCustomerSubscriptions,
   getVendorSubscriptionStats,
+  getVendorDailyDeliveryReport,
 } from "../controllers/customerSubscription.controlers.js"
 import { isAuthenticated } from "../middlewares/isAuthenticated.js"
 import { isCreatedVendorProfile } from "../middlewares/isCreatedVendorProfile.js"
@@ -34,5 +35,6 @@ customerSubscriptionRouter.get("/my-subscriptions", isAuthenticated, isRoleCusto
 customerSubscriptionRouter.get("/calendar/:id", isAuthenticated, isRoleCustomer, getSubscriptionCalendar)
 customerSubscriptionRouter.get("/vendor/calendar/:id", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorSubscriptionCalendar)
 customerSubscriptionRouter.get("/vendor/stats/:id", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorSubscriptionStats)
+customerSubscriptionRouter.get("/vendor/daily-delivery-report", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorDailyDeliveryReport)
 
 export default customerSubscriptionRouter
