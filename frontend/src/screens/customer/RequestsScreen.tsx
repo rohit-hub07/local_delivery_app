@@ -95,12 +95,13 @@ export default function RequestsScreen() {
     return (
       <View style={styles.card}>
         <View style={styles.requestHeader}>
-          <View style={styles.productRow}>
-            <Text style={styles.productLabel}>Product:</Text>
-            <Text style={styles.productName} numberOfLines={1} ellipsizeMode="tail">{item.productName || "N/A"}</Text>
-          </View>
           <Text style={styles.typeBadge}>{item.type}</Text>
           {renderStatusPill(item.status)}
+        </View>
+
+        <View style={styles.productRow}>
+          <Text style={styles.productLabel}>Product:</Text>
+          <Text style={styles.productName} numberOfLines={1} ellipsizeMode="tail">{item.productName || "N/A"}</Text>
         </View>
 
         <View style={styles.requestBody}>
@@ -347,28 +348,27 @@ const styles = StyleSheet.create({
     gap: 8,
   },
    productRow: {
-     flexDirection: "row",
-     alignItems: "center",
-     backgroundColor: "#F8FAFC",
-     borderRadius: 10,
-     paddingHorizontal: 10,
-     paddingVertical: 6,
-     flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#F8FAFC",
+      borderRadius: 10,
+      padding: 8,
+      marginBottom: 10,
+      flexWrap: "wrap",
+      gap: 6,
+    },
+   productLabel: {
+     fontSize: 11,
+     fontWeight: "700",
+     color: "#64748B",
+     textTransform: "uppercase",
+     letterSpacing: 0.3,
    },
-  productLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#64748B",
-    marginRight: 6,
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
-  },
-  productName: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#0F172A",
-    flex: 1,
-  },
+   productName: {
+     fontSize: 15,
+     fontWeight: "700",
+     color: "#0F172A",
+   },
   requestBody: {
     marginTop: 2,
   },
