@@ -71,7 +71,7 @@ export default function RootNavigator() {
   }
 
   //Vendors without a profile (Fixed: Added missing return statement)
-  if (user.role === "VENDOR" && !hasVendorProfile) {
+  if (user && user.role === "VENDOR" && !hasVendorProfile) {
     return <VendorSetUpScreen />;
   }
 
