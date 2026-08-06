@@ -140,6 +140,9 @@ export default function HomeScreen() {
   };
 
   const handleOpenForm = (productId: string, productName: string, unit: string) => {
+    if (unsubscribingId === productId) {
+      return;
+    }
     if (isRequestDisabled()) {
       Alert.alert("Requests Disabled", "Requests are currently disabled. Please try again after 12 PM.");
       return;
@@ -391,9 +394,8 @@ export default function HomeScreen() {
                   )}
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.actionButton, styles.requestButton]}
+                  style={[styles.actionButton, styles.requestButton, (isUnsubscribing || isRequestDisabled()) && styles.disabledActionButton]}
                   onPress={() => handleOpenForm(item.id, item.productName, item.unit)}
-                  disabled={isUnsubscribing || isRequestDisabled()}
                   activeOpacity={0.8}
                 >
                   <Text style={styles.requestButtonIcon}>✉️</Text>
@@ -668,6 +670,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8 * scale,
     elevation: 3
+  },
+  disabledActionButton: {
+    opacity: 0.5,
   },
   requestButtonIcon: { fontSize: 15 * scale },
   requestButtonText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 * scale },
