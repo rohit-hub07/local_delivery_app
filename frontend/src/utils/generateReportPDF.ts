@@ -2,7 +2,6 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { Share, Alert } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import * as WebBrowser from 'expo-web-browser';
 
 interface DeliveryItem {
   customerName: string;
@@ -55,6 +54,28 @@ function uint8ArrayToBase64(uint8Array: Uint8Array): string {
   return btoa(binaryString);
 }
 
+// pdf-lib has no built-in text-centering option, so every "centered" string
+// must have its width measured with the font/size it will be drawn at, and
+// then be placed at (centerX - textWidth / 2).
+function drawCenteredText(
+  page: any,
+  text: string,
+  centerX: number,
+  y: number,
+  font: any,
+  size: number,
+  color: any
+) {
+  const textWidth = font.widthOfTextAtSize(text, size);
+  page.drawText(text, {
+    x: centerX - textWidth / 2,
+    y,
+    size,
+    font,
+    color,
+  });
+}
+
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 const MARGIN_LEFT = 14;
@@ -72,6 +93,15 @@ const TEXT_COLOR = [15, 23, 42];
 const SUBTITLE_COLOR = [100, 116, 139];
 const MUTED_COLOR = [148, 163, 184];
 const WHITE = [255, 255, 255];
+
+function fitText(value: string, maxLength: number): string {
+  const text = (value || "").trim();
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return `${text.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
+}
 
 export async function generateAndDownloadReport(report: ReportData): Promise<void> {
   const pdfDoc = await PDFDocument.create();
@@ -93,14 +123,15 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
     });
     yPosition -= 6;
 
-    page.drawText("Today's Delivery Report", {
-      x: PAGE_WIDTH / 2,
-      y: yPosition,
-      size: 20,
-      font: fontBold,
-      color: rgb(0.06, 0.09, 0.17),
-      align: 'center',
-    });
+    drawCenteredText(
+      page,
+      "Today's Delivery Report",
+      PAGE_WIDTH / 2,
+      yPosition,
+      fontBold,
+      20,
+      rgb(0.06, 0.09, 0.17)
+    );
     yPosition -= 7;
 
     page.drawLine({
@@ -114,14 +145,15 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
 
   const drawFooter = () => {
     const footerY = MARGIN_BOTTOM - 4;
-    page.drawText(`Page ${pageNum}`, {
-      x: PAGE_WIDTH / 2,
-      y: footerY,
-      size: 8,
-      font: font,
-      color: rgb(0.58, 0.64, 0.72),
-      align: 'center',
-    });
+    drawCenteredText(
+      page,
+      `Page ${pageNum}`,
+      PAGE_WIDTH / 2,
+      footerY,
+      font,
+      8,
+      rgb(0.58, 0.64, 0.72)
+    );
 
     page.drawLine({
       start: { x: MARGIN_LEFT, y: footerY + 3 },
@@ -142,27 +174,28 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
       height: statHeight,
       borderColor: rgb(0.89, 0.91, 0.94),
       borderWidth: 1,
-      backgroundColor: rgb(0.94, 0.95, 0.98),
-      borderRadius: 2,
+      color: rgb(0.94, 0.95, 0.98),
     });
 
-    page.drawText(String(report.totalDeliveries), {
-      x: MARGIN_LEFT + statWidth / 2,
-      y: yPosition - 12,
-      size: 26,
-      font: fontBold,
-      color: rgb(0.31, 0.27, 0.89),
-      align: 'center',
-    });
+    drawCenteredText(
+      page,
+      String(report.totalDeliveries),
+      MARGIN_LEFT + statWidth / 2,
+      yPosition - 12,
+      fontBold,
+      26,
+      rgb(0.31, 0.27, 0.89)
+    );
 
-    page.drawText('TOTAL DELIVERIES', {
-      x: MARGIN_LEFT + statWidth / 2,
-      y: yPosition - 20,
-      size: 9,
-      font: font,
-      color: rgb(0.39, 0.45, 0.55),
-      align: 'center',
-    });
+    drawCenteredText(
+      page,
+      'TOTAL DELIVERIES',
+      MARGIN_LEFT + statWidth / 2,
+      yPosition - 20,
+      font,
+      9,
+      rgb(0.39, 0.45, 0.55)
+    );
 
     page.drawRectangle({
       x: MARGIN_LEFT + statWidth + 8,
@@ -171,32 +204,87 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
       height: statHeight,
       borderColor: rgb(0.89, 0.91, 0.94),
       borderWidth: 1,
-      backgroundColor: rgb(0.94, 0.95, 0.98),
-      borderRadius: 2,
+      color: rgb(0.94, 0.95, 0.98),
     });
 
-    page.drawText(report.totalQuantity, {
-      x: MARGIN_LEFT + statWidth + 8 + statWidth / 2,
-      y: yPosition - 12,
-      size: 26,
-      font: fontBold,
-      color: rgb(0.31, 0.27, 0.89),
-      align: 'center',
-    });
+    drawCenteredText(
+      page,
+      report.totalQuantity,
+      MARGIN_LEFT + statWidth + 8 + statWidth / 2,
+      yPosition - 12,
+      fontBold,
+      26,
+      rgb(0.31, 0.27, 0.89)
+    );
 
-    page.drawText('TOTAL QUANTITY', {
-      x: MARGIN_LEFT + statWidth + 8 + statWidth / 2,
-      y: yPosition - 20,
-      size: 9,
-      font: font,
-      color: rgb(0.39, 0.45, 0.55),
-      align: 'center',
-    });
+    drawCenteredText(
+      page,
+      'TOTAL QUANTITY',
+      MARGIN_LEFT + statWidth + 8 + statWidth / 2,
+      yPosition - 20,
+      font,
+      9,
+      rgb(0.39, 0.45, 0.55)
+    );
 
     yPosition -= statHeight + 8;
   };
 
   const drawTable = () => {
+    const drawTableHeader = () => {
+      page.drawText('Delivery Details', {
+        x: MARGIN_LEFT,
+        y: yPosition,
+        size: 11,
+        font: fontBold,
+        color: rgb(0.06, 0.09, 0.17),
+      });
+      yPosition -= 8;
+
+      const colWidths = [110, 70, 130, 85, 45, 127];
+      const headers = ['Customer', 'Phone', 'Address', 'Product', 'Qty', 'Request'];
+
+      page.drawRectangle({
+        x: MARGIN_LEFT,
+        y: yPosition - TABLE_HEADER_HEIGHT,
+        width: CONTENT_WIDTH,
+        height: TABLE_HEADER_HEIGHT,
+        color: rgb(0.31, 0.27, 0.89),
+      });
+
+      let headerXPos = MARGIN_LEFT + 3;
+      for (let i = 0; i < headers.length; i++) {
+        page.drawText(headers[i], {
+          x: headerXPos,
+          y: yPosition - 14,
+          size: 8,
+          font: fontBold,
+          color: rgb(1, 1, 1),
+        });
+        headerXPos += colWidths[i];
+      }
+
+      const verticalLines = [MARGIN_LEFT];
+      let vx = MARGIN_LEFT;
+      for (let i = 0; i < colWidths.length; i++) {
+        vx += colWidths[i];
+        verticalLines.push(vx);
+      }
+
+      for (const vl of verticalLines) {
+        page.drawLine({
+          start: { x: vl, y: yPosition - TABLE_HEADER_HEIGHT },
+          end: { x: vl, y: yPosition },
+          color: rgb(0.27, 0.23, 0.81),
+          thickness: 0.5,
+        });
+      }
+
+      yPosition -= TABLE_HEADER_HEIGHT;
+
+      return { colWidths, verticalLines };
+    };
+
     page.drawText('Delivery Details', {
       x: MARGIN_LEFT,
       y: yPosition,
@@ -207,67 +295,34 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
     yPosition -= 8;
 
     if (report.deliveries.length === 0) {
-      page.drawText('No deliveries recorded for this date.', {
-        x: PAGE_WIDTH / 2,
-        y: yPosition + 10,
-        size: 12,
-        font: font,
-        color: rgb(0.58, 0.64, 0.72),
-        align: 'center',
-      });
+      drawCenteredText(
+        page,
+        'No deliveries recorded for this date.',
+        PAGE_WIDTH / 2,
+        yPosition + 10,
+        font,
+        12,
+        rgb(0.58, 0.64, 0.72)
+      );
       yPosition += 20;
       return;
     }
 
-    const colWidths = [110, 70, 130, 85, 45, 127];
-    const headers = ['Customer', 'Phone', 'Address', 'Product', 'Qty', 'Request'];
-    const headerX = MARGIN_LEFT;
-
-    page.drawRectangle({
-      x: MARGIN_LEFT,
-      y: yPosition - TABLE_HEADER_HEIGHT,
-      width: CONTENT_WIDTH,
-      height: TABLE_HEADER_HEIGHT,
-      backgroundColor: rgb(0.31, 0.27, 0.89),
-    });
-
-    let headerXPos = headerX + 3;
-    for (let i = 0; i < headers.length; i++) {
-      page.drawText(headers[i], {
-        x: headerXPos,
-        y: yPosition - 14,
-        size: 8,
-        font: fontBold,
-        color: rgb(1, 1, 1),
-      });
-      headerXPos += colWidths[i];
-    }
-
-    const verticalLines = [MARGIN_LEFT];
-    let vx = MARGIN_LEFT;
-    for (let i = 0; i < colWidths.length; i++) {
-      vx += colWidths[i];
-      verticalLines.push(vx);
-    }
-
-    for (const vl of verticalLines) {
-      page.drawLine({
-        start: { x: vl, y: yPosition - TABLE_HEADER_HEIGHT },
-        end: { x: vl, y: yPosition },
-        color: rgb(0.27, 0.23, 0.81),
-        thickness: 0.5,
-      });
-    }
-
-    yPosition -= TABLE_HEADER_HEIGHT;
+    let { colWidths, verticalLines } = drawTableHeader();
 
     report.deliveries.forEach((item, rowIndex) => {
+      // If a row would spill past the bottom margin, start a new page,
+      // redraw the report header, and redraw the table header so the
+      // columns keep lining up and don't appear to "disappear".
       if (yPosition - TABLE_ROW_HEIGHT < MARGIN_BOTTOM) {
+        drawFooter();
         page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
         pageNum++;
         yPosition = PAGE_HEIGHT - MARGIN_TOP;
         drawHeader();
-        yPosition -= TABLE_HEADER_HEIGHT;
+        const headerState = drawTableHeader();
+        colWidths = headerState.colWidths;
+        verticalLines = headerState.verticalLines;
       }
 
       const rowY = yPosition - TABLE_ROW_HEIGHT;
@@ -278,7 +333,7 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
           y: rowY,
           width: CONTENT_WIDTH,
           height: TABLE_ROW_HEIGHT,
-          backgroundColor: rgb(0.97, 0.98, 0.99),
+          color: rgb(0.97, 0.98, 0.99),
         });
       }
 
@@ -312,13 +367,16 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
         ? `${requestLabel}: ${item.requestMessage}`
         : requestLabel;
 
+      // Address and request text are the most likely to overflow their
+      // columns, so they're clamped to a length that fits the column width
+      // at 9pt before being drawn.
       const rowData = [
-        item.customerName,
-        item.customerPhone,
-        item.customerAddress,
-        item.productName,
+        fitText(item.customerName, 20),
+        fitText(item.customerPhone, 16),
+        fitText(item.customerAddress, 30),
+        fitText(item.productName, 18),
         qtyDisplay,
-        requestDetail,
+        fitText(requestDetail, 38),
       ];
 
       let cellX = MARGIN_LEFT + 3;
@@ -352,6 +410,7 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
 
   const drawFooterNote = () => {
     if (yPosition < MARGIN_BOTTOM + 20) {
+      drawFooter();
       page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
       pageNum++;
       yPosition = PAGE_HEIGHT - MARGIN_TOP;
@@ -366,17 +425,15 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
     });
     yPosition -= 5;
 
-    page.drawText(
+    drawCenteredText(
+      page,
       '* Modified quantity shown for accepted increase/decrease requests  |  Generated on ' +
-      formatDateTime(new Date()),
-      {
-        x: PAGE_WIDTH / 2,
-        y: yPosition,
-        size: 7,
-        font: font,
-        color: rgb(0.58, 0.64, 0.72),
-        align: 'center',
-      }
+        formatDateTime(new Date()),
+      PAGE_WIDTH / 2,
+      yPosition,
+      font,
+      7,
+      rgb(0.58, 0.64, 0.72)
     );
   };
 

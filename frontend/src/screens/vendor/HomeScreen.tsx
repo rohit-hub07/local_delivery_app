@@ -165,7 +165,8 @@ export default function HomeScreen() {
       if (!res.ok || !data.success) {
         throw new Error(data.message || "Failed to generate report");
       }
-
+      console.log("--------")
+      console.log(JSON.stringify(data))
       const report = {
         reportDate: data.report.reportDate,
         totalDeliveries: data.report.totalDeliveries,
