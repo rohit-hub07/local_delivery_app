@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -29,13 +29,10 @@ export default function VendorSubscriptionCalendarScreen() {
   const { calendar, calendarLoading, currentCalendarMonth, currentCalendarYear, fetchVendorCalendar } = useCustomerSubscriptionStore()
   const [month, setMonth] = useState(currentCalendarMonth)
   const [year, setYear] = useState(currentCalendarYear)
-  const [monthlyDeliveredQuantity, setMonthlyDeliveredQuantity] = useState<string | null>(null)
-  const [statsLoading, setStatsLoading] = useState(false)
 
   useEffect(() => {
     if (subscriptionId) {
       loadCalendar(month, year)
-      loadStats()
     }
   }, [subscriptionId])
 
@@ -43,7 +40,6 @@ export default function VendorSubscriptionCalendarScreen() {
     React.useCallback(() => {
       if (subscriptionId) {
         loadCalendar(month, year)
-        loadStats()
       }
     }, [subscriptionId, month, year])
   )
@@ -53,21 +49,6 @@ export default function VendorSubscriptionCalendarScreen() {
       await fetchVendorCalendar(subscriptionId, targetMonth, targetYear)
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to load calendar')
-    }
-  }
-
-  const loadStats = async () => {
-    if (!subscriptionId) return
-    try {
-      setStatsLoading(true)
-      const stats = await useCustomerSubscriptionStore.getState().fetchVendorSubscriptionStats(subscriptionId, month, year)
-      if (stats) {
-        setMonthlyDeliveredQuantity(stats.monthlyDeliveredQuantity)
-      }
-    } catch (error: any) {
-      console.log('Failed to load stats:', error.message)
-    } finally {
-      setStatsLoading(false)
     }
   }
 
@@ -81,7 +62,6 @@ export default function VendorSubscriptionCalendarScreen() {
     setMonth(newMonth)
     setYear(newYear)
     loadCalendar(newMonth, newYear)
-    loadStats()
   }
 
   const goToNextMonth = () => {
@@ -94,13 +74,22 @@ export default function VendorSubscriptionCalendarScreen() {
     setMonth(newMonth)
     setYear(newYear)
     loadCalendar(newMonth, newYear)
-    loadStats()
   }
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ]
+
+  const monthStats = useMemo(() => {
+    const deliveredDays = calendar.filter(day => day.isCurrentMonth && day.isDelivered).length
+    const skippedDays = calendar.filter(day => day.isCurrentMonth && day.requestType === 'SKIP' && day.isSkipped).length
+    const monthlyDeliveredQuantity = calendar
+      .filter(day => day.isCurrentMonth && day.isDelivered)
+      .reduce((sum, day) => sum + (parseFloat(day.quantity) || 0), 0)
+      .toFixed(2)
+    return { deliveredDays, skippedDays, monthlyDeliveredQuantity }
+  }, [calendar])
 
   const getDayStyle = (item: CalendarDayType) => {
     if (item.requestType === 'SKIP' && item.isSkipped) {
@@ -191,12 +180,20 @@ export default function VendorSubscriptionCalendarScreen() {
             <Text style={styles.monthButtonText}>›</Text>
           </TouchableOpacity>
         </View>
-        {!statsLoading && monthlyDeliveredQuantity !== null && (
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Monthly Delivered Count</Text>
-            <Text style={styles.totalValue}>{monthlyDeliveredQuantity}</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Monthly Delivered Qty</Text>
+            <Text style={styles.statValue}>{monthStats.monthlyDeliveredQuantity}</Text>
           </View>
-        )}
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Received Days</Text>
+            <Text style={styles.statValue}>{monthStats.deliveredDays}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Skipped Days</Text>
+            <Text style={styles.statValue}>{monthStats.skippedDays}</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.calendarContainer}>
@@ -279,20 +276,39 @@ const styles = StyleSheet.create({
   },
   monthButtonText: { fontSize: 22, fontWeight: '800', color: '#2563EB' },
   monthLabel: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
-  totalRow: {
+  statsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    backgroundColor: '#DBEAFE',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: '#BFDBFE'
+    flexWrap: 'wrap',
+    gap: 10,
+    marginHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 12,
   },
-  totalLabel: { fontSize: 13, fontWeight: '700', color: '#1E40AF' },
-  totalValue: { fontSize: 16, fontWeight: '800', color: '#1E3A8A' },
+  statItem: {
+    flex: 1,
+    minWidth: 90,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#EEF1F8',
+    padding: 12,
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    textAlign: 'center',
+  },
 
   calendarContainer: {
     flex: 1,

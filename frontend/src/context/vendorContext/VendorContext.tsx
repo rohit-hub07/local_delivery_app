@@ -52,12 +52,19 @@ export const useVendorContextStore = create<VendorState>()((set) => ({
           vendorProfileDetails: res.data.vendorProfile
         })
         useSocketStore.getState().initCustomerSocket(res.data.vendorProfile.id)
+        return true
       }
+      set({ hasVendorProfile: false, vendorAccount: null, vendorProfileDetails: null })
       return false
     } catch (error: any) {
-      set({ hasVendorProfile: false, vendorAccount: null,vendorProfileDetails: null });
+      set({ hasVendorProfile: false, vendorAccount: null, vendorProfileDetails: null });
+      const status = error?.response?.status;
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Error while getting the vendor profile!";
-      throw new Error(message);
+      const err = new Error(message);
+      if (status) {
+        (err as any).status = status;
+      }
+      throw err;
     }
   }
 }))

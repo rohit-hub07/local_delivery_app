@@ -169,13 +169,25 @@ export const getCustomerRequests = async (req: Request, res: Response) => {
             productName: true,
           },
         },
+        subscription: {
+          select: {
+            dailyQuantity: true,
+          },
+        },
       },
     })
+
+    const formatted = requests.map((req) => ({
+      ...req,
+      previousQuantity: req.subscription?.dailyQuantity
+        ? Number(req.subscription.dailyQuantity)
+        : null,
+    }))
 
     return res.status(200).json({
       message: "Requests fetched successfully!",
       success: true,
-      requests,
+      requests: formatted,
     })
   } catch (error: any) {
     console.log("Error getting the customer requests: ", error.message)
@@ -310,13 +322,25 @@ export const customerRequestStatus = async (req: Request, res: Response) => {
             productName: true,
           },
         },
+        subscription: {
+          select: {
+            dailyQuantity: true,
+          },
+        },
       },
     })
+
+    const formatted = requestStatus.map((req) => ({
+      ...req,
+      previousQuantity: req.subscription?.dailyQuantity
+        ? Number(req.subscription.dailyQuantity)
+        : null,
+    }))
 
     return res.status(200).json({
       message: "Requests fetched successfully!",
       success: true,
-      requestStatus,
+      requestStatus: formatted,
     })
   } catch (error: any) {
     console.log("Error fetching the customer request status: ", error.message)

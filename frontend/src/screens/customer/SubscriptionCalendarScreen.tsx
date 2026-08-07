@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -80,6 +80,16 @@ export default function SubscriptionCalendarScreen() {
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ]
+
+  const monthStats = useMemo(() => {
+    const deliveredDays = calendar.filter(day => day.isCurrentMonth && day.isDelivered).length
+    const skippedDays = calendar.filter(day => day.isCurrentMonth && day.requestType === 'SKIP' && day.isSkipped).length
+    const monthlyDeliveredQuantity = calendar
+      .filter(day => day.isCurrentMonth && day.isDelivered)
+      .reduce((sum, day) => sum + (parseFloat(day.quantity) || 0), 0)
+      .toFixed(2)
+    return { deliveredDays, skippedDays, monthlyDeliveredQuantity }
+  }, [calendar])
 
   const getDayStyle = (item: CalendarDayType) => {
     if (item.requestType === 'SKIP' && item.isSkipped) {
@@ -172,6 +182,21 @@ export default function SubscriptionCalendarScreen() {
         </View>
       </View>
 
+      <View style={styles.statsRow}>
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>Monthly Delivered Qty</Text>
+          <Text style={styles.statValue}>{monthStats.monthlyDeliveredQuantity}</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>Received Days</Text>
+          <Text style={styles.statValue}>{monthStats.deliveredDays}</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>Skipped Days</Text>
+          <Text style={styles.statValue}>{monthStats.skippedDays}</Text>
+        </View>
+      </View>
+
       <View style={styles.calendarContainer}>
         <View style={styles.weekRow}>
           {WEEK_DAYS.map((day) => (
@@ -252,6 +277,39 @@ const styles = StyleSheet.create({
   },
   monthButtonText: { fontSize: 22, fontWeight: '800', color: '#2563EB' },
   monthLabel: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
+  statsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  statItem: {
+    flex: 1,
+    minWidth: 90,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#EEF1F8',
+    padding: 12,
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    textAlign: 'center',
+  },
 
   calendarContainer: {
     flex: 1,

@@ -111,6 +111,23 @@ export default function RequestsScreen() {
             </View>
           ) : null}
 
+          {(item.type === 'INCREASE' || item.type === 'DECREASE') && (
+            <View style={styles.quantityRow}>
+              {item.previousQuantity != null && (
+                <View style={styles.quantityBadge}>
+                  <Text style={styles.quantityLabel}>Previous Qty</Text>
+                  <Text style={styles.quantityValue}>{item.previousQuantity}</Text>
+                </View>
+              )}
+              {item.requestedQuantity != null && (
+                <View style={[styles.quantityBadge, styles.requestedQuantityBadge]}>
+                  <Text style={styles.quantityLabel}>Requested Qty</Text>
+                  <Text style={styles.quantityValue}>{item.requestedQuantity}</Text>
+                </View>
+              )}
+            </View>
+          )}
+
           <View style={styles.dateContainer}>
             <View style={styles.dateBlock}>
               <Text style={styles.dateLabel}>Start Date</Text>
@@ -456,6 +473,39 @@ const styles = StyleSheet.create({
     marginTop: 10,
     textAlign: "right",
     fontWeight: "600",
+  },
+  quantityRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  quantityBadge: {
+    flex: 1,
+    minWidth: 100,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#EEF1F8",
+  },
+  requestedQuantityBadge: {
+    backgroundColor: "#DBEAFE",
+    borderColor: "#BFDBFE",
+  },
+  quantityLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#64748B",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 2,
+  },
+  quantityValue: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0F172A",
   },
   emptyIcon: {
     fontSize: 40,

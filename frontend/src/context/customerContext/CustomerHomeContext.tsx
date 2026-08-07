@@ -50,6 +50,8 @@ interface Request {
   respondedAt: string
   createdAt: string
   updatedAt: string
+  requestedQuantity?: string | null
+  previousQuantity?: number | null
 }
 
 interface RequestApiResponse {
@@ -109,6 +111,8 @@ export const useCustomerHomeContext = create<CustomerHomeState>()((set, get) => 
         const mapped = res.data.requestStatus.map((req: any) => ({
           ...req,
           productName: req.product?.productName || req.productName,
+          requestedQuantity: req.requestedQuantity ?? null,
+          previousQuantity: req.previousQuantity ?? null,
         }))
         const pendingCount = mapped.filter((req: any) => req.status?.toUpperCase() === "PENDING").length
         set({ requestDetails: mapped, pendingNotificationCount: pendingCount })

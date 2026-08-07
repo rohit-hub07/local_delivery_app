@@ -24,6 +24,7 @@ export interface CustomerRequest {
   start_date: string;
   end_date: string;
   requestedQuantity?: string | null;
+  previousQuantity?: number | null;
   status: "PENDING" | "ACCEPTED" | "REJECTED";
   respondedAt: string | null;
   createdAt: string;
@@ -68,10 +69,11 @@ export const useRequestStore = create<RequestState>()((set, get) => ({
     try {
       const res = await axiosInstance.get<ApiResponse>("request/all-requests");
       if (res.data.success) {
-        const mapped = res.data.requests.map((req: any) => ({
-          ...req,
-          productName: req.product?.productName || req.productName,
-        }))
+      const mapped = res.data.requests.map((req: any) => ({
+        ...req,
+        productName: req.product?.productName || req.productName,
+        previousQuantity: req.previousQuantity ?? null,
+      }))
         const pendingCount = mapped.filter((req: any) => req.status === 'PENDING').length
         set({ customerRequests: mapped, pendingNotificationCount: pendingCount })
       }

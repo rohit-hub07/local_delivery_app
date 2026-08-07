@@ -126,9 +126,20 @@ const RequestsScreen = () => {
 
         <View style={styles.requestDetails}>
           <Text style={styles.typeBadge}>{item.type}</Text>
-          {(item.type === 'INCREASE' || item.type === 'DECREASE') && item.requestedQuantity && (
-            <View style={styles.quantityBadge}>
-              <Text style={styles.quantityBadgeText}>Requested Qty: {item.requestedQuantity}</Text>
+          {(item.type === 'INCREASE' || item.type === 'DECREASE') && (
+            <View style={styles.quantityRow}>
+              {item.previousQuantity != null && (
+                <View style={styles.quantityBadge}>
+                  <Text style={styles.quantityLabel}>Previous Qty</Text>
+                  <Text style={styles.quantityValue}>{item.previousQuantity}</Text>
+                </View>
+              )}
+              {item.requestedQuantity != null && (
+                <View style={[styles.quantityBadge, styles.requestedQuantityBadge]}>
+                  <Text style={styles.quantityLabel}>Requested Qty</Text>
+                  <Text style={styles.quantityValue}>{item.requestedQuantity}</Text>
+                </View>
+              )}
             </View>
           )}
           <View style={styles.messageBox}>
@@ -581,8 +592,41 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 15,
   },
-  actionLoader: {
-    paddingVertical: 10,
-    alignSelf: 'center',
-  }
-});
+   actionLoader: {
+     paddingVertical: 10,
+     alignSelf: 'center',
+   },
+   quantityRow: {
+     flexDirection: 'row',
+     flexWrap: 'wrap',
+     gap: 10,
+     marginTop: 12,
+     marginBottom: 4,
+   },
+   quantityBadge: {
+     flex: 1,
+     minWidth: 100,
+     backgroundColor: '#F8FAFC',
+     borderRadius: 12,
+     padding: 10,
+     borderWidth: 1,
+     borderColor: '#EEF1F8',
+   },
+   requestedQuantityBadge: {
+     backgroundColor: '#DBEAFE',
+     borderColor: '#BFDBFE',
+   },
+   quantityLabel: {
+     fontSize: 10,
+     fontWeight: '700',
+     color: '#64748B',
+     textTransform: 'uppercase',
+     letterSpacing: 0.4,
+     marginBottom: 2,
+   },
+   quantityValue: {
+     fontSize: 16,
+     fontWeight: '800',
+     color: '#0F172A',
+   },
+ });
