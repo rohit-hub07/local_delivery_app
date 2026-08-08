@@ -94,6 +94,15 @@ const SUBTITLE_COLOR = [100, 116, 139];
 const MUTED_COLOR = [148, 163, 184];
 const WHITE = [255, 255, 255];
 
+
+function sanitizePdfText(value: string): string {
+  return String(value ?? '')
+    .replace(/\u202F/g, ' ')
+    .replace(/\u00A0/g, ' ')
+    .replace(/\u2014/g, '-')
+    .replace(/\u2013/g, '-');
+}
+
 function fitText(value: string, maxLength: number): string {
   const text = (value || "").trim();
   if (text.length <= maxLength) {
@@ -392,7 +401,7 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
               )
               : rgb(0.06, 0.09, 0.17);
 
-        page.drawText(rowData[col], {
+        page.drawText(sanitizePdfText(rowData[col]), {
           x: cellX,
           y: rowY + 5,
           size: 9,
@@ -427,8 +436,10 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
 
     drawCenteredText(
       page,
-      '* Modified quantity shown for accepted increase/decrease requests  |  Generated on ' +
-        formatDateTime(new Date()),
+      sanitizePdfText(
+        '* Modified quantity shown for accepted increase/decrease requests  |  Generated on ' +
+        formatDateTime(new Date())
+      ),
       PAGE_WIDTH / 2,
       yPosition,
       font,
