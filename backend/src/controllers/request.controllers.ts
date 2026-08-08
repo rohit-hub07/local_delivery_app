@@ -27,7 +27,7 @@ export const customerRequest = async (req: Request, res: Response) => {
 
     const { productId, message, type, start_date, end_date, requestedQuantity } = validateBody.data
 
-    const currentHour = new Date().getHours()
+    const currentHour = new Date().getUTCHours()
     if (currentHour >= 0 && currentHour < 12) {
       return res.status(403).json({
         message: "Requests are currently disabled. Please try again after 12 PM.",
