@@ -12,6 +12,7 @@ export interface SubscriptionStatsType {
   currentDailyQuantity: string
   upcomingRequests: number
   monthlyDeliveredQuantity: string
+  vendorBusinessName: string
 }
 
 export interface CalendarDayType {

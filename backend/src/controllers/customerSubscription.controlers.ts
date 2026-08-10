@@ -358,9 +358,15 @@ export const getSubscriptionCalendar = async (req: Request, res: Response) => {
     const subscription = await db.customerSubscription.findUnique({
       where: { id: subscriptionId },
       include: {
+        product: {
+          select: {
+            productName: true,
+          },
+        },
         vendorCustomers: {
           select: {
             customerId: true,
+            vendorId: true,
           },
         },
       },
@@ -374,6 +380,11 @@ export const getSubscriptionCalendar = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "You are not authorized to view this subscription", success: false })
     }
 
+    const vendor = await db.vendor.findUnique({
+      where: { id: subscription.vendorCustomers.vendorId },
+      select: { businessName: true },
+    })
+
     const calendar: CalendarDay[] = await SubscriptionService.getMonthlyCalendar(subscriptionId, year, month)
 
     return res.status(200).json({
@@ -382,6 +393,8 @@ export const getSubscriptionCalendar = async (req: Request, res: Response) => {
       calendar,
       month,
       year,
+      productName: subscription.product.productName,
+      vendorBusinessName: vendor?.businessName || '',
     })
   } catch (error: any) {
     console.log("Error while fetching calendar: ", error.message)

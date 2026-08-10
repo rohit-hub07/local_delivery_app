@@ -26,6 +26,7 @@ export interface SubscriptionStats {
   currentDailyQuantity: string;
   upcomingRequests: number;
   monthlyDeliveredQuantity: string;
+  vendorBusinessName: string;
 }
 
 export interface DailyDeliveryReportItem {
@@ -136,6 +137,13 @@ export class SubscriptionService {
       return null;
     }
 
+    const vendor = await db.vendor.findUnique({
+      where: { id: subscription.vendorCustomers.vendorId },
+      select: { businessName: true },
+    });
+
+    const vendorBusinessName = vendor?.businessName || '';
+
     const firstDayOfMonth = new Date(year, month - 1, 1);
     firstDayOfMonth.setHours(0, 0, 0, 0);
 
@@ -161,6 +169,7 @@ export class SubscriptionService {
         currentDailyQuantity: subscription.dailyQuantity.toString(),
         upcomingRequests: 0,
         monthlyDeliveredQuantity: "0",
+        vendorBusinessName,
       };
     }
 
@@ -213,6 +222,7 @@ export class SubscriptionService {
       currentDailyQuantity: subscription.dailyQuantity.toString(),
       upcomingRequests: 0,
       monthlyDeliveredQuantity: monthlyDeliveredQuantity.toString(),
+      vendorBusinessName,
     };
   }
 
