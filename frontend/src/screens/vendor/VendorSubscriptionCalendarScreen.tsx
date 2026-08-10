@@ -17,6 +17,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 type CalendarRouteParams = {
   VendorSubscriptionCalendar: {
     subscriptionId: string
+    customerName: string
+    productName: string
   }
 }
 
@@ -26,6 +28,8 @@ export default function VendorSubscriptionCalendarScreen() {
   const route = useRoute<RouteProp<CalendarRouteParams, 'VendorSubscriptionCalendar'>>()
   const navigation = useNavigation<NativeStackNavigationProp<any>>()
   const subscriptionId = route.params?.subscriptionId || ''
+  const customerName = route.params?.customerName || 'Customer'
+  const productName = route.params?.productName || 'Product'
   const { calendar, calendarLoading, currentCalendarMonth, currentCalendarYear, fetchVendorCalendar } = useCustomerSubscriptionStore()
   const [month, setMonth] = useState(currentCalendarMonth)
   const [year, setYear] = useState(currentCalendarYear)
@@ -168,7 +172,15 @@ export default function VendorSubscriptionCalendarScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Delivery Calendar</Text>
+        <View style={styles.headerTopRow}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.backButtonText}>‹</Text>
+          </TouchableOpacity>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.headerTitle}>Delivery Calendar</Text>
+            <Text style={styles.headerSubtitle} numberOfLines={1}>{customerName} • {productName}</Text>
+          </View>
+        </View>
         <View style={styles.monthRow}>
           <TouchableOpacity style={styles.monthButton} onPress={goToPrevMonth} activeOpacity={0.8}>
             <Text style={styles.monthButtonText}>‹</Text>
@@ -179,20 +191,6 @@ export default function VendorSubscriptionCalendarScreen() {
           <TouchableOpacity style={styles.monthButton} onPress={goToNextMonth} activeOpacity={0.8}>
             <Text style={styles.monthButtonText}>›</Text>
           </TouchableOpacity>
-        </View>
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Monthly Delivered Qty</Text>
-            <Text style={styles.statValue}>{monthStats.monthlyDeliveredQuantity}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Received Days</Text>
-            <Text style={styles.statValue}>{monthStats.deliveredDays}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Skipped Days</Text>
-            <Text style={styles.statValue}>{monthStats.skippedDays}</Text>
-          </View>
         </View>
       </View>
 
@@ -228,6 +226,21 @@ export default function VendorSubscriptionCalendarScreen() {
         )}
       </View>
 
+      <View style={styles.statsRow}>
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>Monthly Delivered Qty</Text>
+          <Text style={styles.statValue}>{monthStats.monthlyDeliveredQuantity}</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>Received Days</Text>
+          <Text style={styles.statValue}>{monthStats.deliveredDays}</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>Skipped Days</Text>
+          <Text style={styles.statValue}>{monthStats.skippedDays}</Text>
+        </View>
+      </View>
+
       <View style={styles.legendRow}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: '#DCFCE7' }]} />
@@ -252,8 +265,16 @@ export default function VendorSubscriptionCalendarScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F6FB' },
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14 },
+  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 10 },
+  headerTopRow: { flexDirection: 'row', alignItems: 'center' },
+  backButton: {
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center', marginRight: 10,
+  },
+  backButtonText: { fontSize: 22, fontWeight: '800', color: '#1A1A18', marginTop: -2 },
+  headerTitleWrap: { flex: 1 },
   headerTitle: { fontSize: 24, fontWeight: '800', color: '#0F172A', letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 13, color: '#475569', fontWeight: '600', marginTop: 2 },
   monthRow: {
     flexDirection: 'row',
     alignItems: 'center',

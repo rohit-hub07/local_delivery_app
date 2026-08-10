@@ -26,12 +26,13 @@ export default function CustomerSubscriptionsScreen() {
   const route = useRoute<RouteProp<RouteParams, 'CustomerSubscriptions'>>()
   const navigation = useNavigation<NativeStackNavigationProp<any>>()
   const { customerId, customerName } = route.params
-  const { fetchCustomerSubscriptions, fetchVendorSubscriptionStats } = useCustomerSubscriptionStore()
+  const { fetchCustomerSubscriptions, fetchVendorSubscriptionStats, deleteStoppedSubscription } = useCustomerSubscriptionStore()
 
   const [subscriptions, setSubscriptions] = useState<VendorSubscribedProduct[]>([])
   const [statsMap, setStatsMap] = useState<Record<string, { monthlyDeliveredQuantity: string; receivedDays: number; skippedDays: number }>>({})
   const [loading, setLoading] = useState(false)
   const [statsLoading, setStatsLoading] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     loadSubscriptions()
@@ -94,18 +95,46 @@ export default function CustomerSubscriptionsScreen() {
 
   const renderSubscription = ({ item }: { item: VendorSubscribedProduct }) => {
     const stats = statsMap[item.id]
+    const isStopped = item.status === "STOPPED"
+
+    const handleDeleteStopped = () => {
+      Alert.alert(
+        "Delete Stopped Service?",
+        `Remove "${item.product.productName}" from your records? This action cannot be undone.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              setDeletingId(item.id)
+              try {
+                await deleteStoppedSubscription(item.id)
+              } catch (error: any) {
+                Alert.alert("Error", error.message || "Could not delete the subscription.")
+              } finally {
+                setDeletingId(null)
+              }
+            },
+          },
+        ]
+      )
+    }
+
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, isStopped && styles.stoppedCard]}>
         <View style={styles.cardHeader}>
-          <Text style={styles.productName} numberOfLines={1}>
+          <Text style={[styles.productName, isStopped && styles.stoppedProductName]} numberOfLines={1}>
             {item.product.productName}
           </Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>Active</Text>
+          <View style={[styles.badge, isStopped ? styles.stoppedBadge : styles.activeBadge]}>
+            <Text style={[styles.badgeText, isStopped ? styles.stoppedBadgeText : styles.activeBadgeText]}>
+              {isStopped ? "Stopped" : "Active"}
+            </Text>
           </View>
         </View>
 
-        <Text style={styles.description} numberOfLines={2}>
+        <Text style={[styles.description, isStopped && styles.stoppedDescription]} numberOfLines={2}>
           {item.product.description}
         </Text>
 
@@ -143,9 +172,27 @@ export default function CustomerSubscriptionsScreen() {
           </View>
         </View>
 
+        {isStopped && (
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDeleteStopped}
+            activeOpacity={0.8}
+            disabled={deletingId === item.id}
+          >
+            {deletingId === item.id ? (
+              <ActivityIndicator size="small" color="#A32D2D" />
+            ) : (
+              <>
+                <Feather name="trash-2" size={16} color="#A32D2D" />
+                <Text style={styles.deleteButtonText}>Delete Stopped Service</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           style={styles.calendarButton}
-          onPress={() => navigation.navigate('VendorSubscriptionCalendar', { subscriptionId: item.id })}
+          onPress={() => navigation.navigate('VendorSubscriptionCalendar', { subscriptionId: item.id, customerName, productName: item.product.productName })}
           activeOpacity={0.8}
         >
           <Text style={styles.calendarIcon}>📅</Text>
@@ -259,6 +306,11 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 14,
   },
+  stoppedCard: {
+    backgroundColor: "#FAFAF9",
+    borderColor: "#E2E8F0",
+    opacity: 0.85,
+  },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -271,6 +323,10 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     marginRight: 10,
   },
+  stoppedProductName: {
+    color: "#64748B",
+    textDecorationLine: "line-through",
+  },
   badge: {
     backgroundColor: "#DCFCE7",
     paddingHorizontal: 10,
@@ -278,6 +334,24 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: "#BBF7D0",
+  },
+  activeBadge: {
+    backgroundColor: "#DCFCE7",
+    borderColor: "#BBF7D0",
+  },
+  activeBadgeText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#15803D",
+  },
+  stoppedBadge: {
+    backgroundColor: "#FEF3C7",
+    borderColor: "#FDE69D",
+  },
+  stoppedBadgeText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#92400E",
   },
   badgeText: {
     fontSize: 12,
@@ -289,6 +363,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#475569",
     lineHeight: 20,
+  },
+  stoppedDescription: {
+    color: "#94A3B8",
   },
   divider: {
     height: 1,
@@ -337,6 +414,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3,
+  },
+  deleteButton: {
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  deleteButtonText: {
+    color: "#A32D2D",
+    fontSize: 14,
+    fontWeight: "800",
   },
   calendarIcon: {
     fontSize: 16,

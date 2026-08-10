@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
-  FlatList,
+  SectionList,
   StyleSheet,
   TouchableOpacity,
   Modal,
@@ -12,7 +12,7 @@ import {
   Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useVendorCustomerStore } from "../../context/vendorContext/vendorCustomerContext";
 import { useCustomerSubscriptionStore } from "../../context/vendorContext/CustomerSubscriptionContex";
 import { useNavigation } from "@react-navigation/native";
@@ -49,11 +49,16 @@ const CustomerScreen = () => {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [phone, setPhone] = useState("");
   const [addCustomerError, setAddCustomerError] = useState("");
-  const { subscribedProducts } = useCustomerSubscriptionStore();
+  const { subscribedProducts, subscribedCustomers } = useCustomerSubscriptionStore();
 
   const fetchCustomers = async () => {
     try {
       setLoading(true);
+      try {
+        await subscribedCustomers();
+      } catch (subErr) {
+        console.log("Failed to load subscriptions:", subErr);
+      }
       const res = await allCustomers();
       if (res?.success) {
         setCustomers(res.customers);
@@ -128,20 +133,38 @@ const CustomerScreen = () => {
 
   const getSubscriptionCount = (customerId: string) => {
     return subscribedProducts.filter(
-      (sub) => sub.vendorCustomerId === customerId
+      (sub) => sub.vendorCustomers?.customerId === customerId
     ).length;
   };
 
-  const filteredCustomers = useMemo(() => {
-    if (!search.trim()) return customers;
-    const q = search.trim().toLowerCase();
-    return customers.filter(
-      (item) =>
-        item.user?.name?.toLowerCase().includes(q) ||
-        item.user?.phone?.toLowerCase().includes(q) ||
-        item.user?.address?.toLowerCase().includes(q)
-    );
-  }, [search, customers]);
+  const sections = useMemo(() => {
+    let filtered = customers;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      filtered = customers.filter(
+        (item) =>
+          item.user?.name?.toLowerCase().includes(q) ||
+          item.user?.phone?.toLowerCase().includes(q) ||
+          item.user?.address?.toLowerCase().includes(q)
+      );
+    }
+
+    const subscribed: any[] = [];
+    const unsubscribed: any[] = [];
+
+    filtered.forEach((item) => {
+      if (getSubscriptionCount(item.user.id) > 0) {
+        subscribed.push(item);
+      } else {
+        unsubscribed.push(item);
+      }
+    });
+
+    return [
+      { title: "Subscribed Customers", data: subscribed, count: subscribed.length },
+      { title: "Customers Without Subscriptions", data: unsubscribed, count: unsubscribed.length },
+    ];
+  }, [search, customers, subscribedProducts]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
@@ -168,18 +191,9 @@ const CustomerScreen = () => {
         )}
       </View>
 
-      <FlatList
-        data={filteredCustomers}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.user.id}
-        refreshing={loading}
-        onRefresh={fetchCustomers}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <Feather name="users" size={32} color="#B4B2A9" />
-            <Text style={styles.emptyText}>No customers found.</Text>
-          </View>
-        }
         renderItem={({ item }) => {
           const avatar = getAvatarColor(item.user.id);
           const subCount = getSubscriptionCount(item.user.id);
@@ -209,11 +223,11 @@ const CustomerScreen = () => {
                       </View>
                     )}
                   </View>
-                  {subCount > 0 && (
+                  {/* {subCount > 0 && (
                     <View style={styles.subBadge}>
                       <Text style={styles.subBadgeText}>{subCount}</Text>
                     </View>
-                  )}
+                  )} */}
                 </View>
                 <View style={styles.actionsRow}>
                   <TouchableOpacity
@@ -256,6 +270,35 @@ const CustomerScreen = () => {
             </View>
           );
         }}
+        renderSectionHeader={({ section }) => (
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons
+                name={section.title === "Subscribed Customers" ? "checkmark-circle" : "person-outline"}
+                size={18}
+                color={section.count > 0 ? "#2563EB" : "#9A9990"}
+              />
+              <Text style={[styles.sectionTitle, { color: section.count > 0 ? "#1A1A18" : "#9A9990" }]}>
+                {section.title}
+              </Text>
+            </View>
+            <View style={[styles.sectionBadge, { backgroundColor: section.count > 0 ? "#E6F1FB" : "#F1F0EA" }]}>
+              <Text style={[styles.sectionBadgeText, { color: section.count > 0 ? "#0C447C" : "#9A9990" }]}>
+                {section.count}
+              </Text>
+            </View>
+          </View>
+        )}
+        stickySectionHeadersEnabled={false}
+        refreshing={loading}
+        onRefresh={fetchCustomers}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={styles.emptyWrap}>
+            <Feather name="users" size={32} color="#B4B2A9" />
+            <Text style={styles.emptyText}>No customers found.</Text>
+          </View>
+        }
       />
 
       <TouchableOpacity
@@ -325,10 +368,41 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F7F7F5",
   },
-  listContent: {
+   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 100,
     paddingTop: 8,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 4,
+    paddingVertical: 10,
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
+  sectionBadge: {
+    minWidth: 22,
+    height: 22,
+    paddingHorizontal: 6,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sectionBadgeText: {
+    fontSize: 11,
+    fontWeight: "800",
   },
   header: {
     flexDirection: "row",

@@ -7,6 +7,7 @@ export interface VendorSubscribedProduct {
   productId: string
   dailyQuantity: string
   startDate: string
+  status: string
   createdAt: string
   updatedAt: string
   product: {
@@ -78,6 +79,7 @@ interface VendorStatsResponse {
 interface CustomerSubscriptionState {
   subscribedProducts: VendorSubscribedProduct[];
   subscribedCustomers: () => Promise<void>;
+  deleteStoppedSubscription: (subscriptionId: string) => Promise<void>;
   calendar: CalendarDayType[];
   calendarLoading: boolean;
   currentCalendarMonth: number;
@@ -143,7 +145,7 @@ export const useCustomerSubscriptionStore = create<CustomerSubscriptionState>()(
     }
   },
 
-  fetchVendorSubscriptionStats: async (subscriptionId: string, month?: number, year?: number) => {
+   fetchVendorSubscriptionStats: async (subscriptionId: string, month?: number, year?: number) => {
     try {
       const now = new Date()
       const targetMonth = month ?? now.getMonth() + 1
@@ -157,6 +159,20 @@ export const useCustomerSubscriptionStore = create<CustomerSubscriptionState>()(
       return null
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Failed to load subscription stats"
+      throw new Error(message)
+    }
+  },
+
+  deleteStoppedSubscription: async (subscriptionId: string) => {
+    try {
+      const res = await axiosInstance.delete(`/subscription/delete-stopped-subscription/${subscriptionId}`)
+      if (res.data.success) {
+        set((state) => ({
+          subscribedProducts: state.subscribedProducts.filter((p) => p.id !== subscriptionId),
+        }))
+      }
+    } catch (error: any) {
+      const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Failed to delete subscription"
       throw new Error(message)
     }
   }

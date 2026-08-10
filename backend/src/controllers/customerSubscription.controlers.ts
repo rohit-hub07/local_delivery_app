@@ -43,22 +43,6 @@ export const subscribeProduct = async (req: Request, res: Response) => {
       })
     }
 
-    const existingSubscription = await db.customerSubscription.findUnique({
-      where: {
-        vendorCustomerId_productId: {
-          vendorCustomerId: vendorCustomer.id,
-          productId: productId,
-        },
-      },
-    })
-
-    if (existingSubscription) {
-      return res.status(400).json({
-        message: "You are already subscribed to this product.",
-        success: false,
-      })
-    }
-
     const validateBody = SubscriptionSchema.safeParse({
       productId: req.body.productId || productId,
       dailyQuantity: req.body.dailyQuantity,
@@ -74,6 +58,65 @@ export const subscribeProduct = async (req: Request, res: Response) => {
     }
 
     const { dailyQuantity, startDate } = validateBody.data
+
+    const existingSubscription = await db.customerSubscription.findUnique({
+      where: {
+        vendorCustomerId_productId: {
+          vendorCustomerId: vendorCustomer.id,
+          productId: productId,
+        },
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    })
+
+    if (existingSubscription) {
+      if (existingSubscription.status === "STOPPED") {
+        const resubscribed = await db.customerSubscription.update({
+          where: {
+            vendorCustomerId_productId: {
+              vendorCustomerId: vendorCustomer.id,
+              productId,
+            },
+          },
+          data: {
+            dailyQuantity: dailyQuantity.toString(),
+            startDate,
+            status: "ACTIVE",
+          },
+          include: {
+            product: {
+              select: {
+                id: true,
+                productName: true,
+                description: true,
+                unit: true,
+              },
+            },
+            vendorCustomers: {
+              include: {
+                user: true
+              }
+            }
+          },
+        })
+
+        req.io.to(product.vendorId).emit("customer_subscribed_product", resubscribed)
+
+        return res.status(200).json({
+          message: "Subscribed to the product successfully!",
+          success: true,
+          subscription: resubscribed,
+        })
+      }
+
+      return res.status(400).json({
+        message: "You are already subscribed to this product.",
+        success: false,
+      })
+    }
 
     const newSubscription = await db.customerSubscription.create({
       data: {
@@ -191,16 +234,37 @@ export const unsubscribeProduct = async (req: Request, res: Response) => {
       })
     }
 
-    await db.customerSubscription.delete({
+    await db.customerSubscription.update({
       where: {
         vendorCustomerId_productId: {
           vendorCustomerId: vendorCustomer.id,
           productId,
         },
       },
+      data: {
+        status: "STOPPED",
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            productName: true,
+            description: true,
+            unit: true,
+          },
+        },
+        vendorCustomers: {
+          include: {
+            user: true
+          }
+        }
+      },
     })
 
-    req.io.to(product.vendorId).emit("customer_unsubcribed_product", productId)
+    req.io.to(product.vendorId).emit("customer_unsubcribed_product", {
+      ...subscription,
+      status: "STOPPED",
+    })
 
     const vendor = await db.vendor.findUnique({
       where: {
@@ -294,9 +358,15 @@ export const getSubscriptionCalendar = async (req: Request, res: Response) => {
     const subscription = await db.customerSubscription.findUnique({
       where: { id: subscriptionId },
       include: {
+        product: {
+          select: {
+            productName: true,
+          },
+        },
         vendorCustomers: {
           select: {
             customerId: true,
+            vendorId: true,
           },
         },
       },
@@ -310,6 +380,11 @@ export const getSubscriptionCalendar = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "You are not authorized to view this subscription", success: false })
     }
 
+    const vendor = await db.vendor.findUnique({
+      where: { id: subscription.vendorCustomers.vendorId },
+      select: { businessName: true },
+    })
+
     const calendar: CalendarDay[] = await SubscriptionService.getMonthlyCalendar(subscriptionId, year, month)
 
     return res.status(200).json({
@@ -318,6 +393,8 @@ export const getSubscriptionCalendar = async (req: Request, res: Response) => {
       calendar,
       month,
       year,
+      productName: subscription.product.productName,
+      vendorBusinessName: vendor?.businessName || '',
     })
   } catch (error: any) {
     console.log("Error while fetching calendar: ", error.message)
@@ -345,6 +422,7 @@ export const customerSubscribedProduct = async (req: Request, res: Response) => 
       where: {
         subscription: {
           some: {
+            status: "ACTIVE",
             vendorCustomers: {
               user: {
                 id: userId,
@@ -619,5 +697,80 @@ export const isValidRequest = async (req: Request, res: Response) => {
 
   } catch (error) {
 
+  }
+}
+
+export const deleteStoppedSubscription = async (req: Request, res: Response) => {
+  try {
+    const subscriptionId = req.params.id as string
+    if (!subscriptionId) {
+      return res.status(400).json({
+        message: "Subscription ID is required",
+        success: false,
+      })
+    }
+
+    const vendor = req.vendor
+    if (!vendor) {
+      return res.status(401).json({
+        message: "Vendor doesn't exist!",
+        success: false,
+      })
+    }
+
+    const subscription = await db.customerSubscription.findUnique({
+      where: { id: subscriptionId },
+      include: {
+        product: {
+          select: {
+            productName: true,
+          },
+        },
+        vendorCustomers: {
+          select: {
+            vendorId: true,
+            customerId: true,
+          },
+        },
+      },
+    })
+
+    if (!subscription) {
+      return res.status(404).json({
+        message: "Subscription not found!",
+        success: false,
+      })
+    }
+
+    if (subscription.vendorCustomers.vendorId !== vendor.id) {
+      return res.status(403).json({
+        message: "You are not authorized to perform this action!",
+        success: false,
+      })
+    }
+
+    if (subscription.status !== "STOPPED") {
+      return res.status(400).json({
+        message: "Only stopped subscriptions can be deleted!",
+        success: false,
+      })
+    }
+
+    await db.customerSubscription.delete({
+      where: { id: subscriptionId },
+    })
+
+    req.io.to(subscription.vendorCustomers.customerId).emit("customer_stopped_subscription_deleted", subscriptionId)
+
+    return res.status(200).json({
+      message: "Stopped subscription deleted successfully!",
+      success: true,
+    })
+  } catch (error: any) {
+    console.log("Error while deleting stopped subscription: ", error.message)
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    })
   }
 }

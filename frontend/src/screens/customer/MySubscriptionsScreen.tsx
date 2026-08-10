@@ -73,6 +73,8 @@ export default function MySubscriptionsScreen() {
         </View>
       </View>
 
+      <Text style={styles.vendorName} numberOfLines={1}>{item.vendorBusinessName}</Text>
+
       <View style={styles.body}>
         <View style={styles.pillRow}>
           <View style={styles.pill}>
@@ -99,7 +101,7 @@ export default function MySubscriptionsScreen() {
       <View style={styles.cardFooter}>
         <TouchableOpacity
           style={styles.calendarButton}
-          onPress={() => navigation.navigate('SubscriptionCalendar', { subscriptionId: item.subscriptionId })}
+          onPress={() => navigation.navigate('SubscriptionCalendar', { subscriptionId: item.subscriptionId, vendorBusinessName: item.vendorBusinessName, productName: item.productName })}
           activeOpacity={0.8}
         >
           <Text style={styles.calendarButtonIcon}>📅</Text>
@@ -195,6 +197,7 @@ const styles = StyleSheet.create({
     borderRadius: 20
   },
   unitText: { fontSize: 13, fontWeight: '800', color: '#1D4ED8' },
+  vendorName: { fontSize: 13, color: '#475569', fontWeight: '600', marginTop: 4 },
 
   body: { marginTop: 16 },
   pillRow: { flexDirection: 'row', gap: 12 },
