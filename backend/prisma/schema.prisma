@@ -55,6 +55,11 @@ enum Platform {
   IOS
 }
 
+enum SubscriptionStatus {
+  ACTIVE
+  STOPPED
+}
+
 model User {
   id        String   @id @default(uuid())
   /// @zod.string.min(2, { message: "Name must be at least 2 characters long" })
@@ -124,13 +129,14 @@ model VendorCustomers {
 }
 
 model CustomerSubscription {
-  id               String   @id @default(uuid())
+  id               String              @id @default(uuid())
   vendorCustomerId String
   productId        String
   startDate        DateTime
-  dailyQuantity    Decimal  @db.Decimal(10, 2)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  dailyQuantity    Decimal             @db.Decimal(10, 2)
+  status           SubscriptionStatus  @default(ACTIVE)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
 
   vendorCustomers VendorCustomers @relation(fields: [vendorCustomerId], references: [id], onDelete: Cascade)
 

@@ -121,10 +121,19 @@ export const useSocketStore = create<SocketStore>()((set, get) => ({
       }))
     })
 
-    // when customer removes a product update it to vendor instantly
-    socket.on("customer_unsubcribed_product", (productId) => {
+    // when customer stops a service update the vendor's view to mark it as stopped
+    socket.on("customer_unsubcribed_product", (subscription: any) => {
       useCustomerSubscriptionStore.setState((state) => ({
-        subscribedProducts: state.subscribedProducts.filter((p) => p?.productId != productId)
+        subscribedProducts: state.subscribedProducts.map((p: any) =>
+          p.id === subscription.id ? subscription : p
+        ),
+      }))
+    })
+
+    // when vendor deletes a stopped subscription, remove it from the vendor's view
+    socket.on("customer_stopped_subscription_deleted", (subscriptionId: string) => {
+      useCustomerSubscriptionStore.setState((state) => ({
+        subscribedProducts: state.subscribedProducts.filter((p: any) => p.id !== subscriptionId),
       }))
     })
 
@@ -164,6 +173,7 @@ export const useSocketStore = create<SocketStore>()((set, get) => ({
       socket.off("update_vendor_product");
       socket.off("customer_subscribed_product");
       socket.off("customer_unsubcribed_product");
+      socket.off("customer_stopped_subscription_deleted");
       socket.off("vendor_added_customer");
       socket.off("customer_removed");
 

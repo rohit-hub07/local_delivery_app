@@ -24,12 +24,21 @@ import { useProductStore } from "../../context/vendorContext/ProductContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
+interface ProductSubscription {
+  subscriptionId: string
+  productId: string
+  productName: string
+  dailyQuantity: string
+  startDate: string
+  status: string
+}
+
 interface CustomerState {
   id: string;
   name: string;
   phone: string;
   address: string;
-  products: string[];
+  products: ProductSubscription[];
 }
 
 const C = {
@@ -82,7 +91,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const { subscribedProducts, subscribedCustomers, error: storeError } = useCustomerSubscriptionStore();
+  const { subscribedProducts, subscribedCustomers, deleteStoppedSubscription, error: storeError } = useCustomerSubscriptionStore();
   const { vendorAccount } = useVendorContextStore();
   const { allProducts, getAllProducts } = useProductStore();
 
@@ -106,18 +115,39 @@ export default function HomeScreen() {
         });
       }
       const customer = customerMap.get(user.id);
-      if (item.product?.productName && !customer!.products.includes(item.product.productName)) {
-        customer!.products.push(item.product.productName);
+      const productName = item.product?.productName;
+      if (productName) {
+        const alreadyExists = customer!.products.some((p) => p.productId === item.product.id);
+        if (!alreadyExists) {
+          customer!.products.push({
+            subscriptionId: item.id,
+            productId: item.product.id,
+            productName,
+            dailyQuantity: item.dailyQuantity,
+            startDate: item.startDate,
+            status: item.status || "ACTIVE",
+          });
+        }
       }
     });
     return Array.from(customerMap.values());
   }, [subscribedProducts]);
 
-  const totalSubscriptions = useMemo(() => vendorCustomers.reduce((n, c) => n + c.products.length, 0), [vendorCustomers]);
+  const totalSubscriptions = useMemo(() => vendorCustomers.reduce((n, c) => n + c.products.filter((p) => p.status === "ACTIVE").length, 0), [vendorCustomers]);
   const totalProducts = useMemo(() => allProducts.length, [allProducts]);
   const [reportLoading, setReportLoading] = useState(false);
+  const [deletingSubscriptionId, setDeletingSubscriptionId] = useState<string | null>(null);
 
   const activeError = storeError || localError;
+
+  const activeSubscriptionsCount = useMemo(
+    () => vendorCustomers.reduce((n, c) => n + c.products.filter((p) => p.status === "ACTIVE").length, 0),
+    [vendorCustomers]
+  );
+  const stoppedSubscriptionsCount = useMemo(
+    () => vendorCustomers.reduce((n, c) => n + c.products.filter((p) => p.status === "STOPPED").length, 0),
+    [vendorCustomers]
+  );
 
   const handleFetch = async () => {
     try {
@@ -200,6 +230,33 @@ export default function HomeScreen() {
       Linking.openURL(url);
     };
 
+    const activeProducts = item.products.filter((p) => p.status === "ACTIVE");
+    const stoppedProducts = item.products.filter((p) => p.status === "STOPPED");
+
+    const handleDeleteStopped = (subscription: ProductSubscription) => {
+      Alert.alert(
+        "Delete Stopped Service?",
+        `Remove "${subscription.productName}" from your records? This action cannot be undone.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              setDeletingSubscriptionId(subscription.subscriptionId);
+              try {
+                await deleteStoppedSubscription(subscription.subscriptionId);
+              } catch (error: any) {
+                Alert.alert("Error", error.message || "Could not delete the subscription.");
+              } finally {
+                setDeletingSubscriptionId(null);
+              }
+            },
+          },
+        ]
+      );
+    };
+
     return (
       <View style={styles.card}>
         <View style={styles.cardTopRow}>
@@ -218,25 +275,73 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.sectionHeader}>
-          <MaterialCommunityIcons name="package-variant-closed" size={13} color={C.inkMuted} />
-          <Text style={styles.sectionLabel}>ACTIVE SUBSCRIPTIONS</Text>
-          <View style={styles.countBubble}>
-            <Text style={styles.countBubbleText}>{item.products.length}</Text>
-          </View>
-        </View>
-
-        <View style={styles.badgesContainer}>
-          {item.products.map((product, index) => {
-            const s = chipForProduct(product);
-            return (
-              <View key={`${item.id}-${product}-${index}`} style={[styles.badge, { backgroundColor: s.bg }]}>
-                {s.icon}
-                <Text style={[styles.badgeText, { color: s.fg }]} numberOfLines={1} ellipsizeMode="tail">{product}</Text>
+        {activeProducts.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <MaterialCommunityIcons name="package-variant-closed" size={13} color={C.inkMuted} />
+              <Text style={styles.sectionLabel}>ACTIVE SUBSCRIPTIONS</Text>
+              <View style={styles.countBubble}>
+                <Text style={styles.countBubbleText}>{activeProducts.length}</Text>
               </View>
-            );
-          })}
-        </View>
+            </View>
+
+            <View style={styles.badgesContainer}>
+              {activeProducts.map((product, index) => {
+                const s = chipForProduct(product.productName);
+                return (
+                  <View key={`${item.id}-${product.subscriptionId}-${index}`} style={[styles.badge, { backgroundColor: s.bg }]}>
+                    {s.icon}
+                    <Text style={[styles.badgeText, { color: s.fg }]} numberOfLines={1} ellipsizeMode="tail">{product.productName}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        )}
+
+        {stoppedProducts.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <MaterialCommunityIcons name="pause-circle" size={13} color={C.orange} />
+              <Text style={styles.sectionLabel}>STOPPED SERVICES</Text>
+              <View style={[styles.countBubble, { backgroundColor: C.orangeSoft }]}>
+                <Text style={styles.countBubbleText}>
+                  <Text style={{ color: C.orange }}>{stoppedProducts.length}</Text>
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.badgesContainer}>
+              {stoppedProducts.map((product, index) => {
+                const isDeleting = deletingSubscriptionId === product.subscriptionId;
+                return (
+                  <View key={`${item.id}-${product.subscriptionId}-${index}`} style={[styles.badge, styles.stoppedBadge, { backgroundColor: C.redSoft }]}>
+                    <MaterialCommunityIcons name="snowflake" size={14} color={C.inkMuted} />
+                    <Text style={[styles.badgeText, styles.stoppedBadgeText, { color: C.inkMuted }]} numberOfLines={1} ellipsizeMode="tail">{product.productName}</Text>
+                    {isDeleting ? (
+                      <ActivityIndicator size="small" color={C.red} style={styles.deleteIcon} />
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => handleDeleteStopped(product)}
+                        style={styles.deleteIcon}
+                        activeOpacity={0.7}
+                        hitSlop={6}
+                      >
+                        <Ionicons name="trash" size={14} color={C.red} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        )}
+
+        {!activeProducts.length && !stoppedProducts.length && (
+          <View style={styles.badgesContainer}>
+            <Text style={styles.emptySubscriptionsText}>No subscriptions</Text>
+          </View>
+        )}
 
         <View style={styles.addressContainer}>
           <View style={styles.addressIconWrap}>
@@ -311,10 +416,10 @@ export default function HomeScreen() {
           ListHeaderComponent={
             vendorCustomers.length > 0 ? (
               <>
-                <View style={styles.statsRow}>
-                  <StatChip icon={<Ionicons name="people" size={18} color={C.primary} />} tone={C.primarySoft} value={String(vendorCustomers.length)} label="Customers" />
-                  <StatChip icon={<MaterialCommunityIcons name="package-variant-closed" size={18} color={C.green} />} tone={C.greenSoft} value={String(totalSubscriptions)} label="Active" />
-                  <StatChip icon={<Feather name="box" size={18} color={C.orange} />} tone={C.orangeSoft} value={String(totalProducts)} label="Products" />
+                 <View style={styles.statsRow}>
+                   <StatChip icon={<Ionicons name="people" size={18} color={C.primary} />} tone={C.primarySoft} value={String(vendorCustomers.length)} label="Customers" />
+                   <StatChip icon={<MaterialCommunityIcons name="package-variant-closed" size={18} color={C.green} />} tone={C.greenSoft} value={String(totalSubscriptions)} label="Active" />
+                   <StatChip icon={<Feather name="box" size={18} color={C.pink} />} tone={C.pinkSoft} value={String(totalProducts)} label="Products" />
                 </View>
                 <Text style={styles.listSectionTitle}>Your Customers</Text>
               </>
@@ -392,6 +497,10 @@ const styles = StyleSheet.create({
   badgesContainer: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   badge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 99, maxWidth: "100%" },
   badgeText: { fontSize: 11.5, fontWeight: "700" },
+  stoppedBadge: { opacity: 0.7 },
+  stoppedBadgeText: { textDecorationLine: "line-through" },
+  deleteIcon: { marginLeft: 4, padding: 2 },
+  emptySubscriptionsText: { fontSize: 12, color: C.inkMuted, fontStyle: "italic" },
 
   addressContainer: { marginTop: 10, backgroundColor: C.addressBg, borderRadius: 12, padding: 10, flexDirection: "row", alignItems: "center", gap: 10 },
   addressIconWrap: { width: 30, height: 30, borderRadius: 10, backgroundColor: C.primarySoft, alignItems: "center", justifyContent: "center" },

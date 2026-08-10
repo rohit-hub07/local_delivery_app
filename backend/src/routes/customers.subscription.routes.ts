@@ -1,6 +1,7 @@
 import express from "express"
 import {
   customerSubscribedProduct,
+  deleteStoppedSubscription,
   getMySubscriptions,
   getSubscriptionCalendar,
   subscribeProduct,
@@ -36,5 +37,6 @@ customerSubscriptionRouter.get("/calendar/:id", isAuthenticated, isRoleCustomer,
 customerSubscriptionRouter.get("/vendor/calendar/:id", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorSubscriptionCalendar)
 customerSubscriptionRouter.get("/vendor/stats/:id", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorSubscriptionStats)
 customerSubscriptionRouter.get("/vendor/daily-delivery-report", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorDailyDeliveryReport)
+customerSubscriptionRouter.delete("/delete-stopped-subscription/:id", isAuthenticated, isCreatedVendorProfile, isVendor, deleteStoppedSubscription)
 
 export default customerSubscriptionRouter

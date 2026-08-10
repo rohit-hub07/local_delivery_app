@@ -79,6 +79,7 @@ export class SubscriptionService {
         vendorCustomerId: {
           in: vendorCustomerIds,
         },
+        status: "ACTIVE",
       },
       include: {
         product: {
@@ -396,6 +397,7 @@ export class SubscriptionService {
         vendorCustomers: {
           vendorId,
         },
+        status: "ACTIVE",
       },
       include: {
         product: {
