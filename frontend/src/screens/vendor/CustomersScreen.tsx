@@ -96,28 +96,43 @@ const CustomerScreen = () => {
     }
   };
 
-  const handleDelete = (userId: string) => {
+  const handleDelete = (userId: string, userName: string) => {
     Alert.alert(
       "Remove customer",
-      "Are you sure you want to remove this customer?",
+      `Are you sure you want to remove ${userName}?`,
       [
         {
           text: "Cancel",
           style: "cancel",
         },
         {
-          text: "Remove",
+          text: "Continue",
           style: "destructive",
-          onPress: async () => {
-            try {
-              const res = await deleteCustomers(userId);
-
-              if (res?.success) {
-                fetchCustomers();
-              }
-            } catch (err) {
-              console.log(err);
-            }
+          onPress: () => {
+            Alert.alert(
+              "Final Confirmation",
+              "This action cannot be undone. Do you really want to remove this customer?",
+              [
+                {
+                  text: "Cancel",
+                  style: "cancel",
+                },
+                {
+                  text: "Remove",
+                  style: "destructive",
+                  onPress: async () => {
+                    try {
+                      const res = await deleteCustomers(userId);
+                      if (res?.success) {
+                        fetchCustomers();
+                      }
+                    } catch (err) {
+                      console.log(err);
+                    }
+                  },
+                },
+              ]
+            );
           },
         },
       ]
@@ -201,71 +216,62 @@ const CustomerScreen = () => {
             <View style={styles.card}>
               <View style={styles.cardAccent} />
               <View style={styles.cardInner}>
-                <View style={styles.cardTopRow}>
-                  <View style={[styles.avatar, { backgroundColor: avatar.bg }]}>
-                    <Text style={[styles.avatarText, { color: avatar.text }]}>
-                      {getInitial(item.user.name)}
-                    </Text>
-                  </View>
-                  <View style={styles.cardInfo}>
-                    <Text style={styles.name} numberOfLines={1}>
-                      {item.user.name}
-                    </Text>
-                    <Text style={styles.phone} numberOfLines={1}>
-                      {item.user.phone}
-                    </Text>
-                    {!!item.user.address && (
-                      <View style={styles.addressRow}>
-                        <Feather name="map-pin" size={12} color="#888780" />
-                        <Text style={styles.address} numberOfLines={2}>
-                          {item.user.address}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  {/* {subCount > 0 && (
-                    <View style={styles.subBadge}>
-                      <Text style={styles.subBadgeText}>{subCount}</Text>
-                    </View>
-                  )} */}
-                </View>
-                <View style={styles.actionsRow}>
-                  <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => handleCall(item.user.phone)}
-                    accessibilityLabel={`Call ${item.user.name}`}
-                  >
-                    <Feather name="phone" size={16} color="#185FA5" />
-                    <Text style={styles.actionBtnText}>Call</Text>
-                  </TouchableOpacity>
+                 <View style={styles.cardTopRow}>
+                   <View style={[styles.avatar, { backgroundColor: avatar.bg }]}>
+                     <Text style={[styles.avatarText, { color: avatar.text }]}>
+                       {getInitial(item.user.name)}
+                     </Text>
+                   </View>
+                   <View style={styles.cardInfo}>
+                     <Text style={styles.name} numberOfLines={1}>
+                       {item.user.name}
+                     </Text>
+                     <Text style={styles.phone} numberOfLines={1}>
+                       {item.user.phone}
+                     </Text>
+                     {!!item.user.address && (
+                       <View style={styles.addressRow}>
+                         <Feather name="map-pin" size={12} color="#888780" />
+                         <Text style={styles.address} numberOfLines={2}>
+                           {item.user.address}
+                         </Text>
+                       </View>
+                     )}
+                   </View>
+                   <TouchableOpacity
+                     style={styles.cardDeleteBtn}
+                     onPress={() => handleDelete(item.user.id, item.user.name)}
+                     accessibilityLabel={`Delete ${item.user.name}`}
+                   >
+                     <Feather name="trash-2" size={18} color="#A32D2D" />
+                   </TouchableOpacity>
+                 </View>
+                 <View style={styles.actionsRow}>
+                   <TouchableOpacity
+                     style={styles.actionBtn}
+                     onPress={() => handleCall(item.user.phone)}
+                     accessibilityLabel={`Call ${item.user.name}`}
+                   >
+                     <Feather name="phone" size={16} color="#185FA5" />
+                     <Text style={styles.actionBtnText}>Call</Text>
+                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[styles.actionBtn, styles.viewActionBtn]}
-                    onPress={() =>
-                      navigation.navigate("CustomerSubscriptions", {
-                        customerId: item.user.id,
-                        customerName: item.user.name,
-                      })
-                    }
-                    accessibilityLabel={`View ${item.user.name} subscriptions`}
-                  >
-                    <Feather name="eye" size={16} color="#FFFFFF" />
-                    <Text style={[styles.actionBtnText, styles.viewActionBtnText]}>
-                      View
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.actionBtn, styles.deleteActionBtn]}
-                    onPress={() => handleDelete(item.user.id)}
-                    accessibilityLabel={`Delete ${item.user.name}`}
-                  >
-                    <Feather name="trash-2" size={16} color="#A32D2D" />
-                    <Text style={[styles.actionBtnText, styles.deleteActionBtnText]}>
-                      Remove
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                   <TouchableOpacity
+                     style={[styles.actionBtn, styles.viewActionBtn]}
+                     onPress={() =>
+                       navigation.navigate("CustomerSubscriptions", {
+                         customerId: item.user.id,
+                         customerName: item.user.name,
+                       })
+                     }
+                     accessibilityLabel={`View ${item.user.name} subscriptions`}
+                   >
+                     <Feather name="eye" size={16} color="#FFFFFF" />
+                     <Text style={[styles.actionBtnText, styles.viewActionBtnText]}>
+                       View
+                     </Text>
+                   </TouchableOpacity>
+                 </View>
               </View>
             </View>
           );
@@ -480,6 +486,13 @@ const styles = StyleSheet.create({
   cardInner: {
     padding: 14,
     paddingLeft: 18,
+    paddingRight: 14,
+  },
+  cardDeleteBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: "#FEF2F2",
+    marginLeft: 8,
   },
   cardTopRow: {
     flexDirection: "row",
