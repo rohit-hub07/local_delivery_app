@@ -60,6 +60,7 @@ export interface CalendarDay {
   isUpcoming: boolean;
   requestType: string | null;
   requestId: string | null;
+  isBeforeStart: boolean;
 }
 
 export class SubscriptionService {
@@ -290,6 +291,7 @@ export class SubscriptionService {
         isUpcoming: false,
         requestType: null,
         requestId: null,
+        isBeforeStart: true,
       });
     }
 
@@ -347,6 +349,7 @@ export class SubscriptionService {
         isUpcoming,
         requestType,
         requestId,
+        isBeforeStart,
       });
     }
 
@@ -366,9 +369,9 @@ export class SubscriptionService {
         isUpcoming: false,
         requestType: null,
         requestId: null,
+        isBeforeStart: false,
       });
     }
-
     return calendarDays;
   }
 

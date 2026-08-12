@@ -102,6 +102,9 @@ export default function SubscriptionCalendarScreen() {
     if (item.isUpcoming && item.isCurrentMonth) {
       return { ...styles.calendarCell, backgroundColor: '#F1F5F9' }
     }
+    if (item.isBeforeStart) {
+      return { ...styles.calendarCell, backgroundColor: '#F8FAFC' }
+    }
     if (!item.isDelivered && item.isCurrentMonth) {
       return { ...styles.calendarCell, backgroundColor: '#FEF3C7' }
     }
@@ -113,6 +116,9 @@ export default function SubscriptionCalendarScreen() {
 
   const getDayTextStyle = (item: CalendarDayType) => {
     if (!item.isCurrentMonth) {
+      return styles.dayTextOuter
+    }
+    if (item.isBeforeStart) {
       return styles.dayTextOuter
     }
     if (item.isUpcoming) {
@@ -131,6 +137,9 @@ export default function SubscriptionCalendarScreen() {
     if (!item.isCurrentMonth || item.isUpcoming) {
       return <Text style={styles.dayQuantityOuter}>{item.quantity}</Text>
     }
+    if (item.isBeforeStart) {
+      return <Text style={styles.dayQuantityOuter}>-</Text>
+    }
     if (item.requestType === 'SKIP' && item.isSkipped) {
       return <Text style={styles.dayQuantitySkipped}>{item.quantity}</Text>
     }
@@ -141,11 +150,11 @@ export default function SubscriptionCalendarScreen() {
   }
 
   const renderCell = ({ item }: { item: CalendarDayType }) => {
-    if (!item.isCurrentMonth) {
+    if (!item.isCurrentMonth || item.isBeforeStart) {
       return (
         <View style={getDayStyle(item)}>
-          <Text style={styles.dayTextOuter}>{item.dayNumber}</Text>
-          <Text style={styles.dayQuantityOuter}>{item.quantity}</Text>
+          <Text style={getDayTextStyle(item)}>{item.dayNumber}</Text>
+          {renderDayQuantity(item)}
         </View>
       )
     }

@@ -27,6 +27,7 @@ export interface CalendarDayType {
   isUpcoming: boolean
   requestType: string | null
   requestId: string | null
+  isBeforeStart: boolean
 }
 
 interface SubscriptionApiResponse {
