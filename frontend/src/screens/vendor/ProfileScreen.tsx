@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -23,7 +23,6 @@ const COLORS = {
 
 const ProfileScreen = () => {
   const { logout } = useAuthStore();
-
   // Destructure vendorAccount from your store
   const { vendorProfileDetails } = useVendorContextStore();
 
@@ -33,7 +32,6 @@ const ProfileScreen = () => {
   // const fetchVendorProfile = async() =>{
   //   await vendorProfile()
   // }
-
 
   // Get first letter of business name or default to 'V'
   const avatarLetter = profile?.businessName?.charAt(0).toUpperCase() || 'V';
