@@ -293,14 +293,6 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
 
       return { colWidths, verticalLines };
     };
-
-    page.drawText('Delivery Details', {
-      x: MARGIN_LEFT,
-      y: yPosition,
-      size: 11,
-      font: fontBold,
-      color: rgb(0.06, 0.09, 0.17),
-    });
     yPosition -= 8;
 
     if (report.deliveries.length === 0) {
@@ -417,6 +409,156 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
     yPosition -= 6;
   };
 
+  const drawProductSummary = () => {
+    if (report.deliveries.length === 0) {
+      return;
+    }
+
+    yPosition -= 10;
+
+    page.drawText('Product Quantity Summary', {
+      x: MARGIN_LEFT,
+      y: yPosition,
+      size: 11,
+      font: fontBold,
+      color: rgb(0.06, 0.09, 0.17),
+    });
+    yPosition -= 8;
+
+    const productTotals = new Map<string, number>();
+    for (const item of report.deliveries) {
+      const qty = parseFloat(item.finalQuantity) || 0;
+      const current = productTotals.get(item.productName) || 0;
+      productTotals.set(item.productName, current + qty);
+    }
+
+    const summaryRows = Array.from(productTotals.entries()).map(([name, qty]) => ({
+      productName: name,
+      totalQuantity: qty,
+    }));
+
+    const rowHeight = 18;
+    const headerHeight = 18;
+    const colWidths = [CONTENT_WIDTH - 80, 80];
+
+    const drawSummaryHeader = () => {
+      page.drawRectangle({
+        x: MARGIN_LEFT,
+        y: yPosition - headerHeight,
+        width: CONTENT_WIDTH,
+        height: headerHeight,
+        color: rgb(0.31, 0.27, 0.89),
+      });
+
+      page.drawText('Product', {
+        x: MARGIN_LEFT + 3,
+        y: yPosition - 12,
+        size: 8,
+        font: fontBold,
+        color: rgb(1, 1, 1),
+      });
+
+      page.drawText('Total Quantity', {
+        x: MARGIN_LEFT + colWidths[0] + 3,
+        y: yPosition - 12,
+        size: 8,
+        font: fontBold,
+        color: rgb(1, 1, 1),
+      });
+
+      const verticalLines = [
+        MARGIN_LEFT,
+        MARGIN_LEFT + colWidths[0],
+        MARGIN_LEFT + CONTENT_WIDTH,
+      ];
+      for (const vl of verticalLines) {
+        page.drawLine({
+          start: { x: vl, y: yPosition - headerHeight },
+          end: { x: vl, y: yPosition },
+          color: rgb(0.27, 0.23, 0.81),
+          thickness: 0.5,
+        });
+      }
+
+      yPosition -= headerHeight;
+    };
+
+    drawSummaryHeader();
+
+    summaryRows.forEach((row, rowIndex) => {
+      if (yPosition - rowHeight < MARGIN_BOTTOM) {
+        drawFooter();
+        page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+        pageNum++;
+        yPosition = PAGE_HEIGHT - MARGIN_TOP;
+        drawHeader();
+        drawSummaryHeader();
+      }
+
+      const rowY = yPosition - rowHeight;
+
+      if (rowIndex % 2 === 1) {
+        page.drawRectangle({
+          x: MARGIN_LEFT,
+          y: rowY,
+          width: CONTENT_WIDTH,
+          height: rowHeight,
+          color: rgb(0.97, 0.98, 0.99),
+        });
+      }
+
+      page.drawLine({
+        start: { x: MARGIN_LEFT, y: rowY },
+        end: { x: PAGE_WIDTH - MARGIN_RIGHT, y: rowY },
+        color: rgb(0.89, 0.91, 0.94),
+        thickness: 0.1,
+      });
+
+      page.drawLine({
+        start: { x: MARGIN_LEFT + colWidths[0], y: rowY },
+        end: { x: MARGIN_LEFT + colWidths[0], y: rowY + rowHeight },
+        color: rgb(0.89, 0.91, 0.94),
+        thickness: 0.1,
+      });
+
+      page.drawLine({
+        start: { x: MARGIN_LEFT + CONTENT_WIDTH, y: rowY },
+        end: { x: MARGIN_LEFT + CONTENT_WIDTH, y: rowY + rowHeight },
+        color: rgb(0.89, 0.91, 0.94),
+        thickness: 0.1,
+      });
+
+      page.drawText(sanitizePdfText(fitText(row.productName, 55)), {
+        x: MARGIN_LEFT + 3,
+        y: rowY + 5,
+        size: 9,
+        font: font,
+        color: rgb(0.06, 0.09, 0.17),
+      });
+
+      drawCenteredText(
+        page,
+        String(row.totalQuantity),
+        MARGIN_LEFT + colWidths[0] + colWidths[1] / 2,
+        rowY + 5,
+        font,
+        9,
+        rgb(0.06, 0.09, 0.17)
+      );
+
+      yPosition = rowY;
+    });
+
+    page.drawLine({
+      start: { x: MARGIN_LEFT, y: yPosition },
+      end: { x: PAGE_WIDTH - MARGIN_RIGHT, y: yPosition },
+      color: rgb(0.89, 0.91, 0.94),
+      thickness: 0.3,
+    });
+
+    yPosition -= 6;
+  };
+
   const drawFooterNote = () => {
     if (yPosition < MARGIN_BOTTOM + 20) {
       drawFooter();
@@ -451,8 +593,8 @@ export async function generateAndDownloadReport(report: ReportData): Promise<voi
   drawHeader();
   drawSummaryStats();
   drawTable();
+  drawProductSummary();
   drawFooterNote();
-
   drawFooter();
 
   const pdfBytes = await pdfDoc.save();
