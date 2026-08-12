@@ -42,6 +42,9 @@ export const createVendorProfile = async(req: Request, res: Response) =>{
         businessName,
         businessPhone,
         userId: user.id 
+      },
+      include:{
+        user: true
       }
     })
 

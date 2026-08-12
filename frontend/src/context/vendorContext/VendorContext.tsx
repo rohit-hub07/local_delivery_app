@@ -31,7 +31,7 @@ export const useVendorContextStore = create<VendorState>()((set) => ({
       })
 
       if (res.data.profile) {
-        set({ vendorAccount: res.data.profile, hasVendorProfile: true })
+        set({ vendorAccount: res.data.profile, hasVendorProfile: true, vendorProfileDetails: res.data.profile})
       }
       return res.data
 
