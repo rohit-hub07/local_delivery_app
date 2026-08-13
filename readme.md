@@ -153,23 +153,11 @@ DATABASE_URL=postgresql://<USER>:<PASSWORD>@<HOST>:5432/<DB_NAME>?sslmode=requir
 Create `frontend/.env`. The single required variable is `EXPO_PUBLIC_BACKEND_URL`, which must point to the backend server. The value changes depending on where the backend is running:
 
 ```env
-# ── Choose ONE based on your setup ──────────────────────────────────
+──────────────────────────────────
 
-# 1) Deployed backend (currently active)
-EXPO_PUBLIC_BACKEND_URL=https://local-delivery-app-pk74.onrender.com
+# Local backend — ngrok HTTPS tunnel (for physical device / Expo Go)
+EXPO_PUBLIC_BACKEND_URL=your_ngrok_url
 
-# 2) Local backend — physical device on same LAN
-# EXPO_PUBLIC_BACKEND_URL=http://192.168.29.151:4000
-
-# 3) Local backend — Android Studio AVD emulator
-# EXPO_PUBLIC_BACKEND_URL=http://10.0.2.2:4000
-
-# 4) Local backend — ngrok HTTPS tunnel (for physical device / Expo Go)
-# EXPO_PUBLIC_BACKEND_URL=https://fading-tracing-decompose.ngrok-free.dev
-
-# 5) Local backend — iOS simulator
-# EXPO_PUBLIC_BACKEND_URL=http://localhost:4000
-```
 
 **Fields:**
 | Variable | Description |
