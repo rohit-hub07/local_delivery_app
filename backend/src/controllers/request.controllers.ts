@@ -5,7 +5,7 @@ import type { Requests } from "../generated/zod/index.js"
 import { sendNotification } from "../services/notification.service.js"
 
 const RequestSchema = z.object({
-  type: z.enum(["NOTE", "SKIP", "INCREASE", "DECREASE"]),
+  type: z.enum(["SKIP", "INCREASE", "DECREASE"]),
   message: z.string().min(2, { message: "Message should be at least 2 characters" }),
   start_date: z.coerce.date(),
   end_date: z.coerce.date(),

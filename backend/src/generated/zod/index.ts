@@ -65,7 +65,7 @@ export const ProductUnitSchema = z.enum(['PIECE','PACKET','BOTTLE','LITRE','ML',
 
 export type ProductUnitType = `${z.infer<typeof ProductUnitSchema>}`
 
-export const RequestTypeSchema = z.enum(['NOTE','SKIP','INCREASE','DECREASE']);
+export const RequestTypeSchema = z.enum(['SKIP','INCREASE','DECREASE']);
 
 export type RequestTypeType = `${z.infer<typeof RequestTypeSchema>}`
 

@@ -329,8 +329,6 @@ export class SubscriptionService {
             const decrease = parseFloat(effectiveRequest.requestedQuantity.toString()) || 0;
             quantity = Math.max(0, base - decrease).toString();
             isDelivered = true;
-          } else if (effectiveRequest.type === "NOTE") {
-            isDelivered = true;
           }
         } else if (!isUpcoming) {
           isDelivered = true;

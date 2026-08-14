@@ -44,7 +44,6 @@ enum ProductUnit {
 }
 
 enum RequestType {
-  NOTE
   SKIP
   INCREASE
   DECREASE
@@ -152,7 +151,7 @@ model Requests {
   vendorCustomerId  String
   productId         String
   subscriptionId    String
-  type              RequestType @default(NOTE)
+  type              RequestType @default(SKIP)
   /// @zod.string.min(2,{message: "Message should be at least 2 of 2 characters"})
   message           String
   start_date        DateTime
