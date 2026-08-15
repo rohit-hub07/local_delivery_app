@@ -124,13 +124,10 @@ export default function HomeScreen() {
     if (pickerMode === "end" && startDateObj) {
       return startDateObj;
     }
-    if (requestTypeKey === "INCREASE" || requestTypeKey === "DECREASE") {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(0, 0, 0, 0);
-      return tomorrow;
-    }
-    return new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow;
   };
 
   const isRequestDisabled = (): boolean => {
