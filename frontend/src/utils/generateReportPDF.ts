@@ -37,8 +37,6 @@ function getRequestBadgeColor(type: string): { fill: number[]; text: number[] } 
       return { fill: [220, 252, 231], text: [22, 163, 74] };
     case 'DECREASE':
       return { fill: [254, 243, 199], text: [217, 119, 6] };
-    case 'NOTE':
-      return { fill: [219, 234, 254], text: [29, 78, 216] };
     case 'SKIP':
       return { fill: [254, 226, 226], text: [220, 38, 38] };
     default:

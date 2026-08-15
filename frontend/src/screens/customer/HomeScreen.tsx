@@ -27,7 +27,6 @@ const BASE_WIDTH = 375;
 const scale = SCREEN_WIDTH / BASE_WIDTH;
 
 const REQUEST_TYPES = [
-  { key: "NOTE", label: "General Note" },
   { key: "SKIP", label: "Skip Delivery" },
   { key: "INCREASE", label: "Increase Quantity" },
   { key: "DECREASE", label: "Decrease Quantity" },
@@ -119,6 +118,16 @@ export default function HomeScreen() {
     const parts = name.trim().split(" ").filter(Boolean);
     if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
     return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  };
+
+  const getMinimumDate = () => {
+    if (pickerMode === "end" && startDateObj) {
+      return startDateObj;
+    }
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow;
   };
 
   const isRequestDisabled = (): boolean => {
@@ -500,7 +509,7 @@ export default function HomeScreen() {
                   }
                   mode="date"
                   display={Platform.OS === "ios" ? "spinner" : "default"}
-                  minimumDate={pickerMode === "end" && startDateObj ? startDateObj : new Date()}
+                  minimumDate={getMinimumDate()}
                   onValueChange={handleValueChange}
                   onDismiss={handleDismiss}
                 />
