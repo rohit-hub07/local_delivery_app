@@ -132,6 +132,7 @@ model CustomerSubscription {
   vendorCustomerId String
   productId        String
   startDate        DateTime
+  endDate          DateTime?
   dailyQuantity    Decimal             @db.Decimal(10, 2)
   status           SubscriptionStatus  @default(ACTIVE)
   createdAt        DateTime            @default(now())
@@ -143,7 +144,32 @@ model CustomerSubscription {
 
   requests Requests[]
 
-  @@unique([vendorCustomerId, productId])
+  subscriptionHistory SubscriptionHistory[]
+}
+
+/// Snapshot of a completed/stopped subscription, preserved so vendors can
+/// review subscription history even after a customer unsubscribes.
+model SubscriptionHistory {
+  id             String             @id @default(uuid())
+  subscriptionId String
+  customerId     String
+  customerName   String
+  productId      String
+  productName    String
+  vendorId       String
+  vendorName     String
+  startDate      DateTime
+  endDate        DateTime
+  durationDays   Int
+  status         SubscriptionStatus @default(STOPPED)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  subscription CustomerSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+  @@index([customerId])
+  @@index([status])
 }
 
 model Requests {

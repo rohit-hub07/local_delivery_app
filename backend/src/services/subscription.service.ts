@@ -61,6 +61,7 @@ export interface CalendarDay {
   requestType: string | null;
   requestId: string | null;
   isBeforeStart: boolean;
+  isStoppedDay: boolean;
 }
 
 export class SubscriptionService {
@@ -185,8 +186,15 @@ export class SubscriptionService {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
+    // For stopped subscriptions, only count activity up to the stop date.
+    const isStopped = subscription.status === "STOPPED" && subscription.endDate;
+    const stopDay = isStopped
+      ? new Date(new Date(subscription.endDate as Date).setHours(0, 0, 0, 0))
+      : null;
+
     const rangeStart = firstDayOfMonth > startDate ? firstDayOfMonth : startDate;
-    const rangeEnd = lastDayOfMonth < now ? lastDayOfMonth : now;
+    const effectiveNow = stopDay && stopDay < now ? stopDay : now;
+    const rangeEnd = lastDayOfMonth < effectiveNow ? lastDayOfMonth : effectiveNow;
 
     let monthlyDeliveredQuantity = 0;
     let receivedDays = 0;
@@ -292,6 +300,7 @@ export class SubscriptionService {
         requestType: null,
         requestId: null,
         isBeforeStart: true,
+        isStoppedDay: false,
       });
     }
 
@@ -302,13 +311,20 @@ export class SubscriptionService {
       const isUpcoming = dayDate > today;
       const isBeforeStart = dayDate < startDate;
 
-      let quantity = subscription.dailyQuantity.toString();
+      // A stopped subscription should not show activity after its stop date.
+      const isStopped = subscription.status === "STOPPED" && subscription.endDate;
+      const stopDay = isStopped
+        ? new Date(new Date(subscription.endDate as Date).setHours(0, 0, 0, 0))
+        : null;
+      const isAfterStop = !!stopDay && dayDate > stopDay;
+
+      let quantity = isAfterStop ? "0" : subscription.dailyQuantity.toString();
       let isSkipped = false;
       let isDelivered = false;
       let requestType: string | null = null;
       let requestId: string | null = null;
 
-      if (!isBeforeStart) {
+      if (!isBeforeStart && !isAfterStop) {
         const effectiveRequest = this.getEffectiveRequestForDate(dayDate, acceptedRequests);
 
         if (effectiveRequest) {
@@ -342,12 +358,13 @@ export class SubscriptionService {
         year,
         isCurrentMonth: true,
         quantity,
-        isDelivered: isDelivered && !isBeforeStart && !isUpcoming,
+        isDelivered: isDelivered && !isBeforeStart && !isUpcoming && !isAfterStop,
         isSkipped,
-        isUpcoming,
+        isUpcoming: isUpcoming && !isAfterStop,
         requestType,
         requestId,
         isBeforeStart,
+        isStoppedDay: isAfterStop,
       });
     }
 
@@ -368,6 +385,7 @@ export class SubscriptionService {
         requestType: null,
         requestId: null,
         isBeforeStart: false,
+        isStoppedDay: false,
       });
     }
     return calendarDays;

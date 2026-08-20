@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { generateAndDownloadReport } from "../../utils/generateReportPDF";
-import { useCustomerSubscriptionStore } from "../../context/vendorContext/CustomerSubscriptionContex";
+import { useCustomerSubscriptionStore, type SubscriptionHistoryItem } from "../../context/vendorContext/CustomerSubscriptionContex";
 import { useVendorContextStore } from "../../context/vendorContext/VendorContext";
 import { useProductStore } from "../../context/vendorContext/ProductContext";
 
@@ -90,7 +90,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const { subscribedProducts, subscribedCustomers, deleteStoppedSubscription, error: storeError } = useCustomerSubscriptionStore();
+  const { subscribedProducts, subscribedCustomers, subscriptionHistory, fetchVendorSubscriptionHistory, error: storeError } = useCustomerSubscriptionStore();
   const { vendorAccount } = useVendorContextStore();
   const { allProducts, getAllProducts } = useProductStore();
 
@@ -116,7 +116,7 @@ export default function HomeScreen() {
       const customer = customerMap.get(user.id);
       const productName = item.product?.productName;
       if (productName) {
-        const alreadyExists = customer!.products.some((p) => p.productId === item.product.id);
+        const alreadyExists = customer!.products.some((p) => p.subscriptionId === item.id);
         if (!alreadyExists) {
           customer!.products.push({
             subscriptionId: item.id,
@@ -135,7 +135,6 @@ export default function HomeScreen() {
   const totalSubscriptions = useMemo(() => vendorCustomers.reduce((n, c) => n + c.products.filter((p) => p.status === "ACTIVE").length, 0), [vendorCustomers]);
   const totalProducts = useMemo(() => allProducts.length, [allProducts]);
   const [reportLoading, setReportLoading] = useState(false);
-  const [deletingSubscriptionId, setDeletingSubscriptionId] = useState<string | null>(null);
 
   const activeError = storeError || localError;
 
@@ -154,6 +153,11 @@ export default function HomeScreen() {
       await subscribedCustomers();
     } catch (err: any) {
       setLocalError(err.message || "An unexpected error occurred.");
+    }
+    try {
+      await fetchVendorSubscriptionHistory();
+    } catch (err: any) {
+      console.log("Failed to load subscription history:", err.message);
     }
   };
 
@@ -232,30 +236,6 @@ export default function HomeScreen() {
     const activeProducts = item.products.filter((p) => p.status === "ACTIVE");
     const stoppedProducts = item.products.filter((p) => p.status === "STOPPED");
 
-    const handleDeleteStopped = (subscription: ProductSubscription) => {
-      Alert.alert(
-        "Delete Stopped Service?",
-        `Remove "${subscription.productName}" from your records? This action cannot be undone.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: async () => {
-              setDeletingSubscriptionId(subscription.subscriptionId);
-              try {
-                await deleteStoppedSubscription(subscription.subscriptionId);
-              } catch (error: any) {
-                Alert.alert("Error", error.message || "Could not delete the subscription.");
-              } finally {
-                setDeletingSubscriptionId(null);
-              }
-            },
-          },
-        ]
-      );
-    };
-
     return (
       <View style={styles.card}>
         <View style={styles.cardTopRow}>
@@ -311,27 +291,12 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.badgesContainer}>
-              {stoppedProducts.map((product, index) => {
-                const isDeleting = deletingSubscriptionId === product.subscriptionId;
-                return (
-                  <View key={`${item.id}-${product.subscriptionId}-${index}`} style={[styles.badge, styles.stoppedBadge, { backgroundColor: C.redSoft }]}>
-                    <MaterialCommunityIcons name="snowflake" size={14} color={C.inkMuted} />
-                    <Text style={[styles.badgeText, styles.stoppedBadgeText, { color: C.inkMuted }]} numberOfLines={1} ellipsizeMode="tail">{product.productName}</Text>
-                    {isDeleting ? (
-                      <ActivityIndicator size="small" color={C.red} style={styles.deleteIcon} />
-                    ) : (
-                      <TouchableOpacity
-                        onPress={() => handleDeleteStopped(product)}
-                        style={styles.deleteIcon}
-                        activeOpacity={0.7}
-                        hitSlop={6}
-                      >
-                        <Ionicons name="trash" size={14} color={C.red} />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                );
-              })}
+              {stoppedProducts.map((product, index) => (
+                <View key={`${item.id}-stopped-${product.subscriptionId}-${index}`} style={[styles.badge, styles.stoppedBadge, { backgroundColor: C.redSoft }]}>
+                  <MaterialCommunityIcons name="snowflake" size={14} color={C.inkMuted} />
+                  <Text style={[styles.badgeText, styles.stoppedBadgeText, { color: C.inkMuted }]} numberOfLines={1} ellipsizeMode="tail">{product.productName}</Text>
+                </View>
+              ))}
             </View>
           </>
         )}
@@ -433,26 +398,87 @@ export default function HomeScreen() {
                    <StatChip icon={<Ionicons name="people" size={18} color={C.primary} />} tone={C.primarySoft} value={String(vendorCustomers.length)} label="Customers" />
                    <StatChip icon={<MaterialCommunityIcons name="package-variant-closed" size={18} color={C.green} />} tone={C.greenSoft} value={String(totalSubscriptions)} label="Active" />
                    <StatChip icon={<Feather name="box" size={18} color={C.pink} />} tone={C.pinkSoft} value={String(totalProducts)} label="Products" />
+                   <StatChip icon={<MaterialCommunityIcons name="history" size={18} color={C.amber} />} tone={C.amberSoft} value={String(stoppedSubscriptionsCount)} label="Stopped" />
                 </View>
                 <Text style={styles.listSectionTitle}>Your Customers</Text>
               </>
             ) : null
           }
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[C.primary]} tintColor={C.primary} />}
-          ListEmptyComponent={
-            <View style={styles.centerContainer}>
-              <View style={styles.emptyIconBox}><MaterialCommunityIcons name="account-search-outline" size={28} color={C.inkMuted} /></View>
-              <Text style={styles.emptyTitle}>No subscribers yet</Text>
-              <Text style={styles.emptyText}>No subscribers active today.</Text>
-            </View>
-          }
+          ListFooterComponent={renderHistorySection(subscriptionHistory)}
         />
       )}
     </SafeAreaView>
   );
 }
 
+function formatHistoryDate(iso: string): string {
+  const date = new Date(iso)
+  const day = String(date.getDate()).padStart(2, "0")
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const year = date.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
+function renderHistorySection(subscriptionHistory: SubscriptionHistoryItem[]) {
+  if (subscriptionHistory.length === 0) {
+    return (
+      <View style={styles.historyFooter}>
+        <Text style={styles.listSectionTitle}>Subscription History</Text>
+        <View style={styles.historyEmpty}>
+          <MaterialCommunityIcons name="history" size={26} color={C.inkMuted} />
+          <Text style={styles.historyEmptyText}>No stopped or completed subscriptions yet.</Text>
+        </View>
+      </View>
+    )
+  }
+
+  return (
+    <View style={styles.historyFooter}>
+      <Text style={styles.listSectionTitle}>Subscription History · Stopped</Text>
+      {subscriptionHistory.map((item) => (
+        <View key={item.id} style={styles.historyCard}>
+          <View style={styles.historyCardHeader}>
+            <View style={styles.historyAvatar}>
+              <Text style={styles.historyAvatarText}>
+                {(item.customerName?.[0] || "?").toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.historyCardInfo}>
+              <Text style={styles.historyCustomerName} numberOfLines={1} ellipsizeMode="tail">
+                {item.customerName}
+              </Text>
+              <Text style={styles.historyProductName} numberOfLines={1} ellipsizeMode="tail">
+                {item.productName}
+              </Text>
+            </View>
+            <View style={[styles.historyBadge, { backgroundColor: C.amberSoft }]}>
+              <Text style={[styles.historyBadgeText, { color: C.amber }]}>Stopped</Text>
+            </View>
+          </View>
+
+          <View style={styles.historyMetaRow}>
+            <View style={styles.historyMetaItem}>
+              <Text style={styles.historyMetaLabel}>Started</Text>
+              <Text style={styles.historyMetaValue}>{formatHistoryDate(item.startDate)}</Text>
+            </View>
+            <View style={styles.historyMetaItem}>
+              <Text style={styles.historyMetaLabel}>Stopped</Text>
+              <Text style={styles.historyMetaValue}>{formatHistoryDate(item.endDate)}</Text>
+            </View>
+            <View style={styles.historyMetaItem}>
+              <Text style={styles.historyMetaLabel}>Days Used</Text>
+              <Text style={styles.historyMetaValue}>{item.durationDays}</Text>
+            </View>
+          </View>
+        </View>
+      ))}
+    </View>
+  )
+}
+
 function StatChip({ icon, tone, value, label }: { icon: React.ReactNode; tone: string; value: string; label: string; }) {
+
   return (
     <View style={styles.statChip}>
       <View style={[styles.statIconWrap, { backgroundColor: tone }]}>{icon}</View>
@@ -533,4 +559,28 @@ const styles = StyleSheet.create({
   emptyIconBox: { width: 60, height: 60, borderRadius: 30, backgroundColor: C.primarySoft, justifyContent: "center", alignItems: "center", marginBottom: 12 },
   emptyTitle: { fontSize: 15, fontWeight: "700", color: C.ink, marginBottom: 4 },
   emptyText: { color: C.inkMuted, fontSize: 14, fontWeight: "500", textAlign: "center" },
+
+  historyFooter: { marginTop: 22, paddingTop: 6, borderTopWidth: 1, borderTopColor: "#E6E9F2" },
+  historyEmpty: { alignItems: "center", marginTop: 10, gap: 8, paddingVertical: 14 },
+  historyEmptyText: { color: C.inkMuted, fontSize: 13.5, textAlign: "center" },
+  historyCard: {
+    backgroundColor: C.card, borderRadius: 18, padding: 14, marginBottom: 12,
+    borderWidth: 1, borderColor: "#F0E6D2",
+    ...Platform.select({ ios: { shadowColor: "#0F172A", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 }, android: { elevation: 1 } }),
+  },
+  historyCardHeader: { flexDirection: "row", alignItems: "center" },
+  historyAvatar: { width: 38, height: 38, borderRadius: 12, backgroundColor: C.amberSoft, alignItems: "center", justifyContent: "center" },
+  historyAvatarText: { fontSize: 16, fontWeight: "800", color: C.amber },
+  historyCardInfo: { flex: 1, marginLeft: 10, minWidth: 0 },
+  historyCustomerName: { fontSize: 15, fontWeight: "800", color: C.ink, letterSpacing: -0.3, textTransform: "capitalize" },
+  historyProductName: { fontSize: 12.5, color: C.inkSoft, fontWeight: "600", marginTop: 1 },
+  historyBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1, borderColor: "#FDE69D" },
+  historyBadgeText: { fontSize: 11, fontWeight: "800" },
+  historyMetaRow: { flexDirection: "row", justifyContent: "space-between", gap: 10, marginTop: 12 },
+  historyMetaItem: {
+    flex: 1, backgroundColor: "#FBF7F0", borderRadius: 12, borderWidth: 1, borderColor: "#F0E6D2",
+    padding: 10, alignItems: "center",
+  },
+  historyMetaLabel: { fontSize: 10.5, fontWeight: "700", color: C.inkMuted, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 4 },
+  historyMetaValue: { fontSize: 13, fontWeight: "800", color: C.ink, textAlign: "center" },
 });

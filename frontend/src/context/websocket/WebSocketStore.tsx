@@ -117,7 +117,10 @@ export const useSocketStore = create<SocketStore>()((set, get) => ({
     // when customer subscribes to a product update it to vendor instantly
     socket.on("customer_subscribed_product", (newSubscription) => {
       useCustomerSubscriptionStore.setState((state) => ({
-        subscribedProducts: [newSubscription, ...state.subscribedProducts]
+        subscribedProducts: [
+          newSubscription,
+          ...state.subscribedProducts.filter((p: any) => p.id !== newSubscription.id),
+        ],
       }))
     })
 
@@ -128,13 +131,8 @@ export const useSocketStore = create<SocketStore>()((set, get) => ({
           p.id === subscription.id ? subscription : p
         ),
       }))
-    })
-
-    // when vendor deletes a stopped subscription, remove it from the vendor's view
-    socket.on("customer_stopped_subscription_deleted", (subscriptionId: string) => {
-      useCustomerSubscriptionStore.setState((state) => ({
-        subscribedProducts: state.subscribedProducts.filter((p: any) => p.id !== subscriptionId),
-      }))
+      // keep the vendor's subscription history section in sync
+      useCustomerSubscriptionStore.getState().fetchVendorSubscriptionHistory().catch(() => {})
     })
 
     // when vendor adds a customer 
@@ -173,7 +171,6 @@ export const useSocketStore = create<SocketStore>()((set, get) => ({
       socket.off("update_vendor_product");
       socket.off("customer_subscribed_product");
       socket.off("customer_unsubcribed_product");
-      socket.off("customer_stopped_subscription_deleted");
       socket.off("vendor_added_customer");
       socket.off("customer_removed");
 

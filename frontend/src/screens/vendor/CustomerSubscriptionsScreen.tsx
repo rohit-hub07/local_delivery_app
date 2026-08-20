@@ -26,13 +26,12 @@ export default function CustomerSubscriptionsScreen() {
   const route = useRoute<RouteProp<RouteParams, 'CustomerSubscriptions'>>()
   const navigation = useNavigation<NativeStackNavigationProp<any>>()
   const { customerId, customerName } = route.params
-  const { fetchCustomerSubscriptions, fetchVendorSubscriptionStats, deleteStoppedSubscription } = useCustomerSubscriptionStore()
+  const { fetchCustomerSubscriptions, fetchVendorSubscriptionStats } = useCustomerSubscriptionStore()
 
   const [subscriptions, setSubscriptions] = useState<VendorSubscribedProduct[]>([])
   const [statsMap, setStatsMap] = useState<Record<string, { monthlyDeliveredQuantity: string; receivedDays: number; skippedDays: number }>>({})
   const [loading, setLoading] = useState(false)
   const [statsLoading, setStatsLoading] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     loadSubscriptions()
@@ -93,33 +92,17 @@ export default function CustomerSubscriptionsScreen() {
     return date.toLocaleDateString()
   }
 
+  const getDaysUsed = (start: string, end: string | null) => {
+    const startDate = new Date(start)
+    startDate.setHours(0, 0, 0, 0)
+    const endDate = end ? new Date(end) : new Date()
+    endDate.setHours(0, 0, 0, 0)
+    return Math.max(1, Math.floor((endDate.getTime() - startDate.getTime()) / 86400000) + 1)
+  }
+
   const renderSubscription = ({ item }: { item: VendorSubscribedProduct }) => {
     const stats = statsMap[item.id]
     const isStopped = item.status === "STOPPED"
-
-    const handleDeleteStopped = () => {
-      Alert.alert(
-        "Delete Stopped Service?",
-        `Remove "${item.product.productName}" from your records? This action cannot be undone.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: async () => {
-              setDeletingId(item.id)
-              try {
-                await deleteStoppedSubscription(item.id)
-              } catch (error: any) {
-                Alert.alert("Error", error.message || "Could not delete the subscription.")
-              } finally {
-                setDeletingId(null)
-              }
-            },
-          },
-        ]
-      )
-    }
 
     return (
       <View style={[styles.card, isStopped && styles.stoppedCard]}>
@@ -173,21 +156,20 @@ export default function CustomerSubscriptionsScreen() {
         </View>
 
         {isStopped && (
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDeleteStopped}
-            activeOpacity={0.8}
-            disabled={deletingId === item.id}
-          >
-            {deletingId === item.id ? (
-              <ActivityIndicator size="small" color="#A32D2D" />
-            ) : (
-              <>
-                <Feather name="trash-2" size={16} color="#A32D2D" />
-                <Text style={styles.deleteButtonText}>Delete Stopped Service</Text>
-              </>
-            )}
-          </TouchableOpacity>
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>Stopped On</Text>
+              <Text style={styles.metaValue}>{item.endDate ? formatDate(item.endDate) : '—'}</Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>Days Used</Text>
+              <Text style={styles.metaValue}>{getDaysUsed(item.startDate, item.endDate)}</Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>Status</Text>
+              <Text style={styles.metaValue}>Stopped</Text>
+            </View>
+          </View>
         )}
 
         <TouchableOpacity
