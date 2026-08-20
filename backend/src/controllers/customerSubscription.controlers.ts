@@ -59,12 +59,11 @@ export const subscribeProduct = async (req: Request, res: Response) => {
 
     const { dailyQuantity, startDate } = validateBody.data
 
-    const existingSubscription = await db.customerSubscription.findUnique({
+    const activeSubscription = await db.customerSubscription.findFirst({
       where: {
-        vendorCustomerId_productId: {
-          vendorCustomerId: vendorCustomer.id,
-          productId: productId,
-        },
+        vendorCustomerId: vendorCustomer.id,
+        productId: productId,
+        status: "ACTIVE",
       },
       select: {
         id: true,
@@ -72,52 +71,15 @@ export const subscribeProduct = async (req: Request, res: Response) => {
       },
     })
 
-    if (existingSubscription) {
-      if (existingSubscription.status === "STOPPED") {
-        const resubscribed = await db.customerSubscription.update({
-          where: {
-            vendorCustomerId_productId: {
-              vendorCustomerId: vendorCustomer.id,
-              productId,
-            },
-          },
-          data: {
-            dailyQuantity: dailyQuantity.toString(),
-            startDate,
-            status: "ACTIVE",
-          },
-          include: {
-            product: {
-              select: {
-                id: true,
-                productName: true,
-                description: true,
-                unit: true,
-              },
-            },
-            vendorCustomers: {
-              include: {
-                user: true
-              }
-            }
-          },
-        })
-
-        req.io.to(product.vendorId).emit("customer_subscribed_product", resubscribed)
-
-        return res.status(200).json({
-          message: "Subscribed to the product successfully!",
-          success: true,
-          subscription: resubscribed,
-        })
-      }
-
+    if (activeSubscription) {
       return res.status(400).json({
         message: "You are already subscribed to this product.",
         success: false,
       })
     }
 
+    // A previously stopped subscription is preserved as its own (STOPPED) record,
+    // so a new active subscription is created without overwriting its history.
     const newSubscription = await db.customerSubscription.create({
       data: {
         vendorCustomerId: vendorCustomer.id,
@@ -218,52 +180,71 @@ export const unsubscribeProduct = async (req: Request, res: Response) => {
       })
     }
 
-    const subscription = await db.customerSubscription.findUnique({
+    const subscription = await db.customerSubscription.findFirst({
       where: {
-        vendorCustomerId_productId: {
-          vendorCustomerId: vendorCustomer.id,
-          productId,
-        },
+        vendorCustomerId: vendorCustomer.id,
+        productId,
+        status: "ACTIVE",
       },
     })
 
     if (!subscription) {
       return res.status(404).json({
-        message: "No subscription found for this product!",
+        message: "No active subscription found for this product!",
         success: false,
       })
     }
 
+    const endDate = new Date()
+
+    const startDay = new Date(subscription.startDate)
+    startDay.setHours(0, 0, 0, 0)
+    const endDay = new Date(endDate)
+    endDay.setHours(0, 0, 0, 0)
+    const durationDays = Math.max(1, Math.floor((endDay.getTime() - startDay.getTime()) / 86400000) + 1)
+
+    const [customer, vendorRecord] = await Promise.all([
+      db.user.findUnique({
+        where: { id: vendorCustomer.customerId },
+        select: { name: true },
+      }),
+      db.vendor.findUnique({
+        where: { id: product.vendorId },
+        select: { businessName: true },
+      }),
+    ])
+
     await db.customerSubscription.update({
       where: {
-        vendorCustomerId_productId: {
-          vendorCustomerId: vendorCustomer.id,
-          productId,
-        },
+        id: subscription.id,
       },
       data: {
         status: "STOPPED",
+        endDate,
       },
-      include: {
-        product: {
-          select: {
-            id: true,
-            productName: true,
-            description: true,
-            unit: true,
-          },
-        },
-        vendorCustomers: {
-          include: {
-            user: true
-          }
-        }
+    })
+
+    // Preserve a historical record of the completed/stopped subscription for the vendor.
+    await db.subscriptionHistory.create({
+      data: {
+        subscriptionId: subscription.id,
+        customerId: vendorCustomer.customerId,
+        customerName: customer?.name ?? "Unknown",
+        productId,
+        productName: product.productName,
+        vendorId: product.vendorId,
+        vendorName: vendorRecord?.businessName ?? "",
+        startDate: subscription.startDate,
+        endDate,
+        durationDays,
+        status: "STOPPED",
       },
     })
 
     req.io.to(product.vendorId).emit("customer_unsubcribed_product", {
       ...subscription,
       status: "STOPPED",
+      endDate,
     })
 
     const vendor = await db.vendor.findUnique({
@@ -700,16 +681,8 @@ export const isValidRequest = async (req: Request, res: Response) => {
   }
 }
 
-export const deleteStoppedSubscription = async (req: Request, res: Response) => {
+export const getVendorSubscriptionHistory = async (req: Request, res: Response) => {
   try {
-    const subscriptionId = req.params.id as string
-    if (!subscriptionId) {
-      return res.status(400).json({
-        message: "Subscription ID is required",
-        success: false,
-      })
-    }
-
     const vendor = req.vendor
     if (!vendor) {
       return res.status(401).json({
@@ -718,56 +691,22 @@ export const deleteStoppedSubscription = async (req: Request, res: Response) => 
       })
     }
 
-    const subscription = await db.customerSubscription.findUnique({
-      where: { id: subscriptionId },
-      include: {
-        product: {
-          select: {
-            productName: true,
-          },
-        },
-        vendorCustomers: {
-          select: {
-            vendorId: true,
-            customerId: true,
-          },
-        },
+    const history = await db.subscriptionHistory.findMany({
+      where: {
+        vendorId: vendor.id,
+      },
+      orderBy: {
+        endDate: "desc",
       },
     })
 
-    if (!subscription) {
-      return res.status(404).json({
-        message: "Subscription not found!",
-        success: false,
-      })
-    }
-
-    if (subscription.vendorCustomers.vendorId !== vendor.id) {
-      return res.status(403).json({
-        message: "You are not authorized to perform this action!",
-        success: false,
-      })
-    }
-
-    if (subscription.status !== "STOPPED") {
-      return res.status(400).json({
-        message: "Only stopped subscriptions can be deleted!",
-        success: false,
-      })
-    }
-
-    await db.customerSubscription.delete({
-      where: { id: subscriptionId },
-    })
-
-    req.io.to(subscription.vendorCustomers.customerId).emit("customer_stopped_subscription_deleted", subscriptionId)
-
     return res.status(200).json({
-      message: "Stopped subscription deleted successfully!",
+      message: "Subscription history fetched successfully!",
       success: true,
+      history,
     })
   } catch (error: any) {
-    console.log("Error while deleting stopped subscription: ", error.message)
+    console.log("Error while fetching vendor subscription history: ", error.message)
     return res.status(500).json({
       message: "Internal Server Error",
       success: false,

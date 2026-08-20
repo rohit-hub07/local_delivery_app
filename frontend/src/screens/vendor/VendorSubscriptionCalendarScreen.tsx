@@ -105,6 +105,9 @@ export default function VendorSubscriptionCalendarScreen() {
     if (item.isBeforeStart) {
       return { ...styles.calendarCell, backgroundColor: '#F8FAFC' }
     }
+    if (item.isStoppedDay) {
+      return { ...styles.calendarCell, backgroundColor: '#F1F5F9' }
+    }
     if (!item.isDelivered && item.isCurrentMonth) {
       return { ...styles.calendarCell, backgroundColor: '#FEF3C7' }
     }
@@ -119,6 +122,9 @@ export default function VendorSubscriptionCalendarScreen() {
       return styles.dayTextOuter
     }
     if (item.isBeforeStart) {
+      return styles.dayTextOuter
+    }
+    if (item.isStoppedDay) {
       return styles.dayTextOuter
     }
     if (item.isUpcoming) {
@@ -140,6 +146,9 @@ export default function VendorSubscriptionCalendarScreen() {
     if (item.isBeforeStart) {
       return <Text style={styles.dayQuantityOuter}>-</Text>
     }
+    if (item.isStoppedDay) {
+      return <Text style={styles.dayQuantityOuter}>-</Text>
+    }
     if (item.requestType === 'SKIP' && item.isSkipped) {
       return <Text style={styles.dayQuantitySkipped}>{item.quantity}</Text>
     }
@@ -150,7 +159,7 @@ export default function VendorSubscriptionCalendarScreen() {
   }
 
   const renderCell = ({ item }: { item: CalendarDayType }) => {
-    if (!item.isCurrentMonth || item.isBeforeStart) {
+    if (!item.isCurrentMonth || item.isBeforeStart || item.isStoppedDay) {
       return (
         <View style={getDayStyle(item)}>
           <Text style={getDayTextStyle(item)}>{item.dayNumber}</Text>

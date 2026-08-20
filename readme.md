@@ -245,8 +245,7 @@ npx prisma migrate dev --name <migration-name>
   - `new_request_created` — customer creates a new request
   - `update_vendor_product` — vendor deletes a product
   - `customer_subscribed_product` — customer subscribes to a product
-  - `customer_unsubcribed_product` — customer stops a subscription
-  - `customer_stopped_subscription_deleted` — vendor deletes a stopped subscription
+  - `customer_unsubcribed_product` — customer stops a subscription (vendor retains the historical record; a `SubscriptionHistory` entry is created)
   - `vendor_added_customer` — vendor adds a new customer
   - `customer_removed` — vendor removes a customer
 

@@ -28,6 +28,7 @@ export interface CalendarDayType {
   requestType: string | null
   requestId: string | null
   isBeforeStart: boolean
+  isStoppedDay: boolean
 }
 
 interface SubscriptionApiResponse {

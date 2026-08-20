@@ -1,7 +1,6 @@
 import express from "express"
 import {
   customerSubscribedProduct,
-  deleteStoppedSubscription,
   getMySubscriptions,
   getSubscriptionCalendar,
   subscribeProduct,
@@ -11,6 +10,7 @@ import {
   getVendorCustomerSubscriptions,
   getVendorSubscriptionStats,
   getVendorDailyDeliveryReport,
+  getVendorSubscriptionHistory,
 } from "../controllers/customerSubscription.controlers.js"
 import { isAuthenticated } from "../middlewares/isAuthenticated.js"
 import { isCreatedVendorProfile } from "../middlewares/isCreatedVendorProfile.js"
@@ -37,6 +37,6 @@ customerSubscriptionRouter.get("/calendar/:id", isAuthenticated, isRoleCustomer,
 customerSubscriptionRouter.get("/vendor/calendar/:id", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorSubscriptionCalendar)
 customerSubscriptionRouter.get("/vendor/stats/:id", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorSubscriptionStats)
 customerSubscriptionRouter.get("/vendor/daily-delivery-report", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorDailyDeliveryReport)
-customerSubscriptionRouter.delete("/delete-stopped-subscription/:id", isAuthenticated, isCreatedVendorProfile, isVendor, deleteStoppedSubscription)
+customerSubscriptionRouter.get("/vendor/subscription-history", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorSubscriptionHistory)
 
 export default customerSubscriptionRouter

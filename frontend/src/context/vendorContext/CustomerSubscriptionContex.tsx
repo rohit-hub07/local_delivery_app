@@ -7,6 +7,7 @@ export interface VendorSubscribedProduct {
   productId: string
   dailyQuantity: string
   startDate: string
+  endDate: string | null
   status: string
   createdAt: string
   updatedAt: string
@@ -51,6 +52,7 @@ export interface CalendarDayType {
   requestType: string | null
   requestId: string | null
   isBeforeStart: boolean
+  isStoppedDay: boolean
 }
 
 interface VendorCalendarApiResponse {
@@ -67,6 +69,29 @@ interface VendorCustomerSubscriptionsResponse {
   subscribedProducts: VendorSubscribedProduct[]
 }
 
+export interface SubscriptionHistoryItem {
+  id: string
+  subscriptionId: string
+  customerId: string
+  customerName: string
+  productId: string
+  productName: string
+  vendorId: string
+  vendorName: string
+  startDate: string
+  endDate: string
+  durationDays: number
+  status: string
+  createdAt: string
+  updatedAt: string
+}
+
+interface VendorSubscriptionHistoryResponse {
+  message: string
+  success: boolean
+  history: SubscriptionHistoryItem[]
+}
+
 interface VendorStatsResponse {
   message: string
   success: boolean
@@ -80,7 +105,6 @@ interface VendorStatsResponse {
 interface CustomerSubscriptionState {
   subscribedProducts: VendorSubscribedProduct[];
   subscribedCustomers: () => Promise<void>;
-  deleteStoppedSubscription: (subscriptionId: string) => Promise<void>;
   calendar: CalendarDayType[];
   calendarLoading: boolean;
   currentCalendarMonth: number;
@@ -88,6 +112,8 @@ interface CustomerSubscriptionState {
   fetchVendorCalendar: (subscriptionId: string, month?: number, year?: number) => Promise<void>;
   fetchCustomerSubscriptions: (customerId: string) => Promise<VendorSubscribedProduct[]>;
   fetchVendorSubscriptionStats: (subscriptionId: string, month?: number, year?: number) => Promise<{ monthlyDeliveredQuantity: string; receivedDays: number; skippedDays: number } | null>;
+  subscriptionHistory: SubscriptionHistoryItem[];
+  fetchVendorSubscriptionHistory: () => Promise<void>;
   error: any
 }
 
@@ -98,6 +124,7 @@ export const useCustomerSubscriptionStore = create<CustomerSubscriptionState>()(
   calendarLoading: false,
   currentCalendarMonth: new Date().getMonth() + 1,
   currentCalendarYear: new Date().getFullYear(),
+  subscriptionHistory: [],
 
   subscribedCustomers: async () => {
     try {
@@ -164,16 +191,14 @@ export const useCustomerSubscriptionStore = create<CustomerSubscriptionState>()(
     }
   },
 
-  deleteStoppedSubscription: async (subscriptionId: string) => {
+  fetchVendorSubscriptionHistory: async () => {
     try {
-      const res = await axiosInstance.delete(`/subscription/delete-stopped-subscription/${subscriptionId}`)
+      const res = await axiosInstance.get<VendorSubscriptionHistoryResponse>("/subscription/vendor/subscription-history")
       if (res.data.success) {
-        set((state) => ({
-          subscribedProducts: state.subscribedProducts.filter((p) => p.id !== subscriptionId),
-        }))
+        set({ subscriptionHistory: res.data.history })
       }
     } catch (error: any) {
-      const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Failed to delete subscription"
+      const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Failed to load subscription history"
       throw new Error(message)
     }
   }
