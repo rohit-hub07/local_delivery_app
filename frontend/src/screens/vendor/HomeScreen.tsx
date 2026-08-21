@@ -395,11 +395,10 @@ export default function HomeScreen() {
             vendorCustomers.length > 0 ? (
               <>
                  <View style={styles.statsRow}>
-                   <StatChip icon={<Ionicons name="people" size={18} color={C.primary} />} tone={C.primarySoft} value={String(vendorCustomers.length)} label="Customers" />
-                   <StatChip icon={<MaterialCommunityIcons name="package-variant-closed" size={18} color={C.green} />} tone={C.greenSoft} value={String(totalSubscriptions)} label="Active" />
-                   <StatChip icon={<Feather name="box" size={18} color={C.pink} />} tone={C.pinkSoft} value={String(totalProducts)} label="Products" />
-                   <StatChip icon={<MaterialCommunityIcons name="history" size={18} color={C.amber} />} tone={C.amberSoft} value={String(stoppedSubscriptionsCount)} label="Stopped" />
-                </View>
+                    <StatChip icon={<MaterialCommunityIcons name="package-variant-closed" size={18} color={C.green} />} tone={C.greenSoft} value={String(totalSubscriptions)} label="Active" />
+                    <StatChip icon={<Feather name="box" size={18} color={C.pink} />} tone={C.pinkSoft} value={String(totalProducts)} label="Products" />
+                    <StatChip icon={<MaterialCommunityIcons name="history" size={18} color={C.amber} />} tone={C.amberSoft} value={String(stoppedSubscriptionsCount)} label="Stopped" />
+                 </View>
                 <Text style={styles.listSectionTitle}>Your Customers</Text>
               </>
             ) : null
