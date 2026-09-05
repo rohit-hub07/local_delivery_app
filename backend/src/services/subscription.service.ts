@@ -27,6 +27,33 @@ export interface SubscriptionStats {
   upcomingRequests: number;
   monthlyDeliveredQuantity: string;
   vendorBusinessName: string;
+  /// Per-unit price the customer entered when subscribing.
+  price: string;
+  /// Revenue for the queried month: monthly delivered quantity x price.
+  monthlyRevenue: string;
+  /// All-time revenue since the subscription started, bounded by the stop
+  /// date for stopped subscriptions and reflecting accepted skip/increase/
+  /// decrease requests.
+  totalRevenue: string;
+}
+
+export interface VendorRevenueItem {
+  subscriptionId: string;
+  customerId: string;
+  customerName: string;
+  productName: string;
+  productUnit: string;
+  price: string;
+  deliveredQuantity: string;
+  revenue: string;
+  status: string;
+  startDate: string;
+  endDate: string | null;
+}
+
+export interface VendorTotalRevenue {
+  totalRevenue: string;
+  items: VendorRevenueItem[];
 }
 
 export interface DailyDeliveryReportItem {
@@ -159,6 +186,42 @@ export class SubscriptionService {
       throw new Error("Invalid month. Must be between 1 and 12");
     }
 
+    const price = parseFloat(subscription.price.toString()) || 0;
+
+    const acceptedRequests = await db.requests.findMany({
+      where: {
+        vendorCustomerId: subscription.vendorCustomerId,
+        productId: subscription.productId,
+        status: "ACCEPTED",
+      },
+    });
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    // For stopped subscriptions, revenue stops accruing on the stop date, so
+    // all activity is only counted up to that day.
+    const isStopped = subscription.status === "STOPPED" && subscription.endDate;
+    const stopDay = isStopped
+      ? new Date(new Date(subscription.endDate as Date).setHours(0, 0, 0, 0))
+      : null;
+
+    // The last day that can contribute revenue: today, or the stop date if the
+    // subscription was stopped earlier.
+    const effectiveNow = stopDay && stopDay < now ? stopDay : now;
+
+    // All-time delivered quantity since the subscription started, bounded by the
+    // stop date. getEffectiveQuantityForDate applies accepted skip / increase /
+    // decrease requests, so total revenue always reflects those changes and
+    // stops at the unsubscribe date.
+    const totalDeliveredQuantity = this.computeDeliveredQuantityInRange(
+      startDate,
+      effectiveNow,
+      subscription.dailyQuantity.toString(),
+      acceptedRequests
+    );
+    const totalRevenue = totalDeliveredQuantity * price;
+
     if (lastDayOfMonth < startDate) {
       return {
         subscriptionId: subscription.id,
@@ -172,28 +235,13 @@ export class SubscriptionService {
         upcomingRequests: 0,
         monthlyDeliveredQuantity: "0",
         vendorBusinessName,
+        price: price.toString(),
+        monthlyRevenue: "0",
+        totalRevenue: totalRevenue.toString(),
       };
     }
 
-    const acceptedRequests = await db.requests.findMany({
-      where: {
-        vendorCustomerId: subscription.vendorCustomerId,
-        productId: subscription.productId,
-        status: "ACCEPTED",
-      },
-    });
-
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
-    // For stopped subscriptions, only count activity up to the stop date.
-    const isStopped = subscription.status === "STOPPED" && subscription.endDate;
-    const stopDay = isStopped
-      ? new Date(new Date(subscription.endDate as Date).setHours(0, 0, 0, 0))
-      : null;
-
     const rangeStart = firstDayOfMonth > startDate ? firstDayOfMonth : startDate;
-    const effectiveNow = stopDay && stopDay < now ? stopDay : now;
     const rangeEnd = lastDayOfMonth < effectiveNow ? lastDayOfMonth : effectiveNow;
 
     let monthlyDeliveredQuantity = 0;
@@ -220,6 +268,8 @@ export class SubscriptionService {
       }
     }
 
+    const monthlyRevenue = monthlyDeliveredQuantity * price;
+
     return {
       subscriptionId: subscription.id,
       productName: subscription.product.productName,
@@ -232,6 +282,9 @@ export class SubscriptionService {
       upcomingRequests: 0,
       monthlyDeliveredQuantity: monthlyDeliveredQuantity.toString(),
       vendorBusinessName,
+      price: price.toString(),
+      monthlyRevenue: monthlyRevenue.toString(),
+      totalRevenue: totalRevenue.toString(),
     };
   }
 
@@ -415,6 +468,129 @@ export class SubscriptionService {
     }
 
     return baseQuantity;
+  }
+
+  /**
+   * Sum the effective delivered quantity for each day in [rangeStart, rangeEnd]
+   * (inclusive). Accepted skip / increase / decrease requests are applied per
+   * day via getEffectiveQuantityForDate. Returns 0 when the range is empty
+   * (e.g. a subscription whose start date is in the future).
+   */
+  private static computeDeliveredQuantityInRange(
+    rangeStart: Date,
+    rangeEnd: Date,
+    baseQuantity: string,
+    acceptedRequests: any[]
+  ): number {
+    let total = 0;
+    for (let d = new Date(rangeStart); d <= rangeEnd; d.setDate(d.getDate() + 1)) {
+      const dayStart = new Date(d);
+      dayStart.setHours(0, 0, 0, 0);
+      const effectiveQuantity = this.getEffectiveQuantityForDate(
+        dayStart,
+        baseQuantity,
+        acceptedRequests
+      );
+      total += parseFloat(effectiveQuantity) || 0;
+    }
+    return total;
+  }
+
+  /**
+   * Aggregate all-time revenue for a vendor across every customer subscription
+   * (both ACTIVE and STOPPED). Revenue for each subscription is the effective
+   * delivered quantity — after accepted skip / increase / decrease requests and
+   * bounded by the stop date so it stops at unsubscribe — multiplied by the
+   * per-unit price the customer entered.
+   */
+  static async getVendorTotalRevenue(vendorId: string): Promise<VendorTotalRevenue> {
+    const subscriptions = await db.customerSubscription.findMany({
+      where: {
+        vendorCustomers: {
+          vendorId,
+        },
+      },
+      include: {
+        product: {
+          select: {
+            productName: true,
+            unit: true,
+          },
+        },
+        vendorCustomers: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const items: VendorRevenueItem[] = [];
+    let totalRevenue = 0;
+
+    for (const subscription of subscriptions) {
+      const acceptedRequests = await db.requests.findMany({
+        where: {
+          vendorCustomerId: subscription.vendorCustomerId,
+          productId: subscription.productId,
+          status: "ACCEPTED",
+        },
+      });
+
+      const startDate = new Date(subscription.startDate);
+      startDate.setHours(0, 0, 0, 0);
+
+      // Revenue stops accruing on the stop date for stopped subscriptions.
+      const isStopped = subscription.status === "STOPPED" && subscription.endDate;
+      const stopDay = isStopped
+        ? new Date(new Date(subscription.endDate as Date).setHours(0, 0, 0, 0))
+        : null;
+      const effectiveNow = stopDay && stopDay < now ? stopDay : now;
+
+      const deliveredQuantity = this.computeDeliveredQuantityInRange(
+        startDate,
+        effectiveNow,
+        subscription.dailyQuantity.toString(),
+        acceptedRequests
+      );
+
+      const price = parseFloat(subscription.price.toString()) || 0;
+      const revenue = deliveredQuantity * price;
+      totalRevenue += revenue;
+
+      items.push({
+        subscriptionId: subscription.id,
+        customerId: subscription.vendorCustomers.user.id,
+        customerName: subscription.vendorCustomers.user.name,
+        productName: subscription.product.productName,
+        productUnit: subscription.product.unit,
+        price: price.toString(),
+        deliveredQuantity: deliveredQuantity.toString(),
+        revenue: revenue.toString(),
+        status: subscription.status,
+        startDate: subscription.startDate.toISOString(),
+        endDate: subscription.endDate ? subscription.endDate.toISOString() : null,
+      });
+    }
+
+    // Highest-earning subscriptions first.
+    items.sort((a, b) => parseFloat(b.revenue) - parseFloat(a.revenue));
+
+    return {
+      totalRevenue: totalRevenue.toString(),
+      items,
+    };
   }
 
   static async getVendorDailyDeliveryReport(vendorId: string, reportDate: Date): Promise<DailyDeliveryReport> {

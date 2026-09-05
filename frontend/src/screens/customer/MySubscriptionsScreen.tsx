@@ -55,6 +55,8 @@ export default function MySubscriptionsScreen() {
     return `${day}/${month}/${year}`
   }
 
+  const formatCurrency = (value: string | number) => `₹${Number(value ?? 0).toFixed(2)}`
+
   const RequestItem = React.memo(({ label, value }: { label: string; value: string | number }) => (
     <View style={styles.statRow}>
       <Text style={styles.statLabel}>{label}</Text>
@@ -94,7 +96,20 @@ export default function MySubscriptionsScreen() {
           <RequestItem label="Skipped Days" value={item.skippedDays} />
           <RequestItem label="Monthly Delivered Qty" value={item.monthlyDeliveredQuantity} />
           <RequestItem label="Current Daily Qty" value={item.currentDailyQuantity} />
+          <RequestItem label="Price / Unit" value={formatCurrency(item.price)} />
           <RequestItem label="Upcoming Requests" value={item.upcomingRequests} />
+        </View>
+
+        <View style={styles.revenueBanner}>
+          <View style={styles.revenueTile}>
+            <Text style={styles.revenueLabel}>This Month</Text>
+            <Text style={styles.revenueValue}>{formatCurrency(item.monthlyRevenue)}</Text>
+          </View>
+          <View style={styles.revenueDividerVertical} />
+          <View style={styles.revenueTile}>
+            <Text style={styles.revenueLabel}>Total to Date</Text>
+            <Text style={styles.revenueValueStrong}>{formatCurrency(item.totalRevenue)}</Text>
+          </View>
         </View>
       </View>
 
@@ -218,6 +233,23 @@ const styles = StyleSheet.create({
   statRow: { width: '47%', backgroundColor: '#F8FAFC', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 14, padding: 14 },
   statLabel: { fontSize: 12, color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 },
   statValue: { fontSize: 16, color: '#0F172A', fontWeight: '800', marginTop: 4 },
+
+  revenueBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1.5,
+    borderColor: '#A7F3D0',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    marginTop: 16
+  },
+  revenueTile: { flex: 1, alignItems: 'center' },
+  revenueDividerVertical: { width: 1, alignSelf: 'stretch', backgroundColor: '#A7F3D0', marginHorizontal: 8 },
+  revenueLabel: { fontSize: 12, color: '#047857', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 },
+  revenueValue: { fontSize: 18, color: '#065F46', fontWeight: '800', marginTop: 6 },
+  revenueValueStrong: { fontSize: 20, color: '#065F46', fontWeight: '900', marginTop: 6 },
 
   cardFooter: { marginTop: 18 },
   calendarButton: {

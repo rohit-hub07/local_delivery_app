@@ -134,6 +134,9 @@ model CustomerSubscription {
   startDate        DateTime
   endDate          DateTime?
   dailyQuantity    Decimal             @db.Decimal(10, 2)
+  /// Price per single unit of the product, entered by the customer at subscribe time.
+  /// Revenue = delivered quantity (after skip/increase/decrease requests) x price.
+  price            Decimal             @default(0) @db.Decimal(10, 2)
   status           SubscriptionStatus  @default(ACTIVE)
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt

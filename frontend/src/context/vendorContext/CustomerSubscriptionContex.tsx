@@ -6,6 +6,7 @@ export interface VendorSubscribedProduct {
   vendorCustomerId: string
   productId: string
   dailyQuantity: string
+  price: string
   startDate: string
   endDate: string | null
   status: string
@@ -92,14 +93,40 @@ interface VendorSubscriptionHistoryResponse {
   history: SubscriptionHistoryItem[]
 }
 
+export interface VendorSubscriptionStats {
+  monthlyDeliveredQuantity: string
+  receivedDays: number
+  skippedDays: number
+  price: string
+  monthlyRevenue: string
+  totalRevenue: string
+}
+
 interface VendorStatsResponse {
   message: string
   success: boolean
-  stats: {
-    monthlyDeliveredQuantity: string
-    receivedDays: number
-    skippedDays: number
-  }
+  stats: VendorSubscriptionStats
+}
+
+export interface VendorRevenueItem {
+  subscriptionId: string
+  customerId: string
+  customerName: string
+  productName: string
+  productUnit: string
+  price: string
+  deliveredQuantity: string
+  revenue: string
+  status: string
+  startDate: string
+  endDate: string | null
+}
+
+interface VendorTotalRevenueResponse {
+  message: string
+  success: boolean
+  totalRevenue: string
+  items: VendorRevenueItem[]
 }
 
 interface CustomerSubscriptionState {
@@ -111,9 +138,13 @@ interface CustomerSubscriptionState {
   currentCalendarYear: number;
   fetchVendorCalendar: (subscriptionId: string, month?: number, year?: number) => Promise<void>;
   fetchCustomerSubscriptions: (customerId: string) => Promise<VendorSubscribedProduct[]>;
-  fetchVendorSubscriptionStats: (subscriptionId: string, month?: number, year?: number) => Promise<{ monthlyDeliveredQuantity: string; receivedDays: number; skippedDays: number } | null>;
+  fetchVendorSubscriptionStats: (subscriptionId: string, month?: number, year?: number) => Promise<VendorSubscriptionStats | null>;
   subscriptionHistory: SubscriptionHistoryItem[];
   fetchVendorSubscriptionHistory: () => Promise<void>;
+  totalRevenue: string;
+  revenueItems: VendorRevenueItem[];
+  revenueLoading: boolean;
+  fetchVendorTotalRevenue: () => Promise<void>;
   error: any
 }
 
@@ -125,6 +156,9 @@ export const useCustomerSubscriptionStore = create<CustomerSubscriptionState>()(
   currentCalendarMonth: new Date().getMonth() + 1,
   currentCalendarYear: new Date().getFullYear(),
   subscriptionHistory: [],
+  totalRevenue: "0",
+  revenueItems: [],
+  revenueLoading: false,
 
   subscribedCustomers: async () => {
     try {
@@ -200,6 +234,21 @@ export const useCustomerSubscriptionStore = create<CustomerSubscriptionState>()(
     } catch (error: any) {
       const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Failed to load subscription history"
       throw new Error(message)
+    }
+  },
+
+  fetchVendorTotalRevenue: async () => {
+    set({ revenueLoading: true })
+    try {
+      const res = await axiosInstance.get<VendorTotalRevenueResponse>("/subscription/vendor/total-revenue")
+      if (res.data.success) {
+        set({ totalRevenue: res.data.totalRevenue, revenueItems: res.data.items })
+      }
+    } catch (error: any) {
+      const message = error?.response?.data?.message ?? error?.response?.data?.error ?? error.message ?? "Failed to load total revenue"
+      throw new Error(message)
+    } finally {
+      set({ revenueLoading: false })
     }
   }
 }))

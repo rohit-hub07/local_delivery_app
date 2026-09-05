@@ -41,6 +41,7 @@ const ProductScreen = () => {
   const [subscribing, setSubscribing] = useState<boolean>(false);
   const [subscribedIds, setSubscribedIds] = useState<Set<string>>(new Set());
   const [dailyQuantity, setDailyQuantity] = useState('1');
+  const [price, setPrice] = useState('');
   const [startDate, setStartDate] = useState('');
   const [startDateObj, setStartDateObj] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -118,6 +119,7 @@ const ProductScreen = () => {
 
   const initiateSubscriptionFlow = (productId: string) => {
     setSelectedProductId(productId);
+    setPrice('');
     setStartDate('');
     setStartDateObj(null);
     setShowDatePicker(false);
@@ -127,9 +129,26 @@ const ProductScreen = () => {
   const executeSubscription = async () => {
     if (!selectedProductId) return;
 
+    const parsedQuantity = Number(dailyQuantity);
+    if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
+      Alert.alert('Invalid Quantity', 'Please enter a daily quantity greater than 0.');
+      return;
+    }
+
+    const parsedPrice = Number(price);
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+      Alert.alert('Invalid Price', 'Please enter a price per unit greater than 0.');
+      return;
+    }
+
+    if (!startDate) {
+      Alert.alert('Start Date Required', 'Please choose a start date for your subscription.');
+      return;
+    }
+
     setSubscribing(true);
     try {
-      await subscribeProduct(selectedProductId, dailyQuantity, startDate)
+      await subscribeProduct(selectedProductId, dailyQuantity, startDate, price)
       setSubscribedIds((prev) => new Set(prev).add(selectedProductId));
       Alert.alert('Success', 'You have successfully subscribed to this product!');
     } catch (error: any) {
@@ -143,6 +162,7 @@ const ProductScreen = () => {
   const cancelSubscriptionFlow = () => {
     setIsConfirmOpen(false);
     setSelectedProductId(null);
+    setPrice('');
     setStartDate('');
     setStartDateObj(null);
     setShowDatePicker(false);
@@ -250,6 +270,23 @@ const ProductScreen = () => {
                 placeholder="e.g. 1"
                 placeholderTextColor="#9CA3AF"
               />
+            </View>
+
+            <View style={styles.formField}>
+              <Text style={styles.formLabel}>Price per unit (₹)</Text>
+              <TextInput
+                style={styles.formInput}
+                value={price}
+                onChangeText={setPrice}
+                keyboardType="numeric"
+                placeholder="e.g. 25"
+                placeholderTextColor="#9CA3AF"
+              />
+              {activeProduct?.unit ? (
+                <Text style={styles.priceHint}>
+                  Price for one {activeProduct.unit.toLowerCase()}. Revenue is calculated from the quantity delivered.
+                </Text>
+              ) : null}
             </View>
 
             <View style={styles.formField}>
@@ -459,6 +496,8 @@ const styles = StyleSheet.create({
   datePickerIcon: { fontSize: 16 },
   dateText: { fontSize: 15, color: '#111827', fontWeight: '700' },
    placeholderText: { fontSize: 14, color: '#9CA3AF', fontWeight: '600' },
+
+   priceHint: { fontSize: 12, color: '#6B7280', marginTop: 6, lineHeight: 16 },
 
    unitBadge: {
      alignSelf: 'center',

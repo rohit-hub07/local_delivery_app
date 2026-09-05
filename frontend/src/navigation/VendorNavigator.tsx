@@ -12,15 +12,27 @@ import {MyProductsScreen} from '../screens/vendor/MyProductsScreen';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import VendorSubscriptionCalendarScreen from '../screens/vendor/VendorSubscriptionCalendarScreen';
 import CustomerSubscriptionsScreen from '../screens/vendor/CustomerSubscriptionsScreen';
+import TotalRevenueScreen from '../screens/vendor/TotalRevenueScreen';
 import { useRequestStore } from '../context/vendorContext/RequestContext';
 
-const Tab = createBottomTabNavigator(); 
+const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator()
 
 function CustomersStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="CustomersList" component={CustomerScreen} />
+      <Stack.Screen name="CustomerSubscriptions" component={CustomerSubscriptionsScreen} />
+      <Stack.Screen name="VendorSubscriptionCalendar" component={VendorSubscriptionCalendarScreen} />
+    </Stack.Navigator>
+  )
+}
+
+function ProfileStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ProfileMain" component={ProfileScreen} />
+      <Stack.Screen name="TotalRevenue" component={TotalRevenueScreen} />
       <Stack.Screen name="CustomerSubscriptions" component={CustomerSubscriptionsScreen} />
       <Stack.Screen name="VendorSubscriptionCalendar" component={VendorSubscriptionCalendarScreen} />
     </Stack.Navigator>
@@ -88,7 +100,7 @@ export default function VendorTabNavigator() {
           tabBarBadge: pendingNotificationCount > 0 ? pendingNotificationCount : undefined,
         }}
       /> 
-      <Tab.Screen name="Profile" component={ProfileScreen} /> 
+      <Tab.Screen name="Profile" component={ProfileStack} />
     </Tab.Navigator> 
   ); 
 }
