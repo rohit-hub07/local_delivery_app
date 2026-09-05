@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuthStore } from '../../context/vendorContext/AuthContext';
 import { useVendorContextStore } from '../../context/vendorContext/VendorContext';
 
@@ -25,6 +27,7 @@ const ProfileScreen = () => {
   const { logout } = useAuthStore();
   // Destructure vendorAccount from your store
   const { vendorProfileDetails } = useVendorContextStore();
+  const navigation = useNavigation<NativeStackNavigationProp<any>>();
 
   // Extract vendorProfile based on your exact API response structure
   const profile = vendorProfileDetails;
@@ -138,6 +141,24 @@ const ProfileScreen = () => {
             </View>
           </View>
         </View>
+
+        {/* Total Revenue entry */}
+        <TouchableOpacity
+          style={styles.revenueRow}
+          onPress={() => navigation.navigate('TotalRevenue')}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="View total revenue"
+        >
+          <View style={styles.revenueIcon}>
+            <Feather name="trending-up" size={18} color={COLORS.primaryText} />
+          </View>
+          <View style={styles.revenueTextWrap}>
+            <Text style={styles.revenueTitle}>Total Revenue</Text>
+            <Text style={styles.revenueSubtitle}>Earnings from every customer subscription</Text>
+          </View>
+          <Feather name="chevron-right" size={20} color={COLORS.textTertiary} />
+        </TouchableOpacity>
 
         {/* Action Buttons */}
         <TouchableOpacity
@@ -262,6 +283,39 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: COLORS.border,
     marginVertical: 14,
+  },
+  revenueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  revenueIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.primarySurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  revenueTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  revenueTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  revenueSubtitle: {
+    fontSize: 12.5,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
   },
   logoutButton: {
     flexDirection: 'row',

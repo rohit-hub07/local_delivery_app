@@ -8,6 +8,7 @@ const SubscriptionSchema = z.object({
   productId: z.string(),
   dailyQuantity: z.coerce.number().positive("Daily quantity must be a positive number"),
   startDate: z.coerce.date(),
+  price: z.coerce.number().positive("Price must be a positive number"),
 })
 
 export const subscribeProduct = async (req: Request, res: Response) => {
@@ -47,6 +48,7 @@ export const subscribeProduct = async (req: Request, res: Response) => {
       productId: req.body.productId || productId,
       dailyQuantity: req.body.dailyQuantity,
       startDate: req.body.startDate,
+      price: req.body.price,
     })
 
     if (!validateBody.success) {
@@ -57,7 +59,7 @@ export const subscribeProduct = async (req: Request, res: Response) => {
       })
     }
 
-    const { dailyQuantity, startDate } = validateBody.data
+    const { dailyQuantity, startDate, price } = validateBody.data
 
     const activeSubscription = await db.customerSubscription.findFirst({
       where: {
@@ -85,6 +87,7 @@ export const subscribeProduct = async (req: Request, res: Response) => {
         vendorCustomerId: vendorCustomer.id,
         productId,
         dailyQuantity: dailyQuantity.toString(),
+        price: price.toString(),
         startDate,
       },
       include: {
@@ -632,6 +635,30 @@ export const getVendorSubscriptionStats = async (req: Request, res: Response) =>
     })
   } catch (error: any) {
     console.log("Error while fetching vendor subscription stats: ", error.message)
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+    })
+  }
+}
+
+export const getVendorTotalRevenue = async (req: Request, res: Response) => {
+  try {
+    const vendor = req.vendor
+    if (!vendor) {
+      return res.status(401).json({ message: "Vendor doesn't exist!", success: false })
+    }
+
+    const revenue = await SubscriptionService.getVendorTotalRevenue(vendor.id)
+
+    return res.status(200).json({
+      message: "Total revenue fetched successfully!",
+      success: true,
+      totalRevenue: revenue.totalRevenue,
+      items: revenue.items,
+    })
+  } catch (error: any) {
+    console.log("Error while fetching vendor total revenue: ", error.message)
     return res.status(500).json({
       message: "Internal Server Error",
       success: false,

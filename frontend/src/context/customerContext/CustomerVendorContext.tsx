@@ -42,7 +42,7 @@ interface CustomerVendorState {
   vendorProfiles: VendorProfileState[]
   getAllVendorProducts: (vendorId: string) => Promise<void>
   getAllVendorProfile: () => Promise<void>
-  subscribeProduct: (id: string, dailyQuantity: string, startDate: string) => Promise<void>
+  subscribeProduct: (id: string, dailyQuantity: string, startDate: string, price: string) => Promise<void>
   updateVendorProducts: (newProduct: VendorProductsTypes) => void
   clearVendorProducts: () => void;
   updateProductAfterDelete: (id: string) => void
@@ -82,11 +82,12 @@ export const useCustomerVendorStore = create<CustomerVendorState>()((set,get) =>
     }
   },
   clearVendorProducts: () => set({ vendorProducts: [] }),
-  subscribeProduct: async(id: string, dailyQuantity: string, startDate: string) =>{
+  subscribeProduct: async(id: string, dailyQuantity: string, startDate: string, price: string) =>{
     try {
       const res = await axiosInstance.post(`/subscription/product/add/${id}`, {
         dailyQuantity,
-        startDate
+        startDate,
+        price
       })
       if(res.data.success){
         await useCustomerHomeContext.getState().getCustomerSubscribedProducts()

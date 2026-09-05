@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRoute, useNavigation, useFocusEffect } from "@react-navigation/native";
 import { RouteProp } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
-import { useCustomerSubscriptionStore, type VendorSubscribedProduct } from "../../context/vendorContext/CustomerSubscriptionContex";
+import { useCustomerSubscriptionStore, type VendorSubscribedProduct, type VendorSubscriptionStats } from "../../context/vendorContext/CustomerSubscriptionContex";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 type RouteParams = {
@@ -29,7 +29,7 @@ export default function CustomerSubscriptionsScreen() {
   const { fetchCustomerSubscriptions, fetchVendorSubscriptionStats } = useCustomerSubscriptionStore()
 
   const [subscriptions, setSubscriptions] = useState<VendorSubscribedProduct[]>([])
-  const [statsMap, setStatsMap] = useState<Record<string, { monthlyDeliveredQuantity: string; receivedDays: number; skippedDays: number }>>({})
+  const [statsMap, setStatsMap] = useState<Record<string, VendorSubscriptionStats>>({})
   const [loading, setLoading] = useState(false)
   const [statsLoading, setStatsLoading] = useState(false)
 
@@ -75,7 +75,7 @@ export default function CustomerSubscriptionsScreen() {
           }
         })
       )
-      const map: Record<string, { monthlyDeliveredQuantity: string; receivedDays: number; skippedDays: number }> = {}
+      const map: Record<string, VendorSubscriptionStats> = {}
       for (const r of results) {
         if (r.stats) map[r.id] = r.stats
       }
@@ -91,6 +91,8 @@ export default function CustomerSubscriptionsScreen() {
     const date = new Date(iso)
     return date.toLocaleDateString()
   }
+
+  const formatCurrency = (value: string | number) => `₹${Number(value ?? 0).toFixed(2)}`
 
   const getDaysUsed = (start: string, end: string | null) => {
     const startDate = new Date(start)
@@ -171,6 +173,23 @@ export default function CustomerSubscriptionsScreen() {
             </View>
           </View>
         )}
+
+        <View style={styles.revenueBanner}>
+          <View style={styles.revenueTile}>
+            <Text style={styles.revenueTileLabel}>Price / Unit</Text>
+            <Text style={styles.revenueTileValue}>{formatCurrency(item.price)}</Text>
+          </View>
+          <View style={styles.revenueDivider} />
+          <View style={styles.revenueTile}>
+            <Text style={styles.revenueTileLabel}>This Month</Text>
+            <Text style={styles.revenueTileValue}>{stats ? formatCurrency(stats.monthlyRevenue) : '—'}</Text>
+          </View>
+          <View style={styles.revenueDivider} />
+          <View style={styles.revenueTile}>
+            <Text style={styles.revenueTileLabel}>Total</Text>
+            <Text style={styles.revenueTileValueStrong}>{stats ? formatCurrency(stats.totalRevenue) : '—'}</Text>
+          </View>
+        </View>
 
         <TouchableOpacity
           style={styles.calendarButton}
@@ -396,6 +415,48 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3,
+  },
+  revenueBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ECFDF5",
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    marginTop: 14,
+  },
+  revenueTile: {
+    flex: 1,
+    alignItems: "center",
+  },
+  revenueDivider: {
+    width: 1,
+    alignSelf: "stretch",
+    backgroundColor: "#A7F3D0",
+    marginHorizontal: 4,
+  },
+  revenueTileLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#047857",
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+    marginBottom: 5,
+    textAlign: "center",
+  },
+  revenueTileValue: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#065F46",
+    textAlign: "center",
+  },
+  revenueTileValueStrong: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#065F46",
+    textAlign: "center",
   },
   deleteButton: {
     marginTop: 10,

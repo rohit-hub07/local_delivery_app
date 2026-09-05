@@ -9,6 +9,7 @@ import {
   getVendorSubscriptionCalendar,
   getVendorCustomerSubscriptions,
   getVendorSubscriptionStats,
+  getVendorTotalRevenue,
   getVendorDailyDeliveryReport,
   getVendorSubscriptionHistory,
 } from "../controllers/customerSubscription.controlers.js"
@@ -36,6 +37,7 @@ customerSubscriptionRouter.get("/my-subscriptions", isAuthenticated, isRoleCusto
 customerSubscriptionRouter.get("/calendar/:id", isAuthenticated, isRoleCustomer, getSubscriptionCalendar)
 customerSubscriptionRouter.get("/vendor/calendar/:id", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorSubscriptionCalendar)
 customerSubscriptionRouter.get("/vendor/stats/:id", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorSubscriptionStats)
+customerSubscriptionRouter.get("/vendor/total-revenue", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorTotalRevenue)
 customerSubscriptionRouter.get("/vendor/daily-delivery-report", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorDailyDeliveryReport)
 customerSubscriptionRouter.get("/vendor/subscription-history", isAuthenticated, isCreatedVendorProfile, isVendor, getVendorSubscriptionHistory)
 
