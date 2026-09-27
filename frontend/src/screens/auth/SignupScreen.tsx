@@ -37,21 +37,25 @@ export default function SignupScreen({ navigation }: any) {
       return;
     }
 
-    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+    // 1. Remove spaces, hyphens, brackets, and periods
     let normalizedNumber = phone.trim().replace(/[\s\-().]/g, "");
 
+    // 2. Automatically strip "+91" or "91" if present at the start
     if (normalizedNumber.startsWith("+91")) {
       normalizedNumber = normalizedNumber.slice(3);
     } else if (normalizedNumber.startsWith("91") && normalizedNumber.length > 10) {
       normalizedNumber = normalizedNumber.slice(2);
     }
 
+    // 3. Validate that it is exactly a 10-digit Indian phone number
+    const phoneRegex = /^[6-9]\d{9}$/;
+
     if (!phoneRegex.test(normalizedNumber)) {
-      Alert.alert("Check Your Number", "Please enter a correct phone number.");
+      Alert.alert("Check Your Number", "Please enter a correct 10-digit phone number.");
       return;
     }
 
-    // 2. API Submission
+    // 4. API Submission
     setLoading(false);
     try {
       setLoading(true);

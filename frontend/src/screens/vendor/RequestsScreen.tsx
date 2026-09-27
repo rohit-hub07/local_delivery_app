@@ -491,19 +491,6 @@ const styles = StyleSheet.create({
      overflow: 'hidden',
      marginBottom: 10,
    },
-   quantityBadge: {
-     alignSelf: 'flex-start',
-     backgroundColor: '#FEF3C7',
-     paddingHorizontal: 8,
-     paddingVertical: 4,
-     borderRadius: 8,
-     marginBottom: 10,
-   },
-   quantityBadgeText: {
-     color: '#92400E',
-     fontSize: 11,
-     fontWeight: '800',
-   },
   messageBox: {
     backgroundColor: '#F8FAFC',
     borderRadius: 12,
