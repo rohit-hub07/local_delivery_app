@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCustomerHomeContext } from "../../context/customerContext/CustomerHomeContext";
+import { useResponsive } from "../../utils/responsive";
+import { COLORS, SHADOWS } from "../../theme/tokens";
 
 const TABS = [
   { key: "PENDING" as const, label: "Waiting", icon: "🕓" },
@@ -18,6 +20,8 @@ const TABS = [
 ];
 
 export default function RequestsScreen() {
+  const { width, isTablet, isLargeTablet, isSmallDevice, gutter, maxWidth, rf, ms, columns } = useResponsive();
+  void width; void isLargeTablet; void isSmallDevice; void maxWidth; void columns;
   const { requestDetails, getAllRequestCustomer } = useCustomerHomeContext();
 
   // Frontend local UI states
@@ -93,7 +97,7 @@ export default function RequestsScreen() {
   // Render Item component for FlatList
   const renderRequestItem = ({ item }: { item: typeof requestDetails[0] }) => {
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, SHADOWS.card, { padding: ms(18) }]}>
         <View style={styles.requestHeader}>
           <Text style={styles.typeBadge}>{item.type}</Text>
           {renderStatusPill(item.status)}
@@ -114,13 +118,13 @@ export default function RequestsScreen() {
           {(item.type === 'INCREASE' || item.type === 'DECREASE') && (
             <View style={styles.quantityRow}>
               {item.previousQuantity != null && (
-                <View style={styles.quantityBadge}>
+                <View style={[styles.quantityBadge, { minWidth: ms(90) }]}>
                   <Text style={styles.quantityLabel}>Previous Qty</Text>
                   <Text style={styles.quantityValue}>{item.previousQuantity}</Text>
                 </View>
               )}
               {item.requestedQuantity != null && (
-                <View style={[styles.quantityBadge, styles.requestedQuantityBadge]}>
+                <View style={[styles.quantityBadge, styles.requestedQuantityBadge, { minWidth: ms(90) }]}>
                   <Text style={styles.quantityLabel}>Requested Qty</Text>
                   <Text style={styles.quantityValue}>{item.requestedQuantity}</Text>
                 </View>
@@ -128,7 +132,7 @@ export default function RequestsScreen() {
             </View>
           )}
 
-          <View style={styles.dateContainer}>
+          <View style={[styles.dateContainer, { flexWrap: 'wrap' as const }]}>
             <View style={styles.dateBlock}>
               <Text style={styles.dateLabel}>Start Date</Text>
               <Text style={styles.dateText}>{formatDate(item.start_date)}</Text>
@@ -173,39 +177,40 @@ export default function RequestsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Requests</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.bg }]} edges={["top", "left", "right"]}>
+      <View style={[styles.header, { paddingHorizontal: gutter }]}>
+        <Text style={[styles.headerTitle, { fontSize: rf(28) }]}>My Requests</Text>
       </View>
 
       {/* Dynamic Tab Navigation Menu */}
-       <View style={styles.tabBar}>
-         {TABS.map((tab) => (
-           <TouchableOpacity
-             key={tab.key}
-             style={[styles.tab, activeTab === tab.key && styles.activeTab]}
-             onPress={() => setActiveTab(tab.key)}
-             activeOpacity={0.8}
-           >
-             <Text style={styles.tabIcon}>{tab.icon}</Text>
-             <Text style={[styles.tabLabel, activeTab === tab.key && styles.activeTabLabel]}>
-               {tab.label}
-             </Text>
-             <View style={[styles.tabCount, activeTab === tab.key && styles.activeTabCount]}>
-               <Text style={[styles.tabCountText, activeTab === tab.key && styles.activeTabCountText]}>
-                 {categorizedRequests[tab.key].length}
-               </Text>
-             </View>
-           </TouchableOpacity>
-         ))}
-       </View>
+       <View style={[styles.tabBar, SHADOWS.card, { marginHorizontal: gutter }]}>
+          {TABS.map((tab) => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[styles.tab, activeTab === tab.key && styles.activeTab]}
+              onPress={() => setActiveTab(tab.key)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.tabIcon}>{tab.icon}</Text>
+              <Text style={[styles.tabLabel, { fontSize: rf(11) }, activeTab === tab.key && styles.activeTabLabel]}>
+                {tab.label}
+              </Text>
+              <View style={[styles.tabCount, { minWidth: ms(16), height: ms(16) }, activeTab === tab.key && styles.activeTabCount]}>
+                <Text style={[styles.tabCountText, { fontSize: rf(9) }, activeTab === tab.key && styles.activeTabCountText]}>
+                  {categorizedRequests[tab.key].length}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
 
       {/* Requests Feed */}
       <FlatList
         data={currentData}
         keyExtractor={(item) => item.id}
         renderItem={renderRequestItem}
-        contentContainerStyle={styles.listContainer}
+        style={{ width: '100%', maxWidth: isTablet ? 720 : 520, alignSelf: 'center' }}
+        contentContainerStyle={[styles.listContainer, { paddingHorizontal: gutter, paddingBottom: ms(24) }]}
         refreshControl={
           <RefreshControl
             refreshing={loading}
@@ -483,7 +488,7 @@ const styles = StyleSheet.create({
   },
   quantityBadge: {
     flex: 1,
-    minWidth: 100,
+    minWidth: 90,
     backgroundColor: "#F8FAFC",
     borderRadius: 12,
     padding: 10,
