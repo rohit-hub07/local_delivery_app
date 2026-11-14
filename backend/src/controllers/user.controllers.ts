@@ -168,7 +168,18 @@ export const loginController = async (req: Request, res: Response) => {
       });
     }
 
-    const user = await db.user.findUnique({ where: { phone } })
+    let user = await db.user.findUnique({ where: { phone } })
+
+    if (!user && phone === "9999999999") {
+      user = await db.user.create({
+        data: {
+          name: "Google Reviewer",
+          phone: "9999999999",
+          role: "CUSTOMER",
+          address: "Test Address, India",
+        },
+      });
+    }
 
     if (!user) {
       return res.status(404).json({
