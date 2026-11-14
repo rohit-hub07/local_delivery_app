@@ -98,6 +98,21 @@ export async function sendOtp(
   phone: string,
   purpose: OtpPurpose
 ): Promise<void> {
+  // Google Play Console test account bypass — does not burn SMS credits and works globally
+  if (phone === "9999999999") {
+    await db.otpVerification.deleteMany({
+      where: { phone, purpose },
+    });
+    await db.otpVerification.create({
+      data: {
+        phone,
+        code: "123456",
+        purpose,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      },
+    });
+    return;
+  }
   // Clean up any old unverified OTPs for this phone + purpose before creating
   // a fresh one, so old codes can't be replayed.
   await db.otpVerification.deleteMany({
@@ -131,6 +146,20 @@ export async function verifyOtp(
   code: string,
   purpose: OtpPurpose
 ): Promise<void> {
+  // Google Play Console test account bypass
+  if (phone === "9999999999" && code === "123456") {
+    await db.otpVerification.deleteMany({ where: { phone, purpose } });
+    await db.otpVerification.create({
+      data: {
+        phone,
+        code: "123456",
+        purpose,
+        isVerified: true,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+    });
+    return;
+  }
   const record = await db.otpVerification.findFirst({
     where: { phone, code, purpose, isVerified: false },
     orderBy: { createdAt: "desc" },
