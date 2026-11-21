@@ -5,8 +5,9 @@ import { useCustomerHomeContext } from "../customerContext/CustomerHomeContext";
 import { useCustomerVendorStore, VendorType } from "../customerContext/CustomerVendorContext";
 import { useRequestStore } from "../vendorContext/RequestContext";
 import { useCustomerSubscriptionStore } from "../vendorContext/CustomerSubscriptionContex";
+import { dismissRequestNotification, dismissStaleRequestNotifications } from "../../libs/notifications";
 interface SocketStore {
-  initCustomerSocket: (userId: string) => Promise<void>
+  initCustomerSocket: (userId: string, isVendor?: boolean) => Promise<void>
   socket: Socket | null
   disconnectSocket: () => Promise<void>
 }
@@ -74,9 +75,28 @@ export interface CustomerRequest {
   };
 }
 
+let reconciliationInFlight: Promise<void> | null = null
+
+export function reconcileVendorRequestNotifications(): Promise<void> {
+  if (!reconciliationInFlight) {
+    reconciliationInFlight = (async () => {
+      try {
+        await useRequestStore.getState().getCustomerRequests()
+        const activeIds = useRequestStore.getState().customerRequests.map((request) => request.id)
+        await dismissStaleRequestNotifications(activeIds)
+      } catch (error) {
+        console.log("Unable to reconcile request notifications:", error)
+      }
+    })().finally(() => {
+      reconciliationInFlight = null
+    })
+  }
+  return reconciliationInFlight
+}
+
 export const useSocketStore = create<SocketStore>()((set, get) => ({
   socket: null,
-  initCustomerSocket: async (userId: string) => {
+  initCustomerSocket: async (userId: string, isVendor = false) => {
     if (get().socket) return
 
     const socket = io(process.env.EXPO_PUBLIC_BACKEND_URL, {
@@ -87,6 +107,10 @@ export const useSocketStore = create<SocketStore>()((set, get) => ({
     // connect to backend socket
     socket.on("connect", () => {
       socket.emit("join_room", userId)
+
+      if (isVendor) {
+        void reconcileVendorRequestNotifications()
+      }
     })
 
     socket.on("connect_error", (err) => console.log("Socket error: ", err.message))
@@ -115,6 +139,7 @@ export const useSocketStore = create<SocketStore>()((set, get) => ({
 
       useRequestStore.getState().removeCustomerRequest(requestId)
       useCustomerHomeContext.getState().removeRequestDetails(requestId)
+      void dismissRequestNotification(requestId)
     })
 
     // update the customer when vendor deletes their product

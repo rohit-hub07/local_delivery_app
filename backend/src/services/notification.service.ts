@@ -7,6 +7,7 @@ export async function sendNotification(
   userId: string,
   title: string,
   body: string,
+  data?: Record<string, unknown>,
 ) {
   const pushTokens = await db.pushToken.findMany({
     where: {
@@ -32,6 +33,7 @@ export async function sendNotification(
       sound: "default",
       title,
       body,
+      ...(data ? { data } : {}),
     });
   }
 

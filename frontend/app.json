@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Customer Management",
+    "name": "OAaGaya",
     "slug": "customer-management",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/oAaGaya.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
@@ -12,28 +12,43 @@
     "android": {
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/oAaGaya-launcher-safe.png"
       },
       "predictiveBackGestureEnabled": false,
       "cleartextTrafficPermitted": true,
       "package": "com.vengeace.customermanagement"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/oAaGaya-launcher-safe.png"
     },
     "plugins": [
       "expo-status-bar",
-      "expo-notifications",
       "@react-native-community/datetimepicker",
       "expo-asset",
       "expo-sharing",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/oAaGaya-launcher-safe.png",
+          "color": "#FFFFFF"
+        }
+      ],
+
+      [
         "expo-image-picker",
         {
           "photosPermission": "Allow $(PRODUCT_NAME) to access your photos so you can set a shop photo for your profile."
+        }
+      ],
+
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/oAaGaya.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
         }
       ]
     ],

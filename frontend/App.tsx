@@ -7,6 +7,9 @@ import { useEffect } from "react";
 import { registerPushToken } from "./src/services/registerForPushToken";
 import * as Notifications from "expo-notifications";
 import { handleNotificationResponse, handleNotificationReceived } from "./src/libs/notifications";
+import { AppState } from "react-native";
+import { useAuthStore } from "./src/context/vendorContext/AuthContext";
+import { reconcileVendorRequestNotifications } from "./src/context/websocket/WebSocketStore";
 
 export default function App() {
   useEffect(() => {
@@ -20,9 +23,16 @@ export default function App() {
       handleNotificationReceived(notification);
     });
 
+    const appStateSubscription = AppState.addEventListener("change", (state) => {
+      if (state === "active" && useAuthStore.getState().user?.role === "VENDOR") {
+        void reconcileVendorRequestNotifications();
+      }
+    });
+
     return () => {
       responseListener.remove();
       receivedListener.remove();
+      appStateSubscription.remove();
     };
   }, []);
 

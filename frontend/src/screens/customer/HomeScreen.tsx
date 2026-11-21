@@ -416,7 +416,7 @@ export default function HomeScreen() {
             </Text>
             <Text style={[styles.headerTitle, { fontSize: rf(28) }]}>Your Services</Text>
           </View>
-          <Image source={require("../../assets/helpinghandslogo.png")} style={[styles.headerLogo, { width: ms(40), height: ms(40) }]} />
+          <Image source={require("../../../assets/oAaGaya.png")} style={[styles.headerLogo, { width: ms(40), height: ms(40) }]} />
         </View>
         <View style={[styles.headerBadgeRow, { flexWrap: isSmallDevice ? 'wrap' as const : 'nowrap' as const }]}>
           <View style={[styles.headerBadge, SHADOWS.card]}>

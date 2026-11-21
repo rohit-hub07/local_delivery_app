@@ -204,7 +204,12 @@ export const customerRequest = async (req: Request, res: Response) => {
       })
     }
 
-    await sendNotification(vendor?.userId, `${user.name} has requested`, `Customer has a request for ${product.productName} product`)
+    await sendNotification(
+      vendor.userId,
+      `${user.name} has requested`,
+      `Customer has a request for ${product.productName} product`,
+      { requestId: newRequest.id, type: "new_request" }
+    )
 
     return res.status(201).json({
       message: "Request added successfully!",
@@ -352,13 +357,23 @@ export const vendorResponse = async (req: Request, res: Response) => {
 
     if (status === "ACCEPTED" && userId) {
       try {
-        await sendNotification(userId, "Request Accepted", `${vendorName} accepted your ${productName} request`)
+        await sendNotification(
+          userId,
+          "Request Accepted",
+          `${vendorName} accepted your ${productName} request`,
+          { requestId, type: "request_response" }
+        )
       } catch (notifError: any) {
         console.log("Error sending push notification for accepted request: ", notifError.message)
       }
     } else if (status === "REJECTED" && userId) {
       try {
-        await sendNotification(userId, "Request Rejected", `${vendorName} rejected your ${productName} request`)
+        await sendNotification(
+          userId,
+          "Request Rejected",
+          `${vendorName} rejected your ${productName} request`,
+          { requestId, type: "request_response" }
+        )
       } catch (notifError: any) {
         console.log("Error sending push notification for rejected request: ", notifError.message)
       }
