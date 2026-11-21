@@ -109,7 +109,7 @@ export const useVendorContextStore = create<VendorState>()((set) => ({
           vendorAccount: res.data.vendorProfile,
           vendorProfileDetails: res.data.vendorProfile
         })
-        useSocketStore.getState().initCustomerSocket(res.data.vendorProfile.id)
+        useSocketStore.getState().initCustomerSocket(res.data.vendorProfile.id, true)
         return true
       }
       set({ hasVendorProfile: false, vendorAccount: null, vendorProfileDetails: null })
