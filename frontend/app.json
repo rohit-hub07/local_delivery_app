@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Customer Management",
+    "name": "OAaGaya",
     "slug": "customer-management",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/oAaGaya.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
